@@ -11,20 +11,20 @@ function ensureInit() {
   }
 
   console.log('BOOT 3 - firebase init start');
-  console.log('[FIREBASE_DIAG] FIREBASE_PROJECT_ID present:', !!process.env.FIREBASE_PROJECT_ID);
-  console.log('[FIREBASE_DIAG] FIREBASE_CLIENT_EMAIL present:', !!process.env.FIREBASE_CLIENT_EMAIL);
-  const rawKey = process.env.FIREBASE_PRIVATE_KEY;
-  console.log('[FIREBASE_DIAG] FIREBASE_PRIVATE_KEY present:', !!rawKey);
-  if (rawKey) {
-    console.log('[FIREBASE_DIAG] FIREBASE_PRIVATE_KEY length:', rawKey.length);
-    console.log('[FIREBASE_DIAG] FIREBASE_PRIVATE_KEY first 30 chars:', JSON.stringify(rawKey.slice(0, 30)));
-    console.log('[FIREBASE_DIAG] FIREBASE_PRIVATE_KEY contains \\n:', rawKey.includes('\\n'));
-    console.log('[FIREBASE_DIAG] FIREBASE_PRIVATE_KEY contains actual newline:', rawKey.includes('\n'));
-  }
 
-  const projectId = process.env.FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+  const projectId = process.env.FIREBASE_PROJECT_ID?.trim();
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL?.trim();
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY
+    ?.trim()
+    .replace(/\\n/g, '\n');
+
+  console.log('[FIREBASE_DIAG] projectId (JSON):', JSON.stringify(projectId));
+  console.log('[FIREBASE_DIAG] clientEmail present:', !!clientEmail);
+  console.log('[FIREBASE_DIAG] privateKey present:', !!privateKey);
+  if (privateKey) {
+    console.log('[FIREBASE_DIAG] privateKey length:', privateKey.length);
+    console.log('[FIREBASE_DIAG] privateKey first 30 chars:', JSON.stringify(privateKey.slice(0, 30)));
+  }
 
   if (!projectId || !clientEmail || !privateKey) {
     const msg = 'Firebase Admin SDK not configured: set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY';
@@ -32,15 +32,13 @@ function ensureInit() {
     throw new Error(msg);
   }
 
-  const cleanedKey = privateKey.replace(/\\n/g, '\n');
-  console.log('[FIREBASE_DIAG] cleanedKey first 30 chars:', JSON.stringify(cleanedKey.slice(0, 30)));
   console.log('[FIREBASE_DIAG] calling admin.credential.cert()');
 
   try {
     const credential = admin.credential.cert({
       projectId,
       clientEmail,
-      privateKey: cleanedKey,
+      privateKey,
     });
     console.log('[FIREBASE_DIAG] admin.credential.cert() OK');
 
