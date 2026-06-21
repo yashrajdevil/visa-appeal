@@ -4,42 +4,10 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
-import express from 'express';
-import cors from 'cors';
-import analyzeRouter from './routes/analyze';
-import checkoutRouter from './routes/checkout';
-import webhookRouter from './routes/webhook';
-import { runAllChecks } from './validate';
+import app from '../api/app';
+import { runAllChecks } from '../api/validate';
 
-const app = express();
 const PORT = process.env.PORT || 3001;
-
-app.use(cors({
-  origin: process.env.APP_URL || 'http://localhost:5173',
-  credentials: true,
-}));
-
-// Raw body for webhook signature verification
-app.use('/api/webhook', express.raw({ type: 'application/json' }), (req, _res, next) => {
-  if (Buffer.isBuffer(req.body)) {
-    req.body = JSON.parse(req.body.toString('utf8'));
-  }
-  next();
-}, webhookRouter);
-
-app.use(express.json());
-
-app.use('/api/analyze', analyzeRouter);
-app.use('/api/checkout', checkoutRouter);
-
-app.get('/api/health', async (_req, res) => {
-  const checks = await runAllChecks();
-  const allPassed = checks.every(c => c.status === 'PASS');
-  res.json({
-    status: allPassed ? 'ok' : 'degraded',
-    checks,
-  });
-});
 
 if (!process.env.VERCEL) {
   app.listen(PORT, async () => {
@@ -65,5 +33,3 @@ if (!process.env.VERCEL) {
     }
   });
 }
-
-export default app;

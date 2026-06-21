@@ -140,7 +140,7 @@ async function flowC(caseId: string, localId: string) {
 
   try {
     // C1 — Read Firestore directly to verify document exists
-    const { getDb } = await import('./firebase.js');
+    const { getDb } = await import('../api/firebase.js');
     const db = getDb();
 
     const docRef = db.collection('users').doc(localId).collection('cases').doc(caseId);
@@ -221,7 +221,7 @@ async function flowE() {
   console.log('\n=== FLOW E: Webhook ===');
 
   // E1 — Test signature verification logic
-  const { verifyWebhookSignature } = await import('./services/creem.js');
+  const { verifyWebhookSignature } = await import('../api/services/creem.js');
   const testBody = JSON.stringify({ type: 'checkout.session.completed', data: { metadata: { uid: 'test', caseId: 'test', plan: 'standard' } } });
   const valid = await verifyWebhookSignature(testBody, 'invalid_signature');
   assert('E', 'Invalid signature rejected', !valid, 'Invalid signature should be rejected');
@@ -317,7 +317,7 @@ async function flowH(localId: string, caseId: string | null) {
   }
 
   try {
-    const { getDb } = await import('./firebase.js');
+    const { getDb } = await import('../api/firebase.js');
     const db = getDb();
 
     const snap = await db.collection('users').doc(localId).collection('cases').get();
@@ -395,7 +395,7 @@ async function flowJ(localId: string) {
 
   // J1 — Verify user can read own cases (via Admin SDK bypass)
   try {
-    const { getDb } = await import('./firebase.js');
+    const { getDb } = await import('../api/firebase.js');
     const db = getDb();
 
     // Admin SDK bypasses rules, but we verify the structure
@@ -409,14 +409,14 @@ async function flowJ(localId: string) {
     assert('J', 'Other user cases admin-readable', true, 'Admin can read any case (correct)');
 
     // J3 — These tests verify code logic enforces user isolation
-    const authMiddleware = await import('./middleware/auth.js');
+    const authMiddleware = await import('../api/middleware/auth.js');
     assert('J', 'Auth middleware exists', !!authMiddleware.verifyAuth, 'verifyAuth middleware missing');
 
     // J4 — Verify req.uid is set and cases are scoped to uid
-    const checkoutRoute = await import('./routes/checkout.js');
+    const checkoutRoute = await import('../api/routes/checkout.js');
     assert('J', 'Checkout uses req.uid', true, 'checkout.ts uses req.uid to scope to user');
 
-    const analyzeRoute = await import('./routes/analyze.js');
+    const analyzeRoute = await import('../api/routes/analyze.js');
     assert('J', 'Analyze uses req.uid', true, 'analyze.ts uses req.uid to scope to user');
 
   } catch (err: any) {
@@ -513,7 +513,7 @@ async function main() {
   // Cleanup: delete test user
   if (localId && auth?.idToken) {
     try {
-      const { getAuth } = await import('./firebase.js');
+      const { getAuth } = await import('../api/firebase.js');
       await getAuth().deleteUser(localId);
       console.log('\n  Cleanup: Test user deleted');
     } catch {
