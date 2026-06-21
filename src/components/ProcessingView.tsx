@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Loader2, CheckCircle2, AlertTriangle, RotateCcw, ArrowLeft } from 'lucide-react';
 import SEO from './SEO';
+import { analyzeCase } from '../services/api';
+import type { AppealFormData } from '../types';
 
 const steps = [
   "Uploading document...",
@@ -13,38 +16,46 @@ const steps = [
 ];
 
 interface ProcessingViewProps {
+  formData: AppealFormData | null;
   error?: { message: string, details?: string } | null;
   onRetry?: () => void;
   onCancel?: () => void;
 }
 
-export default function ProcessingView({ error: initialError, onRetry, onCancel }: ProcessingViewProps) {
+export default function ProcessingView({ formData, error: initialError, onRetry, onCancel }: ProcessingViewProps) {
   const [currentStep, setCurrentStep] = useState(0);
-  const [timeoutError, setTimeoutError] = useState<{ message: string, details?: string } | null>(null);
-
-  const error = timeoutError || initialError;
+  const [error, setError] = useState<{ message: string, details?: string } | null>(initialError || null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (error) return; // Stop animation if there's an error
-    
-    // We have 6 steps. Let's make it look realistic by staggering the timing.
-    // The exact progress depends on the actual API taking 10-15s, so we stay on step 3-4 longer.
+    if (error || !formData) return;
+
     const timers = [
-      setTimeout(() => setCurrentStep(1), 800),     // Extracting...
-      setTimeout(() => setCurrentStep(2), 2500),    // Analyzing...
-      setTimeout(() => setCurrentStep(3), 5000),    // Generating strategy...
-      setTimeout(() => setCurrentStep(4), 8500),    // Drafting letter...
-      setTimeout(() => setCurrentStep(5), 14000),   // Preparing results...
-      setTimeout(() => {
-        setTimeoutError({
-          message: "Operation timed out",
-          details: "The server took too long to respond. The document may be too large or the AI services may be experiencing high load."
-        });
-      }, 60000) // 60 seconds timeout fallback
+      setTimeout(() => setCurrentStep(1), 800),
+      setTimeout(() => setCurrentStep(2), 2500),
+      setTimeout(() => setCurrentStep(3), 5000),
+      setTimeout(() => setCurrentStep(4), 8500),
+      setTimeout(() => setCurrentStep(5), 14000),
     ];
 
+    (async () => {
+      try {
+        const { caseId } = await analyzeCase({
+          country: formData.country,
+          visaType: formData.visaType,
+          purpose: formData.purpose,
+          travelHistory: formData.travelHistory,
+          refusalReasons: formData.refusalReasons,
+          questionnaireResponses: formData.questionnaireResponses,
+        });
+        navigate(`/results/${caseId}`);
+      } catch (err: any) {
+        setError({ message: err.message || 'Analysis failed', details: 'Please try again or contact support.' });
+      }
+    })();
+
     return () => timers.forEach(t => clearTimeout(t));
-  }, [error, initialError]);
+  }, [error, formData, navigate]);
 
   return (
     <>
@@ -85,6 +96,14 @@ export default function ProcessingView({ error: initialError, onRetry, onCancel 
                   <AlertTriangle className="w-4 h-4" /> Start New Analysis
                 </button>
               </div>
+            </div>
+          ) : !formData ? (
+            <div className="w-full text-center">
+              <AlertTriangle className="w-10 h-10 text-amber-400 mb-4 mx-auto" />
+              <p className="text-zinc-300">No form data found. Please start a new analysis.</p>
+              <button onClick={onCancel} className="mt-4 flex items-center gap-2 text-zinc-400 hover:text-white text-sm mx-auto">
+                <ArrowLeft className="w-4 h-4" /> Go Back
+              </button>
             </div>
           ) : (
             <>

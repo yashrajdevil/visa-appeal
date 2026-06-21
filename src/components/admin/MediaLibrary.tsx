@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { ImageIcon, Upload, Trash2, Copy, Check } from 'lucide-react';
 
 interface MediaItem {
@@ -10,65 +10,12 @@ interface MediaItem {
 }
 
 export default function MediaLibrary() {
-    const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
-    const [uploading, setUploading] = useState(false);
-    const [copiedId, setCopiedId] = useState<number | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const fetchMedia = async () => {
-        const res = await fetch('/api/blog-app/admin/media');
-        if (res.ok) setMediaItems(await res.json());
-    };
-
-    useEffect(() => {
-        fetchMedia();
-    }, []);
-
-    const handleUploadClick = () => {
-        fileInputRef.current?.click();
-    };
-
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        setUploading(true);
-        const reader = new FileReader();
-        reader.onloadend = async () => {
-            const base64 = reader.result?.toString();
-            if (base64) {
-                const res = await fetch('/api/blog-app/admin/media', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        fileBase64: base64,
-                        filename: file.name,
-                        mimeType: file.type
-                    })
-                });
-                if (res.ok) {
-                    fetchMedia();
-                } else {
-                    alert('Failed to upload image.');
-                }
-            }
-            setUploading(false);
-            if (fileInputRef.current) fileInputRef.current.value = '';
-        };
-        reader.readAsDataURL(file);
-    };
-
-    const handleDelete = async (id: number) => {
-        if (confirm('Are you sure you want to delete this media?')) {
-            await fetch(`/api/blog-app/admin/media/${id}`, { method: 'DELETE' });
-            fetchMedia();
-        }
-    };
+    const [mediaItems] = useState<MediaItem[]>([]);
+    const [uploading] = useState(false);
+    const [copiedId] = useState<number | null>(null);
 
     const handleCopy = (id: number, url: string) => {
         navigator.clipboard.writeText(url);
-        setCopiedId(id);
-        setTimeout(() => setCopiedId(null), 2000);
     };
 
     return (
@@ -77,20 +24,9 @@ export default function MediaLibrary() {
                 <h1 className="text-3xl font-bold flex items-center gap-3">
                     <ImageIcon className="text-indigo-400 w-8 h-8" /> Media Library
                 </h1>
-                <button
-                    onClick={handleUploadClick}
-                    disabled={uploading}
-                    className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors disabled:opacity-50"
-                >
-                    <Upload className="w-4 h-4" /> {uploading ? 'Uploading...' : 'Upload Image'}
-                </button>
-                <input 
-                    type="file" 
-                    accept="image/*" 
-                    ref={fileInputRef} 
-                    className="hidden" 
-                    onChange={handleFileChange} 
-                />
+                <span className="bg-zinc-700 text-zinc-400 px-4 py-2 rounded-lg font-medium flex items-center gap-2 opacity-50 cursor-not-allowed">
+                    <Upload className="w-4 h-4" /> Upload Image
+                </span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
@@ -108,13 +44,12 @@ export default function MediaLibrary() {
                                 >
                                     {copiedId === item.id ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
                                 </button>
-                                <button
-                                    onClick={() => handleDelete(item.id)}
+                                <span
                                     title="Delete Image"
-                                    className="p-2 bg-red-500/20 hover:bg-red-500/40 text-red-100 rounded-full transition-colors"
+                                    className="p-2 bg-red-500/10 text-red-100/50 rounded-full opacity-50 cursor-not-allowed"
                                 >
                                     <Trash2 className="w-4 h-4" />
-                                </button>
+                                </span>
                             </div>
                         </div>
                         <div className="p-3 border-t border-zinc-800">

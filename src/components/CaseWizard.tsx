@@ -2,13 +2,10 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Upload, FileText, ChevronRight, X, Check, Edit2, 
-  Plus, AlertCircle, ShieldCheck, Briefcase, 
-  MapPin, Globe, User, Save
+  Plus, AlertCircle, ShieldCheck, 
+  MapPin, Globe
 } from 'lucide-react';
 import { AppealFormData, ExternalQuestionResponse } from '../types';
-import { useCustomerAuth } from '../context/CustomerAuthContext';
-import { db } from '../firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 interface CaseWizardProps {
   onSubmit: (data: AppealFormData) => void;
@@ -60,13 +57,11 @@ const DEFAULT_QUESTIONS = {
 };
 
 export default function CaseWizard({ onSubmit }: CaseWizardProps) {
-  const { user } = useCustomerAuth();
   const [step, setStep] = useState(1);
-  const [direction, setDirection] = useState(1); // 1 = forward, -1 = backward
+  const [direction, setDirection] = useState(1);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-  // Form State
   const [file, setFile] = useState<File | null>(null);
   const [country, setCountry] = useState('');
   const [visaType, setVisaType] = useState('');
@@ -75,13 +70,10 @@ export default function CaseWizard({ onSubmit }: CaseWizardProps) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [additionalEvidence, setAdditionalEvidence] = useState<File[]>([]);
 
-  // UI State
   const [dragActive, setDragActive] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const evidenceInputRef = useRef<HTMLInputElement>(null);
-
-  // Removed drafting feature completely for privacy
 
 
   const nextStep = () => {
@@ -94,7 +86,6 @@ export default function CaseWizard({ onSubmit }: CaseWizardProps) {
     setStep((s) => Math.max(s - 1, 1));
   };
 
-  // Step 1: Upload
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault(); e.stopPropagation(); setDragActive(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
@@ -106,11 +97,10 @@ export default function CaseWizard({ onSubmit }: CaseWizardProps) {
 
   const processFile = (selectedFile: File) => {
     if (selectedFile.size > 2.5 * 1024 * 1024) {
-      alert("File size exceeds 2.5MB limit to ensure it works with the system server limits. Please compress it."); return;
+      alert("File size exceeds 2.5MB limit."); return;
     }
     setFile(selectedFile);
     setIsExtracting(true);
-    // Simulate AI extraction
     setTimeout(() => {
       setIsExtracting(false);
       setRefusalReasons([
@@ -121,7 +111,6 @@ export default function CaseWizard({ onSubmit }: CaseWizardProps) {
     }, 2000);
   };
 
-  // Step 6: Additional Evidence
   const handleEvidenceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.length) {
       const newFiles = Array.from(e.target.files);
@@ -135,7 +124,6 @@ export default function CaseWizard({ onSubmit }: CaseWizardProps) {
     setAdditionalEvidence(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Handle Generate
   const handleGenerate = () => {
     const questionnaireResponses: ExternalQuestionResponse[] = Object.entries(answers).map(([key, value]) => ({
       question: key,
@@ -154,7 +142,6 @@ export default function CaseWizard({ onSubmit }: CaseWizardProps) {
     });
   };
 
-  // Get active questions based on refusal reasons
   const getActiveQuestions = () => {
     const types = new Set(refusalReasons.map(r => r.type));
     let questions: any[] = [];
@@ -537,11 +524,9 @@ export default function CaseWizard({ onSubmit }: CaseWizardProps) {
 
   return (
     <div className="w-full max-w-2xl mx-auto bg-zinc-950 border border-zinc-800/80 rounded-[32px] p-8 md:p-12 shadow-2xl relative overflow-hidden">
-      {/* Background gradients */}
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-indigo-500/20 to-transparent"></div>
       <div className="absolute -top-40 -right-40 w-80 h-80 bg-indigo-500/5 blur-[100px] rounded-full pointer-events-none"></div>
 
-      {/* Progress Bar */}
       {step > 1 && (
         <div className="mb-10 w-full">
            <div className="flex items-center justify-between text-[10px] font-bold tracking-widest text-zinc-600 uppercase mb-3">

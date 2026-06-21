@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import SEO from '../SEO';
 import { getBreadcrumbsSchema } from '../../utils/seoSchemas';
@@ -9,8 +9,8 @@ export default function BlogHubView() {
     const [searchParams, setSearchParams] = useSearchParams();
     const query = searchParams.get('q') || '';
     
-    const [posts, setPosts] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const posts: any[] = [];
+    const loading = false;
 
     let title = "Blog | Visa Reapplication Planning Platform";
     let description = "Read our latest articles, guides, and tips on visa applications and refusals.";
@@ -20,38 +20,6 @@ export default function BlogHubView() {
     } else if (tag) {
         title = `Articles tagged with ${tag.replace(/-/g, ' ')} | Blog`;
     }
-
-    useEffect(() => {
-        const fetchPosts = async () => {
-            setLoading(true);
-            let url = '/api/blog-app/posts?type=blog';
-            if (query) url += `&search=${encodeURIComponent(query)}`;
-            // In a fuller implementation, API endpoint could handle category/tag params.
-            // For now, fetching all and filtering client side for speed & demonstration, or update API later.
-            try {
-                const res = await fetch(url);
-                if (res.ok) {
-                    let data = await res.json();
-                    if (category) {
-                        data = data.filter((p: any) => p.categorySlug === category);
-                    }
-                    if (tag) {
-                        data = data.filter((p: any) => {
-                            try {
-                                const tags = JSON.parse(p.tagsJson || '[]');
-                                return tags.map((t:string) => t.toLowerCase().replace(/\\s+/g, '-')).includes(tag);
-                            } catch(e) { return false; }
-                        });
-                    }
-                    setPosts(data);
-                }
-            } catch(e) {
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchPosts();
-    }, [category, tag, query]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();

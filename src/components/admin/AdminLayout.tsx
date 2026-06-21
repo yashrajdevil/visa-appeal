@@ -1,48 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FileText, Tags, Image as ImageIcon, Search, Settings, Users, LogOut, Loader2 } from 'lucide-react';
+import { LayoutDashboard, FileText, Tags, Image as ImageIcon, Search, Settings, Users, LogOut } from 'lucide-react';
 import SEO from '../SEO';
 
 export default function AdminLayout() {
-    const [loading, setLoading] = useState(true);
-    const [authenticated, setAuthenticated] = useState(false);
-    const [userEmail, setUserEmail] = useState('');
     const location = useLocation();
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const verifyAuth = async () => {
-            try {
-                const res = await fetch('/api/auth/me');
-                if (res.ok) {
-                    const data = await res.json();
-                    setUserEmail(data.user.email);
-                    setAuthenticated(true);
-                } else {
-                    navigate('/admin');
-                }
-            } catch (e) {
-                navigate('/admin');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        verifyAuth();
-    }, [navigate]);
-
-    const handleLogout = async () => {
-        await fetch('/api/auth/logout', { method: 'POST' });
+    const handleLogout = () => {
         navigate('/admin');
     };
-
-    if (loading) {
-        return <div className="min-h-screen bg-black flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-indigo-500" /></div>;
-    }
-
-    if (!authenticated) {
-        return null;
-    }
 
     const navItems = [
         { path: '/admin/dashboard', icon: <LayoutDashboard className="w-5 h-5" />, label: 'Dashboard' },
@@ -63,7 +30,7 @@ export default function AdminLayout() {
             <aside className="w-64 bg-zinc-950 border-r border-zinc-800 flex flex-col hidden md:flex sticky top-0 h-screen">
                 <div className="p-6 border-b border-zinc-800">
                     <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">CMS Admin</h1>
-                    <p className="text-xs text-zinc-500 mt-1 truncate">{userEmail}</p>
+                    <p className="text-xs text-zinc-500 mt-1 truncate">admin@example.com</p>
                 </div>
                 
                 <nav className="flex-1 p-4 space-y-1 overflow-y-auto">

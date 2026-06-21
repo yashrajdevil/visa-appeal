@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Save, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Settings as SettingsIcon, Save } from 'lucide-react';
 
 export default function Settings() {
     const [settings, setSettings] = useState({
@@ -10,27 +10,7 @@ export default function Settings() {
         logoUrl: '',
         faviconUrl: ''
     });
-    const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-
-    useEffect(() => {
-        const fetchSettings = async () => {
-            const res = await fetch('/api/blog-app/admin/settings');
-            if (res.ok) {
-                const data = await res.json();
-                setSettings({
-                    siteName: data.siteName || '',
-                    metaDescription: data.metaDescription || '',
-                    contactEmail: data.contactEmail || '',
-                    socialLinks: data.socialLinks || '',
-                    logoUrl: data.logoUrl || '',
-                    faviconUrl: data.faviconUrl || ''
-                });
-            }
-            setLoading(false);
-        };
-        fetchSettings();
-    }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setSettings({ ...settings, [e.target.name]: e.target.value });
@@ -39,22 +19,9 @@ export default function Settings() {
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
-        const res = await fetch('/api/blog-app/admin/settings', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(settings)
-        });
-        if (res.ok) {
-            alert('Settings saved successfully');
-        } else {
-            alert('Failed to save settings');
-        }
+        alert('Settings save is not available in static mode.');
         setSaving(false);
     };
-
-    if (loading) {
-        return <div className="p-8 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-indigo-500" /></div>;
-    }
 
     return (
         <div className="p-8 max-w-4xl mx-auto w-full">
@@ -67,7 +34,7 @@ export default function Settings() {
                     disabled={saving}
                     className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-lg font-medium flex items-center gap-2 transition-colors disabled:opacity-50"
                 >
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    {saving ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
                     Save Changes
                 </button>
             </div>

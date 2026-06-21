@@ -1,18 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Layers, MousePointerClick, TrendingUp } from 'lucide-react';
+import React from 'react';
+import { Layers, TrendingUp } from 'lucide-react';
 
 export default function Dashboard() {
-    const [analytics, setAnalytics] = useState<any[]>([]);
-
-    useEffect(() => {
-        const fetchAnalytics = async () => {
-            const res = await fetch('/api/blog-app/admin/analytics/cta');
-            if(res.ok) setAnalytics(await res.json());
-        }
-        fetchAnalytics();
-    }, []);
-
-    const totalClicks = analytics.reduce((acc, curr) => acc + curr.clicks, 0);
+    const analytics: any[] = [];
+    const totalClicks = 0;
 
     return (
         <div className="p-8 max-w-7xl mx-auto w-full">
@@ -41,7 +32,7 @@ export default function Dashboard() {
             </div>
 
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2 mt-12">
-                <MousePointerClick className="w-5 h-5 text-indigo-400" /> Top Performing CTAs
+                Top Performing CTAs
             </h2>
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
                 <table className="w-full text-left text-sm whitespace-nowrap">

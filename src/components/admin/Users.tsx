@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Users as UsersIcon, Shield } from 'lucide-react';
 
 interface AdminUser {
@@ -9,17 +9,7 @@ interface AdminUser {
 }
 
 export default function Users() {
-    const [users, setUsers] = useState<AdminUser[]>([]);
-
-    useEffect(() => {
-        const fetchUsers = async () => {
-            const res = await fetch('/api/auth/users');
-            if (res.ok) {
-                setUsers(await res.json());
-            }
-        };
-        fetchUsers();
-    }, []);
+    const [users] = useState<AdminUser[]>([]);
 
     return (
         <div className="p-8 max-w-5xl mx-auto w-full">

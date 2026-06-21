@@ -1,47 +1,11 @@
-import React, { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useCustomerAuth } from '../../context/CustomerAuthContext';
-import { LayoutDashboard, ShoppingBag, Files, FolderOpen, Settings, LogOut, AlertCircle } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Files, FolderOpen, Settings, LogOut } from 'lucide-react';
 import SEO from '../SEO';
+import { useCustomerAuth } from '../../context/CustomerAuthContext';
 
 export default function CustomerLayout() {
-  const { user, logout, loading } = useCustomerAuth();
   const navigate = useNavigate();
-  const [loadingTimeout, setLoadingTimeout] = useState(false);
-
-  useEffect(() => {
-    let timer: any;
-    if (loading) {
-      timer = setTimeout(() => {
-        setLoadingTimeout(true);
-      }, 10000);
-    }
-    return () => clearTimeout(timer);
-  }, [loading]);
-
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/login');
-    }
-  }, [user, loading, navigate]);
-
-  if (loading) {
-     if (loadingTimeout) {
-        return (
-          <div className="min-h-screen flex flex-col items-center justify-center pt-20 space-y-4">
-             <AlertCircle className="w-12 h-12 text-rose-500" />
-             <div className="text-white text-lg font-medium">Authentication is taking longer than expected.</div>
-             <p className="text-zinc-400">Please check your connection and try again.</p>
-             <button onClick={() => window.location.reload()} className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition">Reload Page</button>
-          </div>
-        );
-     }
-     return <div className="min-h-screen flex items-center justify-center pt-20"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>;
-  }
-
-  if (!user) {
-     return null; // Will be navigated
-  }
+  const { user, logout } = useCustomerAuth();
 
   const navItems = [
     { name: 'Overview', path: '/dashboard', icon: LayoutDashboard },
@@ -51,8 +15,8 @@ export default function CustomerLayout() {
     { name: 'Settings', path: '/dashboard/settings', icon: Settings },
   ];
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
 
@@ -64,7 +28,7 @@ export default function CustomerLayout() {
         <aside className="w-64 bg-zinc-900 border-r border-zinc-800 hidden md:flex flex-col">
           <div className="p-6">
             <h2 className="text-xl font-bold text-white tracking-tight">Client Portal</h2>
-            <p className="text-xs text-zinc-500 mt-1">{user.email}</p>
+            <p className="text-xs text-zinc-500 mt-1">{user?.email || ''}</p>
           </div>
           <nav className="flex-1 px-4 space-y-1">
             {navItems.map((item) => (

@@ -1,58 +1,37 @@
 import { useState, useRef } from 'react';
 import { motion } from 'motion/react';
-import { Download, Copy, CheckCircle2, ChevronLeft, LockIcon, AlertCircle, Briefcase, FileText, CheckSquare, Clock, ShieldCheck, Zap } from 'lucide-react';
+import { Download, Copy, CheckCircle2, ChevronLeft, FileText, CheckSquare, Clock, Briefcase, AlertCircle } from 'lucide-react';
 import { GenerateAppealResponse, ChecklistItem } from '../types';
-import { generateAppeal } from '../services/api'; // just for example if needed later
-import { auth, db } from '../firebase';
 import SEO from './SEO';
 
 interface ResultsDashboardProps {
   result: GenerateAppealResponse;
   onReset: () => void;
+  purchasedPlan?: string;
   isSample?: boolean;
-  initialPlan?: PlanTier;
 }
 
-type PlanTier = 'free' | 'starter' | 'standard' | 'premium';
+const PLAN_TIERS = ['starter', 'standard', 'premium'];
 
-export default function ResultsDashboard({ result, onReset, isSample = false, initialPlan = 'free' }: ResultsDashboardProps) {
+function hasAccess(purchasedPlan: string | undefined, requiredTier: string): boolean {
+  if (!purchasedPlan) return false;
+  return PLAN_TIERS.indexOf(purchasedPlan) >= PLAN_TIERS.indexOf(requiredTier);
+}
+
+export default function ResultsDashboard({ result, onReset, purchasedPlan, isSample = false }: ResultsDashboardProps) {
   const [copied, setCopied] = useState(false);
   const pdfContentRef = useRef<HTMLDivElement>(null);
-  
-  const activePlan = isSample ? 'premium' : initialPlan;
-
-  const isStarter = isSample || activePlan === 'starter' || activePlan === 'standard' || activePlan === 'premium';
-  const isStandard = isSample || activePlan === 'standard' || activePlan === 'premium';
-  const isPremium = isSample || activePlan === 'premium';
 
   const handleCopy = () => {
-    if (!isStarter) {
-      alert('Please unlock the full package to copy the supporting explanation.');
-      return;
-    }
     navigator.clipboard.writeText(result.appeal_letter);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleDownload = async () => {
-    if (!isStarter) {
-      alert('Please unlock the full package to download.');
-      return;
-    }
-    
     if (pdfContentRef.current) {
       const element = pdfContentRef.current;
-      // Temporarily make the hidden PDF content visible for printing
       element.style.display = 'block';
-      
-      const opt = {
-        margin:       [0.5, 0] as [number, number],
-        filename:     'Visa_Appeal_Package.pdf',
-        image:        { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
-        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' as const }
-      };
 
       try {
         const { default: html2canvas } = await import('html2canvas');
@@ -62,7 +41,6 @@ export default function ResultsDashboard({ result, onReset, isSample = false, in
         const imgData = canvas.toDataURL('image/jpeg', 0.98);
         const pdf = new jsPDF({ unit: 'in', format: 'a4', orientation: 'portrait' });
         
-        // standard a4 width in inches
         const pdfWidth = 8.27;
         const pdfHeight = 11.69;
         const imgWidth = canvas.width;
@@ -83,32 +61,6 @@ export default function ResultsDashboard({ result, onReset, isSample = false, in
           heightLeft -= pdfHeight;
         }
 
-        const pdfBlob = pdf.output('blob');
-        const fileName = `Visa_Appeal_Package_${Date.now()}.pdf`;
-        let pdfUrl = '';
-
-        if (auth.currentUser && result.caseId) {
-          try {
-            const { getStorage, ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
-            const { doc, updateDoc } = await import('firebase/firestore');
-            const storage = getStorage();
-            const storageRef = ref(storage, `users/${auth.currentUser.uid}/cases/${result.caseId}/${fileName}`);
-            await uploadBytes(storageRef, pdfBlob);
-            pdfUrl = await getDownloadURL(storageRef);
-            
-            const caseRef = doc(db, 'users', auth.currentUser.uid, 'cases', result.caseId);
-            
-            const updateField = activePlan === 'premium' ? 'pdfUrls.premium' : 
-                               activePlan === 'standard' ? 'pdfUrls.standard' : 'pdfUrls.starter';
-                               
-            await updateDoc(caseRef, {
-              [updateField]: pdfUrl
-            });
-          } catch(uploadErr) {
-             console.error("Failed to upload PDF:", uploadErr);
-          }
-        }
-
         pdf.save('Visa_Appeal_Package.pdf');
       } catch (err) {
         console.error("PDF generation failed:", err);
@@ -116,44 +68,6 @@ export default function ResultsDashboard({ result, onReset, isSample = false, in
       } finally {
         element.style.display = 'none';
       }
-    }
-  };
-
-  const handlePayment = async (plan: PlanTier) => {
-    try {
-      const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
-      if (!token) {
-        alert("Please log in to upgrade.");
-        return;
-      }
-      
-      let finalCaseId = result.caseId;
-      
-      console.log(`Starting checkout with caseId: ${finalCaseId}`);
-
-      const res = await fetch("/api/payments/create-checkout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({ plan, caseId: finalCaseId })
-      });
-      
-      if (!res.ok) {
-        console.error("Failed response:", await res.text());
-        throw new Error("Failed to create checkout");
-      }
-      
-      const data = await res.json();
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-      } else {
-        throw new Error("Missing checkout URL");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Error initiating checkout. Please try again later.");
     }
   };
 
@@ -201,13 +115,6 @@ export default function ResultsDashboard({ result, onReset, isSample = false, in
             <ChevronLeft className="w-4 h-4 mr-1" /> {isSample ? 'Back to Previous' : 'Start New Analysis'}
           </button>
           <h2 className="text-3xl lg:text-4xl font-semibold tracking-tight text-white mb-2">Reapplication Preparation Package</h2>
-          {!isSample && (
-            activePlan === 'free' ? (
-              <p className="text-indigo-400 flex items-center gap-1.5"><LockIcon className="w-4 h-4" /> Preview Mode — Unlock for full export</p>
-            ) : (
-              <p className="text-emerald-400 flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> <span className="capitalize">{activePlan}</span> Package Unlocked</p>
-            )
-          )}
         </div>
         
         <div className="flex z-20 items-center gap-3 w-full sm:w-auto">
@@ -229,7 +136,6 @@ export default function ResultsDashboard({ result, onReset, isSample = false, in
       </div>
 
       <div className="space-y-16">
-        {/* SECTION 1 - CONSULTANT REVIEW */}
         <section>
           <div className="flex items-center gap-2 mb-6">
             <Briefcase className="w-5 h-5 text-indigo-400" />
@@ -237,15 +143,7 @@ export default function ResultsDashboard({ result, onReset, isSample = false, in
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Score & Severity */}
             <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 flex flex-col items-start shadow-lg overflow-hidden relative">
-              {!isStandard && (
-                <div className="absolute inset-0 z-20 backdrop-blur-md bg-zinc-950/80 flex flex-col items-center justify-center p-4 text-center">
-                  <LockIcon className="w-6 h-6 text-indigo-400 mb-2" />
-                  <p className="text-sm text-zinc-300 font-medium mb-3">Upgrade to Standard<br/>to unlock Case Readiness Score</p>
-                  <button type="button" onClick={(e) => { e.preventDefault(); handlePayment('standard'); }} className="text-xs px-4 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white font-medium rounded-full transition-colors">Unlock</button>
-                </div>
-              )}
               <div className="text-sm text-zinc-400 uppercase tracking-wider mb-2 font-medium">Application Readiness Score</div>
               <div className={`text-5xl font-bold ${scoreColor} mb-4`}>
                 {result.case_assessment.score}<span className="text-2xl text-zinc-600 font-medium">/100</span>
@@ -263,9 +161,7 @@ export default function ResultsDashboard({ result, onReset, isSample = false, in
               </div>
             </div>
             
-            {/* AI Assessment Summary & Notes */}
             <div className="md:col-span-2 flex flex-col gap-6">
-              {/* Verdict & Path */}
               <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 shadow-lg relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-8 opacity-5">
                    <Briefcase className="w-32 h-32" />
@@ -284,65 +180,47 @@ export default function ResultsDashboard({ result, onReset, isSample = false, in
                   </div>
                 </div>
 
-                <div className="mb-6 relative z-10 overflow-hidden">
-                  {!isPremium && (
-                    <div className="absolute inset-0 z-20 backdrop-blur-md bg-zinc-950/80 flex flex-col items-center justify-center p-4 text-center">
-                       <LockIcon className="w-5 h-5 text-purple-400 mb-2" />
-                       <p className="text-sm text-zinc-200 mb-2">Upgrade to Premium to unlock<br/><span className="text-purple-400 font-medium">Enhanced AI Assessment Summary</span></p>
-                       <button type="button" onClick={(e) => { e.preventDefault(); handlePayment('premium'); }} className="text-xs px-4 py-1.5 bg-purple-500 hover:bg-purple-600 text-white font-medium rounded-full transition-colors">Unlock Premium</button>
-                    </div>
-                  )}
-                  <div className={`transition-opacity ${!isPremium ? 'opacity-30 blur-sm pointer-events-none' : ''}`}>
-                    <div className="flex items-center gap-2 mb-2">
-                       <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Consultant Reasoning:</div>
-                    </div>
-                    <p className="text-sm text-zinc-300 italic mb-6">
-                       "{result.case_assessment.consultantVerdict.reasoning}"
-                    </p>
-
-                    <h4 className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-3">Consultant Notes</h4>
-                    <ul className="space-y-3 mb-6">
-                        {result.case_assessment.consultantNotes.map((note, i) => (
-                          <li key={i} className="text-sm text-zinc-300 flex items-start gap-3">
-                            <span className="w-1.5 h-1.5 rounded-full bg-zinc-600 mt-1.5 flex-shrink-0" />
-                            <span className="leading-relaxed">{note}</span>
-                          </li>
-                        ))}
-                    </ul>
+                <div className="mb-6 relative z-10">
+                  <div className="flex items-center gap-2 mb-2">
+                     <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Consultant Reasoning:</div>
                   </div>
+                  <p className="text-sm text-zinc-300 italic mb-6">
+                     "{result.case_assessment.consultantVerdict.reasoning}"
+                  </p>
+
+                  <h4 className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-3">Consultant Notes</h4>
+                  <ul className="space-y-3 mb-6">
+                      {result.case_assessment.consultantNotes.map((note, i) => (
+                        <li key={i} className="text-sm text-zinc-300 flex items-start gap-3">
+                          <span className="w-1.5 h-1.5 rounded-full bg-zinc-600 mt-1.5 flex-shrink-0" />
+                          <span className="leading-relaxed">{note}</span>
+                        </li>
+                      ))}
+                  </ul>
                 </div>
                 
                 {result.case_assessment.successOutlook && (
-                  <div className="pt-6 border-t border-zinc-800/80 relative z-10 overflow-hidden">
-                    {!isPremium && (
-                      <div className="absolute inset-0 z-20 backdrop-blur-md bg-zinc-950/80 flex flex-col items-center justify-center p-4 text-center">
-                         <LockIcon className="w-5 h-5 text-purple-400 mb-2" />
-                         <p className="text-sm text-zinc-200 mb-2">Upgrade to Premium to unlock<br/><span className="text-purple-400 font-medium">Readiness Outlook & Weakness Analysis</span></p>
-                         <button type="button" onClick={(e) => { e.stopPropagation(); alert('Top Premium Button Clicked'); handlePayment('premium'); }} className="text-xs px-4 py-1.5 bg-purple-500 hover:bg-purple-600 text-white font-medium rounded-full transition-colors">Unlock Premium</button>
+                  <div className="pt-6 border-t border-zinc-800/80 relative z-10">
+                    <div className="flex flex-col sm:flex-row gap-6">
+                       <div className="flex-1">
+                         <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1 font-semibold">Post-Fixes Outlook</div>
+                         <div className="text-emerald-400 font-medium">{result.case_assessment.successOutlook.readinessAfterFixes}</div>
+                       </div>
+                       <div className="flex-1">
+                         <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1 font-semibold">Exp. Improvement</div>
+                         <div className="text-indigo-400 font-medium">{result.case_assessment.successOutlook.expectedScoreImprovement}</div>
+                       </div>
+                    </div>
+                    {result.case_assessment.successOutlook.primaryObstacles && result.case_assessment.successOutlook.primaryObstacles.length > 0 && (
+                      <div className="mt-4">
+                        <div className="text-xs text-zinc-500 uppercase tracking-wider mb-2 font-semibold">Primary Obstacles to Address</div>
+                        <div className="flex flex-wrap gap-2">
+                          {result.case_assessment.successOutlook.primaryObstacles.map((obs, i) => (
+                            <span key={i} className="text-xs px-2.5 py-1 bg-red-500/10 text-red-400 rounded border border-red-500/20">{obs}</span>
+                          ))}
+                        </div>
                       </div>
                     )}
-                    <div className={`transition-opacity ${!isPremium ? 'opacity-30 blur-sm pointer-events-none' : ''}`}>
-                      <div className="flex flex-col sm:flex-row gap-6">
-                         <div className="flex-1">
-                           <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1 font-semibold">Post-Fixes Outlook</div>
-                           <div className="text-emerald-400 font-medium">{result.case_assessment.successOutlook.readinessAfterFixes}</div>
-                         </div>
-                         <div className="flex-1">
-                           <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1 font-semibold">Exp. Improvement</div>
-                           <div className="text-indigo-400 font-medium">{result.case_assessment.successOutlook.expectedScoreImprovement}</div>
-                         </div>
-                      </div>
-                      {result.case_assessment.successOutlook.primaryObstacles && result.case_assessment.successOutlook.primaryObstacles.length > 0 && (
-                        <div className="mt-4">
-                          <div className="text-xs text-zinc-500 uppercase tracking-wider mb-2 font-semibold">Primary Obstacles to Address</div>
-                          <div className="flex flex-wrap gap-2">
-                            {result.case_assessment.successOutlook.primaryObstacles.map((obs, i) => (
-                              <span key={i} className="text-xs px-2.5 py-1 bg-red-500/10 text-red-400 rounded border border-red-500/20">{obs}</span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
                   </div>
                 )}
               </div>
@@ -350,7 +228,6 @@ export default function ResultsDashboard({ result, onReset, isSample = false, in
           </div>
         </section>
 
-        {/* ISSUE BREAKDOWN FORMAT */}
         <section>
           <div className="flex items-center gap-2 mb-6">
             <AlertCircle className="w-5 h-5 text-indigo-400" />
@@ -370,36 +247,27 @@ export default function ResultsDashboard({ result, onReset, isSample = false, in
                   </span>
                 </div>
                 
-                <div className="relative mt-4">
-                  {!isPremium && (
-                    <div className="absolute inset-0 z-20 backdrop-blur-md bg-zinc-950/80 flex flex-col items-center justify-center p-4 text-center rounded-lg border border-zinc-800">
-                       <LockIcon className="w-5 h-5 text-purple-400 mb-2" />
-                       <p className="text-xs text-zinc-300 mb-3">Upgrade to Premium for Detailed Breakdown & Evidence Roadmap</p>
-                       <button type="button" onClick={(e) => { e.preventDefault(); handlePayment('premium'); }} className="text-xs px-4 py-1.5 bg-purple-500 hover:bg-purple-600 text-white font-medium rounded-full transition-colors">Unlock Premium</button>
-                    </div>
-                  )}
-                  <div className={`transition-opacity ${!isPremium ? 'opacity-30 blur-sm pointer-events-none' : ''}`}>
-                    <div className="mb-4 bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/50">
-                      <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Finding</div>
-                      <div className="text-sm text-zinc-300">{issue.finding}</div>
-                    </div>
-                    
-                    <div className="mb-4">
-                      <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Recommended Action</div>
-                      <div className="text-sm text-indigo-300 font-medium">{issue.recommendedAction}</div>
-                    </div>
+                <div className="mt-4">
+                  <div className="mb-4 bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/50">
+                    <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Finding</div>
+                    <div className="text-sm text-zinc-300">{issue.finding}</div>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Recommended Action</div>
+                    <div className="text-sm text-indigo-300 font-medium">{issue.recommendedAction}</div>
+                  </div>
 
-                    <div>
-                      <div className="text-xs text-zinc-500 uppercase tracking-wider mb-2">Required Evidence</div>
-                      <ul className="space-y-1.5">
-                        {issue.recommendedEvidence.map((ev, i) => (
-                          <li key={i} className="text-sm text-zinc-400 flex items-start gap-2">
-                            <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
-                            <span>{ev}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                  <div>
+                    <div className="text-xs text-zinc-500 uppercase tracking-wider mb-2">Required Evidence</div>
+                    <ul className="space-y-1.5">
+                      {issue.recommendedEvidence.map((ev, i) => (
+                        <li key={i} className="text-sm text-zinc-400 flex items-start gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                          <span>{ev}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
               </div>
@@ -407,7 +275,7 @@ export default function ResultsDashboard({ result, onReset, isSample = false, in
           </div>
         </section>
 
-        {/* SECTION 2 - APPEAL LETTER DOCUMENT VIEWER */}
+        {hasAccess(purchasedPlan, 'standard') && (
         <section>
           <div className="flex items-center gap-2 mb-6">
             <FileText className="w-5 h-5 text-indigo-400" />
@@ -416,212 +284,123 @@ export default function ResultsDashboard({ result, onReset, isSample = false, in
           
           <div className="relative">
              <div className="bg-zinc-800/30 -mx-4 sm:-mx-8 p-4 sm:p-8 rounded-3xl border border-zinc-800/50 shadow-inner overflow-x-auto flex flex-col items-center pb-24">
-               
-               {/* Viewer Header Toolbar */}
-               <div className="mb-4 w-full max-w-[800px] flex justify-between items-center bg-zinc-900 px-4 py-2.5 rounded-xl border border-zinc-700/50 shadow-sm">
-                  <div className="flex items-center gap-3">
-                     <div className="p-1.5 bg-indigo-500/10 rounded-md">
-                        <FileText className="w-4 h-4 text-indigo-400" />
-                     </div>
-                     <span className="text-sm font-medium text-zinc-200 tracking-wide">formal_supporting_explanation_draft.docx</span>
-                  </div>
-                  <div className="flex gap-1.5 opacity-50">
-                     <div className="w-3 h-3 rounded-full bg-zinc-600"></div>
-                     <div className="w-3 h-3 rounded-full bg-zinc-600"></div>
-                     <div className="w-3 h-3 rounded-full bg-zinc-600"></div>
-                  </div>
-               </div>
-
-               {/* A4 Document Canvas */}
-               <div 
-                 className="relative bg-white shrink-0 shadow-2xl rounded-sm py-16 px-10 sm:py-24 sm:px-16"
-                 style={{ 
-                   width: '100%',
-                   maxWidth: '800px',
-                   minHeight: '1050px'
-                 }}
-               >
-                 <div className="max-w-[650px] mx-auto w-full relative z-10 text-black">
-                    <div className="whitespace-pre-wrap font-serif text-[15px] leading-[1.8] text-[#1a1a1a] tracking-normal text-justify">
-                      {isStarter ? (
-                        <div className="outline-none focus:ring-2 ring-indigo-500/20 rounded-md p-2 -m-2 transition-all" contentEditable suppressContentEditableWarning>
-                           {result.appeal_letter}
-                        </div>
-                      ) : (
-                        <>
-                          <div>{result.appeal_letter.slice(0, 300)}...</div>
-                          <div className="mt-4 blur-[4px] opacity-40 select-none">
-                            {result.appeal_letter.slice(300, 1500)}
-                            <br/><br/>
-                            [Letter continues securely...]
-                          </div>
-                        </>
-                      )}
-                    </div>
-                 </div>
-
-                 {/* Paywall Overlay inside the letter canvas */}
-                 {!isStarter && (
-                   <div className="absolute inset-x-0 bottom-0 top-[200px] z-20 flex flex-col items-center justify-center p-6 bg-gradient-to-t from-white via-white/95 to-transparent rounded-b-[4px]">
-                     <div className="w-full max-w-md bg-zinc-950 p-8 rounded-3xl shadow-2xl border border-zinc-800 mt-32 text-left">
-                       <div className="text-center mb-8">
-                          <LockIcon className="w-8 h-8 text-indigo-400 mx-auto mb-3" />
-                          <h3 className="text-2xl font-bold text-white mb-2 tracking-tight">Unlock Application Package</h3>
-                          <p className="text-sm text-zinc-400">Choose a plan to generate your full appeal package.</p>
-                       </div>
-
-                       <div className="space-y-4">
-                         {/* Starter Plan */}
-                         <div className="flex items-center justify-between p-4 rounded-xl border border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800/80 transition-colors cursor-pointer" onClick={(e) => { e.preventDefault(); handlePayment('starter'); }}>
-                            <div>
-                               <div className="font-semibold text-white mb-1">Starter</div>
-                               <div className="text-xs text-zinc-400">Document Draft + Basic Checklist</div>
-                            </div>
-                            <div className="text-right">
-                              <div className="font-bold text-white tracking-tight">$9.99</div>
-                              <button className="mt-1 text-[10px] px-3 py-1 bg-white text-zinc-950 font-semibold uppercase tracking-wide rounded-full">Unlock</button>
-                            </div>
-                         </div>
-
-                         {/* Standard Plan */}
-                         <div className="flex items-center justify-between p-4 rounded-xl border border-indigo-500/50 bg-indigo-500/10 hover:bg-indigo-500/20 transition-colors cursor-pointer relative" onClick={(e) => { e.preventDefault(); handlePayment('standard'); }}>
-                            <div className="absolute -top-2.5 right-4 px-2 py-0.5 bg-indigo-500 text-white text-[9px] uppercase font-bold tracking-wider rounded-sm">Recommended</div>
-                            <div>
-                               <div className="font-semibold text-white mb-1">Standard</div>
-                               <div className="text-xs text-zinc-400">Reapplication Strategy + Score</div>
-                            </div>
-                            <div className="text-right flex flex-col justify-center items-end">
-                              <div className="font-bold text-white tracking-tight">$19.99</div>
-                              <button className="mt-1 text-[10px] px-3 py-1 bg-indigo-500 text-white font-semibold uppercase tracking-wide rounded-full">Unlock</button>
-                            </div>
-                         </div>
-                         {/* Premium Plan */}
-                         <div className="flex items-center justify-between p-4 rounded-xl border border-purple-500/30 bg-purple-500/5 hover:bg-purple-500/10 transition-colors cursor-pointer" onClick={(e) => { e.preventDefault(); handlePayment('premium'); }}>
-                            <div>
-                               <div className="font-semibold text-white mb-1">Premium</div>
-                               <div className="text-xs text-zinc-400">Detailed Breakdown + AI Assessment Summary</div>
-                            </div>
-                            <div className="text-right flex flex-col justify-center items-end">
-                              <div className="font-bold text-white tracking-tight">$34.99</div>
-                              <button className="mt-1 text-[10px] px-3 py-1 bg-purple-500 text-white font-semibold uppercase tracking-wide rounded-full">Unlock</button>
-                            </div>
-                         </div>
-                       </div>
-                     </div>
+                <div className="mb-4 w-full max-w-[800px] flex justify-between items-center bg-zinc-900 px-4 py-2.5 rounded-xl border border-zinc-700/50 shadow-sm">
+                   <div className="flex items-center gap-3">
+                      <div className="p-1.5 bg-indigo-500/10 rounded-md">
+                         <FileText className="w-4 h-4 text-indigo-400" />
+                      </div>
+                      <span className="text-sm font-medium text-zinc-200 tracking-wide">formal_supporting_explanation_draft.docx</span>
                    </div>
-                 )}
-               </div>
+                   <div className="flex gap-1.5 opacity-50">
+                      <div className="w-3 h-3 rounded-full bg-zinc-600"></div>
+                      <div className="w-3 h-3 rounded-full bg-zinc-600"></div>
+                      <div className="w-3 h-3 rounded-full bg-zinc-600"></div>
+                   </div>
+                </div>
+
+                <div 
+                  className="relative bg-white shrink-0 shadow-2xl rounded-sm py-16 px-10 sm:py-24 sm:px-16"
+                  style={{ 
+                    width: '100%',
+                    maxWidth: '800px',
+                    minHeight: '1050px'
+                  }}
+                >
+                  <div className="max-w-[650px] mx-auto w-full relative z-10 text-black">
+                     <div className="whitespace-pre-wrap font-serif text-[15px] leading-[1.8] text-[#1a1a1a] tracking-normal text-justify">
+                       <div className="outline-none focus:ring-2 ring-indigo-500/20 rounded-md p-2 -m-2 transition-all" contentEditable suppressContentEditableWarning>
+                          {result.appeal_letter}
+                       </div>
+                     </div>
+                  </div>
+                </div>
              </div>
           </div>
         </section>
+        )}
 
-        {/* REAPPLICATION STRATEGY */}
+        {hasAccess(purchasedPlan, 'standard') && (
         <section>
           <div className="flex items-center gap-2 mb-6">
             <Clock className="w-5 h-5 text-indigo-400" />
             <h3 className="text-xl font-medium text-white">Reapplication Strategy Planner</h3>
           </div>
-          <div className="relative">
-            {!isStandard && (
-              <div className="absolute inset-0 z-20 backdrop-blur-md bg-zinc-950/80 flex flex-col items-center justify-center p-6 text-center rounded-2xl border border-zinc-800">
-                 <LockIcon className="w-6 h-6 text-indigo-400 mb-3" />
-                 <h4 className="text-lg font-bold text-white mb-2">Upgrade to Standard</h4>
-                 <p className="text-sm text-zinc-300 mb-4">Unlock personalized Reapplication Strategy.</p>
-                 <button type="button" onClick={(e) => { e.preventDefault(); handlePayment('standard'); }} className="text-sm px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold rounded-full transition-colors shadow-lg">Unlock Standard ($19.99)</button>
-              </div>
-            )}
-            <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${!isStandard ? 'blur-sm opacity-40 select-none' : ''}`}>
-             <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-6">
-                <h4 className="text-sm font-bold text-emerald-400 uppercase tracking-wider mb-4 flex items-center gap-2">Immediate Actions</h4>
-                <ul className="space-y-3">
-                  {result.strategy.immediateActions.map((action, i) => (
-                    <li key={i} className="text-sm text-zinc-300 flex items-start gap-3">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0" />
-                      <span>{action}</span>
-                    </li>
-                  ))}
-                </ul>
-             </div>
-             
-             <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-xl p-6">
-                <h4 className="text-sm font-bold text-indigo-400 uppercase tracking-wider mb-4 flex items-center gap-2">Evidence To Gather</h4>
-                <ul className="space-y-3">
-                  {result.strategy.evidenceToGather.map((item, i) => (
-                    <li key={i} className="text-sm text-zinc-300 flex items-start gap-3">
-                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 flex-shrink-0" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-             </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+           <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-6">
+              <h4 className="text-sm font-bold text-emerald-400 uppercase tracking-wider mb-4 flex items-center gap-2">Immediate Actions</h4>
+              <ul className="space-y-3">
+                {result.strategy.immediateActions.map((action, i) => (
+                  <li key={i} className="text-sm text-zinc-300 flex items-start gap-3">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0" />
+                    <span>{action}</span>
+                  </li>
+                ))}
+              </ul>
+           </div>
+           
+           <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-xl p-6">
+              <h4 className="text-sm font-bold text-indigo-400 uppercase tracking-wider mb-4 flex items-center gap-2">Evidence To Gather</h4>
+              <ul className="space-y-3">
+                {result.strategy.evidenceToGather.map((item, i) => (
+                  <li key={i} className="text-sm text-zinc-300 flex items-start gap-3">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 flex-shrink-0" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+           </div>
 
-             <div className="bg-rose-500/5 border border-rose-500/20 rounded-xl p-6">
-                <h4 className="text-sm font-bold text-rose-400 uppercase tracking-wider mb-4 flex items-center gap-2">Common Mistakes To Avoid</h4>
-                <ul className="space-y-3">
-                  {result.strategy.commonMistakes.map((mistake, i) => (
-                    <li key={i} className="text-sm text-zinc-300 flex items-start gap-3">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-1.5 flex-shrink-0" />
-                      <span>{mistake}</span>
-                    </li>
-                  ))}
-                </ul>
-             </div>
+           <div className="bg-rose-500/5 border border-rose-500/20 rounded-xl p-6">
+              <h4 className="text-sm font-bold text-rose-400 uppercase tracking-wider mb-4 flex items-center gap-2">Common Mistakes To Avoid</h4>
+              <ul className="space-y-3">
+                {result.strategy.commonMistakes.map((mistake, i) => (
+                  <li key={i} className="text-sm text-zinc-300 flex items-start gap-3">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-1.5 flex-shrink-0" />
+                    <span>{mistake}</span>
+                  </li>
+                ))}
+              </ul>
+           </div>
 
-             <div className="bg-zinc-800/20 border border-zinc-800/80 rounded-xl p-6 flex flex-col justify-center text-center">
-                <h4 className="text-xs text-zinc-500 uppercase tracking-wider mb-2 font-bold">Recommended Timeline</h4>
-                <div className="text-lg font-medium text-white mb-4">{result.strategy.timeline}</div>
-                
-                <h4 className="text-xs text-zinc-500 uppercase tracking-wider mb-2 font-bold pt-4 border-t border-zinc-800">Expected Outcome</h4>
-                <div className="text-sm text-emerald-400 font-medium">{result.strategy.expectedOutcome}</div>
-             </div>
-          </div>
-          </div>
+           <div className="bg-zinc-800/20 border border-zinc-800/80 rounded-xl p-6 flex flex-col justify-center text-center">
+              <h4 className="text-xs text-zinc-500 uppercase tracking-wider mb-2 font-bold">Recommended Timeline</h4>
+              <div className="text-lg font-medium text-white mb-4">{result.strategy.timeline}</div>
+              
+              <h4 className="text-xs text-zinc-500 uppercase tracking-wider mb-2 font-bold pt-4 border-t border-zinc-800">Expected Outcome</h4>
+              <div className="text-sm text-emerald-400 font-medium">{result.strategy.expectedOutcome}</div>
+           </div>
+         </div>
         </section>
+        )}
 
-         {/* DOCUMENT CHECKLIST */}
-        <section className="pb-16 border-t border-zinc-800/80 pt-12">
+        {hasAccess(purchasedPlan, 'premium') && (
+         <section className="pb-16 border-t border-zinc-800/80 pt-12">
           <div className="flex items-center gap-2 mb-8">
             <CheckSquare className="w-5 h-5 text-indigo-400" />
-            <h3 className="text-xl font-medium text-white">{isStandard ? 'Detailed Categorized Checklist' : 'Basic Document Checklist'}</h3>
+            <h3 className="text-xl font-medium text-white">Detailed Categorized Checklist</h3>
           </div>
           
           <div className="max-w-3xl relative z-10">
             {renderChecklistSection('Identity Documents', result.checklist.identity)}
             {renderChecklistSection('Travel Documents', result.checklist.travel)}
-            
-            {/* Standard Tier Checklist Expansion */}
-            <div className="relative mt-8">
-              {!isStandard && (
-                <div className="absolute inset-0 z-20 backdrop-blur-md bg-zinc-950/80 flex flex-col items-center justify-center p-6 text-center border border-zinc-800 rounded-xl">
-                   <LockIcon className="w-6 h-6 text-indigo-400 mb-3" />
-                   <h4 className="text-lg font-bold text-white mb-2">Detailed Checklist Locked</h4>
-                   <p className="text-sm text-zinc-300 mb-4">Upgrade to Standard for Financial, Employment, and Academic checks.</p>
-                   <button type="button" onClick={(e) => { e.preventDefault(); handlePayment('standard'); }} className="text-sm px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold rounded-full transition-colors shadow-lg">Unlock Standard ($19.99)</button>
-                </div>
-              )}
-              <div className={`transition-opacity ${!isStandard ? 'opacity-30 blur-sm pointer-events-none' : ''}`}>
-                {renderChecklistSection('Financial Documents', result.checklist.financial)}
-                {renderChecklistSection('Employment Documents', result.checklist.employment)}
-                {renderChecklistSection('Academic Documents', result.checklist.academic)}
-                {renderChecklistSection('Other Documents', result.checklist.other)}
-              </div>
-            </div>
+            {renderChecklistSection('Financial Documents', result.checklist.financial)}
+            {renderChecklistSection('Employment Documents', result.checklist.employment)}
+            {renderChecklistSection('Academic Documents', result.checklist.academic)}
+            {renderChecklistSection('Other Documents', result.checklist.other)}
           </div>
         </section>
+        )}
       </div>
 
-      {/* Disclaimer on Dashboard */}
       <div className="max-w-5xl mx-auto px-4 pb-12">
         <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-lg text-xs text-zinc-500">
           <strong>Disclaimer:</strong> This platform provides document preparation and informational assistance only. It does not provide immigration advice, legal advice, or representation before any government authority.
         </div>
       </div>
 
-      {/* Hidden PDF Export Template */}
       <div style={{ display: 'none' }}>
         <div ref={pdfContentRef} className="bg-white text-black" style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
           
-          {/* PDF Page 1: Cover Page */}
           <div style={{ padding: '60px 80px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', minHeight: '1000px', pageBreakAfter: 'always' }}>
              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
                <h1 style={{ fontSize: '42px', fontWeight: '800', margin: '0 0 16px 0', letterSpacing: '-1px', color: '#111' }}>Visa Reapplication Preparation Package</h1>
@@ -649,11 +428,9 @@ export default function ResultsDashboard({ result, onReset, isSample = false, in
              </div>
           </div>
 
-          {/* PDF Page 2: Executive Summary */}
           <div style={{ padding: '60px 80px', boxSizing: 'border-box', pageBreakAfter: 'always' }}>
              <h2 style={{ fontSize: '24px', fontWeight: '800', borderBottom: '2px solid #111', paddingBottom: '16px', marginBottom: '32px', textTransform: 'uppercase', letterSpacing: '1px', color: '#111' }}>Executive Summary</h2>
              
-             {/* Most Prominent Section: AI Assessment Summary */}
              <div style={{ marginBottom: '32px', backgroundColor: '#111', color: '#fff', padding: '32px', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', pageBreakInside: 'avoid' }}>
                 <h3 style={{ fontSize: '14px', textTransform: 'uppercase', letterSpacing: '2px', color: '#a1a1aa', fontWeight: '700', marginBottom: '24px' }}>AI Assessment Summary</h3>
                 
@@ -719,7 +496,6 @@ export default function ResultsDashboard({ result, onReset, isSample = false, in
              </ul>
           </div>
 
-          {/* PDF Page 3: Issue Analysis */}
           <div style={{ padding: '60px 80px', boxSizing: 'border-box' }}>
              <h2 style={{ fontSize: '24px', fontWeight: '800', borderBottom: '2px solid #111', paddingBottom: '16px', marginBottom: '32px', textTransform: 'uppercase', letterSpacing: '1px', color: '#111' }}>Refusal Issue Analysis</h2>
              
@@ -752,7 +528,6 @@ export default function ResultsDashboard({ result, onReset, isSample = false, in
              ))}
           </div>
 
-          {/* PDF Page 4: Appeal Letter */}
           <div style={{ padding: '60px 80px', boxSizing: 'border-box' }}>
             <h2 style={{ fontSize: '24px', fontWeight: '800', borderBottom: '2px solid #111', paddingBottom: '16px', marginBottom: '32px', textTransform: 'uppercase', letterSpacing: '1px', color: '#111' }}>Draft Preparation Submission (Supporting Explanation)</h2>
             <div style={{ whiteSpace: 'pre-wrap', fontFamily: "'Times New Roman', Times, serif", fontSize: '15px', lineHeight: '1.8', color: '#111', textJustify: 'inter-word', textAlign: 'justify', padding: '40px', border: '1px solid #e5e7eb', backgroundColor: '#fafafa', borderRadius: '4px' }}>
@@ -760,7 +535,6 @@ export default function ResultsDashboard({ result, onReset, isSample = false, in
             </div>
           </div>
           
-          {/* PDF Page 5: Checklist & Strategy */}
           <div style={{ padding: '60px 80px', boxSizing: 'border-box' }}>
              <h2 style={{ fontSize: '24px', fontWeight: '800', borderBottom: '2px solid #111', paddingBottom: '16px', marginBottom: '32px', textTransform: 'uppercase', letterSpacing: '1px', color: '#111' }}>Evidence Checklist & Strategy</h2>
 
@@ -785,33 +559,9 @@ export default function ResultsDashboard({ result, onReset, isSample = false, in
              </div>
 
              <h3 style={{ fontSize: '18px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '24px', color: '#111' }}>Structured Document Checklist</h3>
-
-             {['Financial', 'Employment', 'Academic', 'Travel', 'Identity', 'Other'].map(category => {
-               const catKey = category.toLowerCase() as keyof ChecklistItem;
-               // @ts-ignore dynamic access for PDF template
-               const items = result.checklist[catKey];
-               if (!items || items.length === 0) return null;
-               
-               return (
-                 <div key={category} style={{ marginBottom: '24px', pageBreakInside: 'avoid', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px' }}>
-                   <h4 style={{ fontSize: '15px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '16px', color: '#334155', display: 'inline-block', borderBottom: '2px solid #cbd5e1', paddingBottom: '4px' }}>{category} Evidence</h4>
-                   {items.map((item: any, i: number) => (
-                     <div key={i} style={{ display: 'flex', marginBottom: '12px', alignItems: 'flex-start' }}>
-                       <div style={{ fontSize: '20px', marginRight: '16px', color: '#94a3b8', lineHeight: '1' }}>☐</div>
-                       <div>
-                         <div style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', marginBottom: '2px' }}>{item.item}</div>
-                         <div style={{ fontSize: '13px', color: '#64748b', lineHeight: '1.5' }}>{item.explanation}</div>
-                       </div>
-                     </div>
-                   ))}
-                 </div>
-               );
-             })}
           </div>
-
         </div>
       </div>
-      
     </div>
     </>
   );

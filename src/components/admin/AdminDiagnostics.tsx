@@ -1,77 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { db, auth } from '../../firebase';
-import { collection, limit, getDocs, query, orderBy } from 'firebase/firestore';
-import { AlertCircle, CheckCircle, Database, Server, HardDrive, ShieldAlert, Activity } from 'lucide-react';
+import React from 'react';
+import { AlertCircle, Database, Server, HardDrive, ShieldAlert } from 'lucide-react';
 
 export default function AdminDiagnostics() {
-  const [status, setStatus] = useState<any>({
-    firestore: 'checking',
-    storage: 'checking',
-    auth: 'checking',
-    pdf: 'checking',
-    errors: [],
+  const status = {
+    firestore: 'offline',
+    storage: 'offline',
+    auth: 'offline',
+    pdf: 'online',
+    errors: ['Backend services are not available in static mode.'],
     failedJobs: []
-  });
-
-  const runDiagnostics = async () => {
-    let newStatus = { ...status, errors: [] as any[] };
-    
-    // Check Auth
-    try {
-      if (auth.app) {
-         newStatus.auth = 'online';
-      } else {
-         newStatus.auth = 'offline';
-      }
-    } catch (e: any) {
-      newStatus.auth = 'error';
-      newStatus.errors.push(`Auth Error: ${e.message}`);
-    }
-
-    // Check Firestore
-    try {
-      const q = query(collection(db, 'cases'), limit(1));
-      await getDocs(q);
-      newStatus.firestore = 'online';
-    } catch (e: any) {
-      newStatus.firestore = 'error';
-      newStatus.errors.push(`Firestore Error: ${e.message}`);
-    }
-
-    // Check Storage
-    try {
-      const docsRef = collection(db, 'documents');
-      await getDocs(query(docsRef, limit(1)));
-      newStatus.storage = 'online'; // We assume storage is working if we can read docs tracking it
-    } catch (e: any) {
-      newStatus.storage = 'error';
-      newStatus.errors.push(`Storage Error: ${e.message}`);
-    }
-
-    // Check PDF API (Simulated check)
-    newStatus.pdf = 'online'; // Assuming html2pdf loads client side
-
-    // Get recent failed cases/orders
-    try {
-      const failedOrdersRef = collection(db, 'orders');
-      // In a real app we'd query by status=='failed', but missing indexes might fail.
-      const qs = await getDocs(query(failedOrdersRef, orderBy('createdAt', 'desc'), limit(10)));
-      const failed = qs.docs.map(d=>({id: d.id, ...d.data()})).filter((o: any) => o.status === 'failed');
-      newStatus.failedJobs = failed;
-    } catch (e: any) {
-       console.error("Could not fetch failed jobs", e);
-    }
-    
-    setStatus(newStatus);
   };
 
-  useEffect(() => {
-    runDiagnostics();
-  }, []);
-
   const StatusIcon = ({ state }: { state: string }) => {
-    if (state === 'checking') return <Activity className="w-5 h-5 text-zinc-500 animate-pulse" />;
-    if (state === 'online') return <CheckCircle className="w-5 h-5 text-emerald-500" />;
+    if (state === 'online') return <span className="w-5 h-5 text-emerald-500">●</span>;
     return <AlertCircle className="w-5 h-5 text-rose-500" />;
   };
 
@@ -159,9 +100,9 @@ export default function AdminDiagnostics() {
       </div>
       
       <div className="flex justify-end">
-         <button onClick={runDiagnostics} className="px-6 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition font-medium text-sm">
+         <span className="px-6 py-2 bg-zinc-700 text-zinc-400 rounded-lg font-medium text-sm opacity-50 cursor-not-allowed">
            Refresh Diagnostics
-         </button>
+         </span>
       </div>
     </div>
   );

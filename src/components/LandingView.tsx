@@ -8,8 +8,7 @@ import TrustSection from './TrustSection';
 import { ShowcaseSection } from './ShowcaseSection';
 import WorldMapBackground from './WorldMapBackground';
 import { UploadAnimation, AnalysisAnimation, AppealAnimation } from './HowItWorksAnimations';
-import { useCustomerAuth } from '../context/CustomerAuthContext';
-import { AuthModal } from './customer/AuthModal';
+
 
 interface LandingViewProps {
   onStartAppeal: () => void;
@@ -28,15 +27,8 @@ export default function LandingView({ onStartAppeal }: LandingViewProps) {
   const [currentHeadlineIndex, setCurrentHeadlineIndex] = useState(0);
   const [typedText, setTypedText] = useState(HEADLINES[0]);
   const [isDeleting, setIsDeleting] = useState(false);
-  const { user } = useCustomerAuth();
-  const [showAuthModal, setShowAuthModal] = useState(false);
-
   const handleStartClicked = () => {
-    if (user) {
-      onStartAppeal();
-    } else {
-      setShowAuthModal(true);
-    }
+    onStartAppeal();
   };
 
   useEffect(() => {
@@ -495,7 +487,6 @@ export default function LandingView({ onStartAppeal }: LandingViewProps) {
           </Link>
         </div>
       </section>
-      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} onSuccess={onStartAppeal} />
     </div>
     </>
   );

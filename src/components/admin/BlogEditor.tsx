@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Globe, Eye, Image as ImageIcon, Plus, Trash2 } from 'lucide-react';
 import SEO from '../SEO';
 import { ErrorBoundary } from '../ErrorBoundary';
@@ -7,8 +7,7 @@ import RichTextEditor from './RichTextEditor';
 
 export default function BlogEditor() {
     const { id } = useParams<{ id: string }>();
-    const navigate = useNavigate();
-    const [categories, setCategories] = useState<any[]>([]);
+    const [categories] = useState<any[]>([]);
     const [saving, setSaving] = useState(false);
 
     // Form State
@@ -28,84 +27,11 @@ export default function BlogEditor() {
     // FAQ Builder
     const [faqs, setFaqs] = useState<{question:string, answer:string}[]>([]);
 
-    useEffect(() => {
-        const fetchCategories = async () => {
-            const res = await fetch('/api/blog-app/admin/categories');
-            if(res.ok) setCategories(await res.json());
-        };
-        fetchCategories();
-
-        if (id) {
-            const fetchPost = async () => {
-                const res = await fetch(`/api/blog-app/admin/posts/${id}`);
-                if(res.ok) {
-                    const data = await res.json();
-                    setTitle(data.title || '');
-                    setSlug(data.slug || '');
-                    setContent(data.content || '');
-                    setExcerpt(data.excerpt || '');
-                    setCategoryId(data.categoryId || '');
-                    setPostType(data.postType || 'blog');
-                    setTags(data.tagsJson ? JSON.parse(data.tagsJson).join(', ') : '');
-                    setMetaTitle(data.metaTitle || '');
-                    setMetaDescription(data.metaDescription || '');
-                    setAuthor(data.author || 'Admin');
-                    setStatus(data.status || 'draft');
-                    setFeaturedImage(data.featuredImage || '');
-                    if (data.faqsJson) {
-                        try {
-                            setFaqs(JSON.parse(data.faqsJson));
-                        } catch(e) {}
-                    }
-                }
-            };
-            fetchPost();
-        }
-    }, [id]);
-
     const handleSave = async (newStatus: string) => {
         setSaving(true);
-        const postData = {
-            title,
-            slug,
-            content,
-            excerpt,
-            postType,
-            categoryId: categoryId ? parseInt(categoryId) : null,
-            tagsJson: JSON.stringify(tags.split(',').map(t => t.trim()).filter(Boolean)),
-            metaTitle,
-            metaDescription,
-            author,
-            status: newStatus,
-            featuredImage,
-            faqsJson: JSON.stringify(faqs)
-        };
-
-        const method = id ? 'PUT' : 'POST';
-        const url = id ? `/api/blog-app/admin/posts/${id}` : `/api/blog-app/admin/posts`;
-        
-        try {
-            const res = await fetch(url, {
-                method,
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(postData)
-            });
-
-            if (res.ok) {
-                const data = await res.json();
-                setStatus(newStatus);
-                if (!id) {
-                    // Navigate to the edit view for the newly created post
-                    navigate(`/admin/articles/edit/${data.id}`, { replace: true });
-                }
-            } else {
-                alert('Failed to save. Ensure slug is unique.');
-            }
-        } catch (e) {
-            alert('A network error occurred while saving.');
-        } finally {
-            setSaving(false);
-        }
+        setStatus(newStatus);
+        alert('Save is not available in static mode. Changes will not persist.');
+        setSaving(false);
     };
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -144,9 +70,9 @@ export default function BlogEditor() {
                     </span>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button onClick={() => window.open(`/blog/${slug}`, '_blank')} className="text-zinc-300 hover:text-white flex items-center gap-2 text-sm">
+                    <span className="text-zinc-500 flex items-center gap-2 text-sm opacity-50 cursor-not-allowed">
                         <Eye className="w-4 h-4" /> Preview
-                    </button>
+                    </span>
                     <button 
                         onClick={() => handleSave('draft')} 
                         disabled={saving}

@@ -1,7 +1,6 @@
 import { Logo } from './Logo';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useCustomerAuth } from '../context/CustomerAuthContext';
-
 export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -49,12 +48,12 @@ export default function Header() {
           {user ? (
             <button 
               onClick={() => navigate('/dashboard')}
-              className="text-sm font-medium bg-zinc-800 text-white px-5 py-2 rounded-full hover:bg-zinc-700 transition-colors duration-200"
+              className="text-sm font-medium text-zinc-400 hover:text-white transition-colors duration-200"
             >
               Dashboard
             </button>
           ) : (
-             <button 
+            <button 
               onClick={() => navigate('/login')}
               className="text-sm font-medium text-zinc-400 hover:text-white transition-colors duration-200"
             >

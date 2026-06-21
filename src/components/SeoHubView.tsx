@@ -1,29 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, Globe2, FileText, ArrowRight, Loader2 } from 'lucide-react';
+import { BookOpen, Globe2, FileText, ArrowRight } from 'lucide-react';
 import SEO from './SEO';
 import { getBreadcrumbsSchema } from '../utils/seoSchemas';
 
 export default function SeoHubView() {
-  const [guides, setGuides] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchGuides = async () => {
-      try {
-        const res = await fetch('/api/blog-app/posts?type=guide');
-        if (res.ok) {
-          const data = await res.json();
-          setGuides(data);
-        }
-      } catch(e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchGuides();
-  }, []);
+  const [guides] = useState<any[]>([]);
+  const loading = false;
 
   return (
     <>
@@ -48,9 +31,7 @@ export default function SeoHubView() {
         </p>
       </div>
 
-      {loading ? (
-          <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-indigo-500" /></div>
-      ) : (
+      {(
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {guides.map((guide) => (
               <Link 

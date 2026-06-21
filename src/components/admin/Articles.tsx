@@ -1,39 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { PenSquare, Trash2, Plus, FileText } from 'lucide-react';
 
 export default function Articles() {
-    const [posts, setPosts] = useState<any[]>([]);
+    const [posts] = useState<any[]>([]);
     const [filter, setFilter] = useState<string>('all');
-    const navigate = useNavigate();
-
-    const fetchPosts = async () => {
-        const pRes = await fetch('/api/blog-app/admin/posts');
-        if(pRes.ok) setPosts(await pRes.json());
-    };
-
-    useEffect(() => {
-        fetchPosts();
-    }, []);
-
-    const deletePost = async (id: number) => {
-        if(confirm('Delete article permanently?')) {
-            await fetch(`/api/blog-app/admin/posts/${id}`, { method: 'DELETE' });
-            fetchPosts();
-        }
-    };
-
-    const createPostDraft = async () => {
-        const res = await fetch('/api/blog-app/admin/posts', {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ title: 'New Draft' })
-        });
-        if(res.ok) {
-            const data = await res.json();
-            navigate(`/admin/articles/edit/${data.id}`);
-        }
-    };
 
     const filteredPosts = posts.filter(p => {
         if (filter === 'all') return true;
@@ -50,7 +21,7 @@ export default function Articles() {
                 <h1 className="text-3xl font-bold flex items-center gap-3">
                     <FileText className="text-indigo-400 w-8 h-8" /> Articles
                 </h1>
-                <button onClick={createPostDraft} className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors">
+                <button className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors opacity-50 cursor-not-allowed" disabled title="Not available in static mode">
                     <Plus className="w-4 h-4" /> New Article
                 </button>
             </div>
@@ -98,7 +69,7 @@ export default function Articles() {
                                         <Link to={`/admin/articles/edit/${p.id}`} className="text-indigo-400 hover:text-indigo-300 flex items-center gap-1.5 transition-colors">
                                             <PenSquare className="w-4 h-4"/> Edit
                                         </Link>
-                                        <button onClick={() => deletePost(p.id)} className="text-red-400 hover:text-red-300 flex items-center gap-1.5 transition-colors">
+                                        <button className="text-red-400/50 flex items-center gap-1.5 opacity-50 cursor-not-allowed" disabled>
                                             <Trash2 className="w-4 h-4"/> Delete
                                         </button>
                                     </td>

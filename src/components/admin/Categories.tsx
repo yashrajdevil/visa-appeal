@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Tags, Plus, Trash2, PenSquare, X, Check } from 'lucide-react';
+import React, { useState } from 'react';
+import { Tags, Plus, X, Check } from 'lucide-react';
 
 interface Category {
     id: number;
@@ -8,65 +8,28 @@ interface Category {
 }
 
 export default function Categories() {
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [editId, setEditId] = useState<number | null>(null);
-    const [editName, setEditName] = useState('');
-    const [editSlug, setEditSlug] = useState('');
+    const [categories] = useState<Category[]>([]);
+    const [editId] = useState<number | null>(null);
+    const [editName] = useState('');
+    const [editSlug] = useState('');
     
     const [newName, setNewName] = useState('');
     const [newSlug, setNewSlug] = useState('');
 
-    const fetchCategories = async () => {
-        const res = await fetch('/api/blog-app/admin/categories');
-        if (res.ok) setCategories(await res.json());
-    };
-
-    useEffect(() => {
-        fetchCategories();
-    }, []);
-
-    const handleCreate = async (e: React.FormEvent) => {
+    const handleCreate = (e: React.FormEvent) => {
         e.preventDefault();
-        const res = await fetch('/api/blog-app/admin/categories', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: newName, slug: newSlug })
-        });
-        if (res.ok) {
-            setNewName('');
-            setNewSlug('');
-            fetchCategories();
-        } else {
-            alert('Failed to create category. Ensure slug is unique.');
-        }
+        alert('Creating categories is not available in static mode.');
     };
 
-    const handleUpdate = async (id: number) => {
-        const res = await fetch(`/api/blog-app/admin/categories/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: editName, slug: editSlug })
-        });
-        if (res.ok) {
-            setEditId(null);
-            fetchCategories();
-        } else {
-            alert('Failed to update category. Ensure slug is unique.');
-        }
+    const handleUpdate = (id: number) => {
+        alert('Updating categories is not available in static mode.');
     };
 
-    const handleDelete = async (id: number) => {
-        if (confirm('Are you sure you want to delete this category?')) {
-            await fetch(`/api/blog-app/admin/categories/${id}`, { method: 'DELETE' });
-            fetchCategories();
-        }
+    const handleDelete = (id: number) => {
+        alert('Deleting categories is not available in static mode.');
     };
 
-    const startEdit = (cat: Category) => {
-        setEditId(cat.id);
-        setEditName(cat.name);
-        setEditSlug(cat.slug);
-    };
+    const startEdit = (cat: Category) => {};
 
     return (
         <div className="p-8 max-w-5xl mx-auto w-full">
@@ -125,51 +88,18 @@ export default function Categories() {
                             <tbody>
                                 {categories.map(cat => (
                                     <tr key={cat.id} className="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
-                                        {editId === cat.id ? (
-                                            <>
-                                                <td className="p-3">
-                                                    <input 
-                                                        type="text" 
-                                                        value={editName}
-                                                        onChange={(e) => setEditName(e.target.value)}
-                                                        className="w-full bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-white focus:outline-none"
-                                                    />
-                                                </td>
-                                                <td className="p-3">
-                                                    <input 
-                                                        type="text" 
-                                                        value={editSlug}
-                                                        onChange={(e) => setEditSlug(e.target.value)}
-                                                        className="w-full bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-white focus:outline-none"
-                                                    />
-                                                </td>
-                                                <td className="p-3">
-                                                    <div className="flex items-center justify-end gap-2">
-                                                        <button onClick={() => handleUpdate(cat.id)} className="p-1.5 bg-green-500/20 text-green-400 rounded hover:bg-green-500/30">
-                                                            <Check className="w-4 h-4" />
-                                                        </button>
-                                                        <button onClick={() => setEditId(null)} className="p-1.5 bg-zinc-700 text-zinc-300 rounded hover:bg-zinc-600">
-                                                            <X className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <td className="p-4 font-medium text-white">{cat.name}</td>
-                                                <td className="p-4 text-zinc-400 font-mono text-xs">{cat.slug}</td>
-                                                <td className="p-4">
-                                                    <div className="flex items-center justify-end gap-3">
-                                                        <button onClick={() => startEdit(cat)} className="text-zinc-400 hover:text-indigo-400 transition-colors">
-                                                            <PenSquare className="w-4 h-4" />
-                                                        </button>
-                                                        <button onClick={() => handleDelete(cat.id)} className="text-zinc-400 hover:text-red-400 transition-colors">
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </>
-                                        )}
+                                        <td className="p-4 font-medium text-white">{cat.name}</td>
+                                        <td className="p-4 text-zinc-400 font-mono text-xs">{cat.slug}</td>
+                                        <td className="p-4">
+                                            <div className="flex items-center justify-end gap-3">
+                                                <span className="text-zinc-600 opacity-50 cursor-not-allowed">
+                                                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                                                </span>
+                                                <span className="text-zinc-600 opacity-50 cursor-not-allowed">
+                                                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                                </span>
+                                            </div>
+                                        </td>
                                     </tr>
                                 ))}
                                 {categories.length === 0 && (
