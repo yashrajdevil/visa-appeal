@@ -1,0 +1,94 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile data",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["email", "createdAt", "updatedAt"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Purchase transaction for an appeal generation",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "plan": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["userId", "plan", "amount", "status", "createdAt", "updatedAt"]
+    },
+    "Case": {
+      "title": "Appeal Case",
+      "description": "Information related to a user's visa appeal case",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "country": { "type": "string" },
+        "visaType": { "type": "string" },
+        "status": { "type": "string" },
+        "refusalReasonsJson": { "type": "string" },
+        "questionnaireResponsesJson": { "type": "string" },
+        "generatedResultJson": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["userId", "country", "visaType", "status", "createdAt", "updatedAt"]
+    },
+    "Document": {
+      "title": "Document",
+      "description": "Documents related to an appeal.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "caseId": { "type": "string" },
+        "fileName": { "type": "string" },
+        "storagePath": { "type": "string" },
+        "type": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["userId", "fileName", "storagePath", "type", "createdAt"]
+    },
+    "SavedDraft": {
+      "title": "Saved Draft",
+      "description": "Draft states of ongoing appeals",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "draftDataJson": { "type": "string" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["userId", "draftDataJson", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles"
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Orders created via standard purchase flow"
+    },
+    "/cases/{caseId}": {
+      "schema": { "$ref": "#/entities/Case" },
+      "description": "Appeal cases"
+    },
+    "/documents/{documentId}": {
+      "schema": { "$ref": "#/entities/Document" },
+      "description": "File references"
+    },
+    "/saved_drafts/{draftId}": {
+      "schema": { "$ref": "#/entities/SavedDraft" },
+      "description": "User drafts"
+    }
+  }
+}

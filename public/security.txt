@@ -1,0 +1,3 @@
+Contact: security@visaappealbuilder.com
+Preferred-Languages: en
+Canonical: https://visaappealbuilder.com/security.txt

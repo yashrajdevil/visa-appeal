@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /processing
+Disallow: /results
+Disallow: /flow
+
+Sitemap: https://visaappealbuilder.com/sitemap.xml

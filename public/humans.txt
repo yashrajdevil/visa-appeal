@@ -1,0 +1,7 @@
+/* TEAM */
+Developer: Visa Appeal Builder Team
+Site: https://visaappealbuilder.com
+
+/* SITE */
+Language: English
+Technology: React, Node.js, Express, Tailwind CSS, AI.
