@@ -4,6 +4,7 @@ import analyzeRouter from './routes/analyze';
 import checkoutRouter from './routes/checkout';
 import webhookRouter from './routes/webhook';
 import { runAllChecks } from './validate';
+console.log('BOOT 2 - app.ts all imports resolved');
 
 const app = express();
 
@@ -33,4 +34,5 @@ app.get('/api/health', async (_req, res) => {
   });
 });
 
+console.log('BOOT 5 - app export');
 export default app;

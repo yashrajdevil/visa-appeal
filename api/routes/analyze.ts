@@ -4,6 +4,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { AuthenticatedRequest, verifyAuth } from '../middleware/auth';
 import { getDb } from '../firebase';
 import { generateAnalysis } from '../services/gemini';
+console.log('BOOT TRACE - api/routes/analyze.ts loaded');
 
 const router = Router();
 

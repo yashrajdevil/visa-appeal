@@ -1,3 +1,4 @@
+console.log('BOOT TRACE - api/services/gemini.ts loaded');
 const MODEL = 'gemini-2.0-flash';
 
 function getApiUrl(): string {

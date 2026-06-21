@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { getDb } from '../firebase';
 import { verifyWebhookSignature } from '../services/creem';
+console.log('BOOT TRACE - api/routes/webhook.ts loaded');
 
 const router = Router();
 

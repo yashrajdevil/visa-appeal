@@ -1,3 +1,4 @@
+console.log('BOOT TRACE - api/services/creem.ts loaded');
 const CREEM_API_URL = 'https://api.creem.io/v1';
 
 function getCreemApiKey(): string {

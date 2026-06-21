@@ -1,4 +1,5 @@
 import { getDb, getAuth } from './firebase';
+console.log('BOOT TRACE - api/validate.ts loaded');
 
 interface CheckResult {
   name: string;

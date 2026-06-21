@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { getAuth } from '../firebase';
+console.log('BOOT TRACE - api/middleware/auth.ts loaded');
 
 export interface AuthenticatedRequest extends Request {
   uid?: string;
