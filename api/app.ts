@@ -1,9 +1,9 @@
 import express from 'express';
 import cors from 'cors';
-import analyzeRouter from './routes/analyze';
-import checkoutRouter from './routes/checkout';
-import webhookRouter from './routes/webhook';
-import { runAllChecks } from './validate';
+import analyzeRouter from './routes/analyze.js';
+import checkoutRouter from './routes/checkout.js';
+import webhookRouter from './routes/webhook.js';
+import { runAllChecks } from './validate.js';
 console.log('BOOT 2 - app.ts all imports resolved');
 
 const app = express();

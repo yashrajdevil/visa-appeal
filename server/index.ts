@@ -4,8 +4,8 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
-import app from '../api/app';
-import { runAllChecks } from '../api/validate';
+import app from '../api/app.js';
+import { runAllChecks } from '../api/validate.js';
 
 const PORT = process.env.PORT || 3001;
 

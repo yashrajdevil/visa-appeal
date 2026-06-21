@@ -1,9 +1,9 @@
 import { Router, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { Timestamp } from 'firebase-admin/firestore';
-import { AuthenticatedRequest, verifyAuth } from '../middleware/auth';
-import { getDb } from '../firebase';
-import { generateAnalysis } from '../services/gemini';
+import { AuthenticatedRequest, verifyAuth } from '../middleware/auth.js';
+import { getDb } from '../firebase.js';
+import { generateAnalysis } from '../services/gemini.js';
 console.log('BOOT TRACE - api/routes/analyze.ts loaded');
 
 const router = Router();

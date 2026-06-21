@@ -1,4 +1,4 @@
-import { getDb, getAuth } from './firebase';
+import { getDb, getAuth } from './firebase.js';
 console.log('BOOT TRACE - api/validate.ts loaded');
 
 interface CheckResult {

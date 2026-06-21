@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
-import { AuthenticatedRequest, verifyAuth } from '../middleware/auth';
-import { getDb } from '../firebase';
-import { createCheckoutSession } from '../services/creem';
+import { AuthenticatedRequest, verifyAuth } from '../middleware/auth.js';
+import { getDb } from '../firebase.js';
+import { createCheckoutSession } from '../services/creem.js';
 console.log('BOOT TRACE - api/routes/checkout.ts loaded');
 
 const router = Router();
