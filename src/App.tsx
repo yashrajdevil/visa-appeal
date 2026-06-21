@@ -39,6 +39,7 @@ import { DashboardOverview, DashboardOrders, DashboardCases, DashboardDocuments,
 import CustomerLayout from './components/customer/CustomerLayout';
 
 import { useCustomerAuth } from './context/CustomerAuthContext';
+import FirebaseDebug from './components/FirebaseDebug';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading } = useCustomerAuth();
@@ -130,6 +131,9 @@ function AppContent() {
             <Route path="cases" element={<DashboardCases />} />
             <Route path="settings" element={<DashboardSettings />} />
           </Route>
+
+          {/* Debug */}
+          <Route path="/debug/firebase" element={<FirebaseDebug />} />
 
           {/* Static Pages */}
           <Route path="/contact" element={<ContactUsView />} />
