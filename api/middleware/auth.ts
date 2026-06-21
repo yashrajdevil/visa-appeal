@@ -7,28 +7,30 @@ export interface AuthenticatedRequest extends Request {
 }
 
 export async function verifyAuth(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-  const header = req.headers.authorization;
-  if (!header || !header.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  const token = header.split('Bearer ')[1];
+  console.log('AUTH HEADER PRESENT:', !!req.headers.authorization);
+
+  const token = req.headers.authorization?.replace('Bearer ', '');
+
+  console.log('TOKEN LENGTH:', token?.length);
+
   try {
     const decoded = await getAuth().verifyIdToken(token);
 
-    console.log('TOKEN VERIFIED');
+    console.log('VERIFY SUCCESS');
     console.log({
       uid: decoded.uid,
       aud: decoded.aud,
       iss: decoded.iss,
+      projectId: process.env.FIREBASE_PROJECT_ID,
     });
 
     req.uid = decoded.uid;
     next();
   } catch (error: any) {
-    console.error('FIREBASE AUTH ERROR');
+    console.error('VERIFY FAILED');
+    console.error('CODE:', error?.code);
+    console.error('MESSAGE:', error?.message);
     console.error(error);
-    console.error('ERROR CODE:', error?.code);
-    console.error('ERROR MESSAGE:', error?.message);
 
     return res.status(401).json({
       error: 'Invalid token',
