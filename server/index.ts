@@ -41,25 +41,29 @@ app.get('/api/health', async (_req, res) => {
   });
 });
 
-app.listen(PORT, async () => {
-  console.log(`Server running on port ${PORT}`);
+if (!process.env.VERCEL) {
+  app.listen(PORT, async () => {
+    console.log(`Server running on port ${PORT}`);
 
-  try {
-    const results = await runAllChecks();
-    console.log('\n=== Dependency Health ===');
-    for (const r of results) {
-      const icon = r.status === 'PASS' ? '✓' : '✗';
-      console.log(`  ${icon} ${r.name}: ${r.status}${r.message ? ` (${r.message})` : ''}`);
-    }
-    console.log('=========================\n');
+    try {
+      const results = await runAllChecks();
+      console.log('\n=== Dependency Health ===');
+      for (const r of results) {
+        const icon = r.status === 'PASS' ? '✓' : '✗';
+        console.log(`  ${icon} ${r.name}: ${r.status}${r.message ? ` (${r.message})` : ''}`);
+      }
+      console.log('=========================\n');
 
-    const failed = results.filter(r => r.status === 'FAIL');
-    if (failed.length > 0) {
-      console.warn(`WARNING: ${failed.length} dependency check(s) failed. Server will start but some features may not work.`);
-    } else {
-      console.log('All dependencies passed.');
+      const failed = results.filter(r => r.status === 'FAIL');
+      if (failed.length > 0) {
+        console.warn(`WARNING: ${failed.length} dependency check(s) failed. Server will start but some features may not work.`);
+      } else {
+        console.log('All dependencies passed.');
+      }
+    } catch (err: any) {
+      console.error('Validation error:', err.message);
     }
-  } catch (err: any) {
-    console.error('Validation error:', err.message);
-  }
-});
+  });
+}
+
+export default app;
