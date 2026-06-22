@@ -94,18 +94,26 @@ router.post('/', async (req: Request, res: Response) => {
   const eventType = event.type || '';
   console.log('EVENT type:', eventType);
   console.log('EVENT top-level keys:', Object.keys(event));
+  console.log('EVENT full payload:', JSON.stringify(event, null, 2));
 
-  if (event.data) {
-    console.log('EVENT.data keys:', Object.keys(event.data));
-    console.log('EVENT.data full:', JSON.stringify(event.data));
+  // Check all possible metadata locations
+  const metadataSources = {
+    'event.data?.metadata': event.data?.metadata,
+    'event.metadata': event.metadata,
+    'event.data?.object?.metadata': event.data?.object?.metadata,
+    'event.data?.object?.customer?.metadata': event.data?.object?.customer?.metadata,
+  };
+  console.log('METADATA sources:', JSON.stringify(metadataSources, null, 2));
+
+  for (const [src, val] of Object.entries(metadataSources)) {
+    if (val && (val.uid || val.caseId)) {
+      console.log('METADATA FOUND in:', src, JSON.stringify(val));
+    }
   }
 
-  const metadata =
-    event.data?.metadata ||
-    event.metadata ||
-    event.data?.object?.metadata ||
-    {};
-
+  const metadata = event.data?.metadata || event.metadata || event.data?.object?.metadata || {};
+  const metadataSource = event.data?.metadata ? 'event.data.metadata' : event.metadata ? 'event.metadata' : event.data?.object?.metadata ? 'event.data.object.metadata' : 'NONE';
+  console.log('METADATA USED source:', metadataSource);
   console.log('METADATA resolved:', JSON.stringify(metadata));
   console.log('METADATA uid:', metadata.uid);
   console.log('METADATA caseId:', metadata.caseId);

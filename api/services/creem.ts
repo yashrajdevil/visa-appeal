@@ -91,16 +91,27 @@ export async function createCheckoutSession(params: {
 import crypto from 'crypto';
 
 export async function verifyWebhookSignature(body: string, signature: string): Promise<boolean> {
-  const secret = process.env.CREEM_WEBHOOK_SECRET;
+  const raw = process.env.CREEM_WEBHOOK_SECRET || '';
+  console.log('[verify] RAW secret length:', raw.length);
+  console.log('[verify] RAW last char code:', raw.charCodeAt(raw.length - 1));
+  console.log('[verify] RAW contains newline:', raw.includes('\n'));
+  console.log('[verify] RAW contains space:', raw.includes(' '));
+
+  const secret = raw.trim();
+  console.log('[verify] TRIMMED secret length:', secret.length);
+  console.log('[verify] TRIMMED equals raw:', secret === raw);
+
   if (!secret) return false;
 
   try {
     const computed = crypto.createHmac('sha256', secret).update(body).digest('hex');
-    console.log('COMPUTED signature:', computed.slice(0, 20) + '...');
-    console.log('RECEIVED signature:', signature.slice(0, 20) + '...');
-    return crypto.timingSafeEqual(Buffer.from(computed, 'hex'), Buffer.from(signature, 'hex'));
+    console.log('[verify] COMPUTED signature:', computed.slice(0, 20) + '...');
+    console.log('[verify] RECEIVED signature:', signature.slice(0, 20) + '...');
+    const match = crypto.timingSafeEqual(Buffer.from(computed, 'hex'), Buffer.from(signature, 'hex'));
+    console.log('[verify] VERDICT:', match ? 'VALID' : 'INVALID');
+    return match;
   } catch (err) {
-    console.error('[verifyWebhookSignature] Error:', err);
+    console.error('[verify] Error:', err);
     return false;
   }
 }
