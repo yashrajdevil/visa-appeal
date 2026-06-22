@@ -17,9 +17,10 @@ export function getModelDiagnostics() {
 }
 
 function isRetryableError(status: number, errorBody: string): boolean {
-  if (status === 429 || status === 503) return true;
+  if (status === 429 || status === 503 || status === 404) return true;
   if (errorBody.includes('UNAVAILABLE')) return true;
   if (errorBody.includes('RESOURCE_EXHAUSTED')) return true;
+  if (errorBody.includes('NOT_FOUND') || errorBody.includes('not found') || errorBody.includes('does not exist')) return true;
   return false;
 }
 
