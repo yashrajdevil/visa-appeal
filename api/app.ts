@@ -108,20 +108,68 @@ app.post('/api/test-gemini', async (_req, res) => {
 
 app.get('/api/debug-gemini-project', async (_req, res) => {
   const key = (process.env.GEMINI_API_KEY || '').trim();
-  const url = `https://generativelanguage.googleapis.com/v1/models?key=${key}`;
-  console.log('DEBUG-PROJECT URL (redacted):', url.replace(key, '***REDACTED***'));
+  const keyPrefix = key.slice(0, 10);
+  const keySuffix = key.slice(-5);
+
+  // 1) models list (v1beta, same version as generateContent)
+  const modelsUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${key}`;
+  console.log('DEBUG-PROJECT key prefix:', keyPrefix);
+  console.log('DEBUG-PROJECT models URL (redacted):', modelsUrl.replace(key, '***REDACTED***'));
+
+  let modelsStatus: number | null = null;
+  let modelsHeaders: Record<string, string> = {};
+  let modelsBody: string | null = null;
+
   try {
-    const response = await fetch(url);
-    const text = await response.text();
-    console.log('DEBUG-PROJECT status:', response.status);
-    res.json({
-      status: response.status,
-      body: text,
-    });
+    const resp = await fetch(modelsUrl);
+    modelsStatus = resp.status;
+    modelsHeaders = Object.fromEntries(resp.headers.entries());
+    modelsBody = await resp.text();
+    console.log('DEBUG-PROJECT models status:', modelsStatus);
+    console.log('DEBUG-PROJECT models headers:', JSON.stringify(modelsHeaders));
+    console.log('DEBUG-PROJECT models body (first 1000):', modelsBody?.slice(0, 1000));
   } catch (err: any) {
-    console.error('DEBUG-PROJECT error:', err.message);
-    res.status(500).json({ error: err.message });
+    console.error('DEBUG-PROJECT models error:', err.message);
   }
+
+  // 2) generateContent minimal (to compare quota behavior)
+  const genUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
+  const genPayload = { contents: [{ parts: [{ text: 'hello' }] }] };
+
+  let genStatus: number | null = null;
+  let genHeaders: Record<string, string> = {};
+  let genBody: string | null = null;
+
+  try {
+    const resp = await fetch(genUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+      body: JSON.stringify(genPayload),
+    });
+    genStatus = resp.status;
+    genHeaders = Object.fromEntries(resp.headers.entries());
+    genBody = await resp.text();
+    console.log('DEBUG-PROJECT generate status:', genStatus);
+    console.log('DEBUG-PROJECT generate headers:', JSON.stringify(genHeaders));
+    console.log('DEBUG-PROJECT generate body:', genBody?.slice(0, 1000));
+  } catch (err: any) {
+    console.error('DEBUG-PROJECT generate error:', err.message);
+  }
+
+  res.json({
+    key: { prefix: keyPrefix, suffix: keySuffix, length: key.length },
+    modelsList: {
+      status: modelsStatus,
+      headers: modelsHeaders,
+      body: modelsBody,
+    },
+    generateContent: {
+      status: genStatus,
+      headers: genHeaders,
+      body: genBody,
+      requestPayload: genPayload,
+    },
+  });
 });
 
 app.get('/api/test-generate-minimal', async (_req, res) => {
