@@ -3,7 +3,13 @@ import { getDb } from '../firebase.js';
 
 const router = Router();
 
-const SITE_URL = 'https://visaappealbuilder.com';
+function getSiteUrl(): string {
+  if (process.env.SITE_URL) return process.env.SITE_URL;
+  if (process.env.APP_URL && !process.env.APP_URL.includes('localhost')) return process.env.APP_URL;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  return 'https://visa-appeal.vercel.app';
+}
 
 const staticPages = [
   { loc: '/', changefreq: 'weekly', priority: '1.0' },
@@ -20,6 +26,7 @@ const staticPages = [
 
 router.get('/sitemap.xml', async (_req: Request, res: Response) => {
   try {
+    const SITE_URL = getSiteUrl();
     const urls: string[] = [];
 
     for (const page of staticPages) {
@@ -53,8 +60,6 @@ router.get('/sitemap.xml', async (_req: Request, res: Response) => {
     } catch (dbErr) {
       console.error('[Sitemap] Firestore unavailable, serving static sitemap:', (dbErr as Error).message);
     }
-
-    // Guides sitemap entries would be loaded from Firestore in production
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

@@ -1,13 +1,7 @@
 User-agent: *
 Allow: /
-Disallow: /admin/
-Disallow: /dashboard/
-Disallow: /results/
-Disallow: /processing
-Disallow: /flow
-Disallow: /login
-Disallow: /register
-Disallow: /debug/
-Disallow: /api/
 
-Sitemap: https://visaappealbuilder.com/sitemap.xml
+Sitemap: https://visa-appeal.vercel.app/sitemap.xml
+
+Disallow: /admin
+Disallow: /api
