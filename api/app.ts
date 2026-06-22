@@ -124,5 +124,57 @@ app.get('/api/debug-gemini-project', async (_req, res) => {
   }
 });
 
+app.get('/api/test-generate-minimal', async (_req, res) => {
+  const key = (process.env.GEMINI_API_KEY || '').trim();
+  const model = 'gemini-2.0-flash';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+  const fullUrl = `${url}?key=${key}`;
+  const payload = {
+    contents: [
+      {
+        parts: [
+          {
+            text: 'hello',
+          },
+        ],
+      },
+    ],
+  };
+  const body = JSON.stringify(payload);
+
+  console.log('TEST-MINIMAL URL:', fullUrl.replace(key, '***REDACTED***'));
+  console.log('TEST-MINIMAL model:', model);
+  console.log('TEST-MINIMAL payload:', body);
+
+  try {
+    const response = await fetch(fullUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': key,
+      },
+      body,
+    });
+
+    const text = await response.text();
+    const headers = Object.fromEntries(response.headers.entries());
+
+    console.log('TEST-MINIMAL status:', response.status);
+    console.log('TEST-MINIMAL headers:', JSON.stringify(headers));
+    console.log('TEST-MINIMAL body:', text);
+
+    res.json({
+      status: response.status,
+      headers,
+      body: text,
+      exactUrl: fullUrl.replace(key, '***REDACTED***'),
+      exactPayload: payload,
+    });
+  } catch (err: any) {
+    console.error('TEST-MINIMAL error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 console.log('BOOT 5 - app export');
 export default app;
