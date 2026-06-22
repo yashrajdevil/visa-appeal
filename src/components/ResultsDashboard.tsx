@@ -52,9 +52,9 @@ const FEATURE_PLAN: Record<FeatureKey, 'starter' | 'standard' | 'premium'> = {
 
 function getRequiredPlanLabel(featureKey: FeatureKey): string {
   const plan = FEATURE_PLAN[featureKey];
-  if (plan === 'starter') return 'Starter';
-  if (plan === 'standard') return 'Standard & Premium';
-  return 'Premium';
+  if (plan === 'starter') return 'Requires Starter Plan';
+  if (plan === 'standard') return 'Requires Standard Plan';
+  return 'Requires Premium Plan';
 }
 
 function PlanCard({ plan, onPurchase, isPurchasing }: { plan: typeof PLANS[0]; onPurchase: (plan: 'starter' | 'standard' | 'premium') => void; isPurchasing?: boolean }) {
@@ -118,7 +118,7 @@ function LockOverlay({ featureKey, onPurchase }: { featureKey: FeatureKey; onPur
     <div className="absolute inset-0 z-20 backdrop-blur-md bg-zinc-950/80 flex flex-col items-center justify-center p-6 text-center rounded-2xl">
       <Lock className="w-6 h-6 text-amber-400 mb-2" />
       <p className="text-sm text-zinc-300 font-medium mb-1">{feature?.label || featureKey}</p>
-      <p className="text-xs text-zinc-500 mb-4">Available in {getRequiredPlanLabel(featureKey)}</p>
+      <p className="text-xs text-zinc-500 mb-4">{getRequiredPlanLabel(featureKey)}</p>
       {onPurchase && (
         <button
           type="button"
@@ -279,25 +279,32 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
       const margin = 0.4;
       const usableWidth = pdfWidth - 2 * margin;
       const usableHeight = pdfHeight - 2 * margin;
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const ratio = imgWidth / usableWidth;
-      const pageContentHeight = imgHeight / ratio;
+      const imgToPdfRatio = usableWidth / canvas.width;
+      const pageCanvasHeight = usableHeight / imgToPdfRatio;
 
-      console.log('[PDF] Page dimensions - usable:', usableWidth, 'x', usableHeight, 'content:', pageContentHeight);
+      console.log('[PDF] Page dimensions - usable:', usableWidth, 'x', usableHeight, 'pageCanvasHeight:', pageCanvasHeight, 'imgToPdfRatio:', imgToPdfRatio);
 
-      let heightLeft = pageContentHeight;
-      let position = -margin * ratio;
+      let remainingHeight = canvas.height;
+      let srcY = 0;
       let pageNum = 1;
 
-      while (heightLeft > 0) {
-        if (pageNum > 1) {
-          pdf.addPage();
-          position = -(margin * ratio) - ((pageNum - 1) * usableHeight * ratio - pageContentHeight * (pageNum - 1) / Math.ceil(pageContentHeight / usableHeight));
-        }
-        console.log(`[PDF] Adding page ${pageNum}, position:`, position);
-        pdf.addImage(imgData, 'JPEG', margin, margin, usableWidth, pageContentHeight, undefined, 'FAST');
-        heightLeft -= usableHeight;
+      while (remainingHeight > 0) {
+        if (pageNum > 1) pdf.addPage();
+
+        const sliceHeight = Math.min(remainingHeight, pageCanvasHeight);
+        console.log(`[PDF] Page ${pageNum}: srcY=${srcY}, sliceHeight=${sliceHeight}, remaining=${remainingHeight}`);
+
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = sliceHeight;
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCtx.drawImage(canvas, 0, srcY, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
+        const pageImgData = tempCanvas.toDataURL('image/jpeg', 0.95);
+
+        pdf.addImage(pageImgData, 'JPEG', margin, margin, usableWidth, sliceHeight * imgToPdfRatio);
+
+        srcY += sliceHeight;
+        remainingHeight -= sliceHeight;
         pageNum++;
       }
 
@@ -751,7 +758,7 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
                   <div className="absolute inset-0 z-20 backdrop-blur-md bg-zinc-950/80 flex flex-col items-center justify-center p-6 text-center border border-zinc-800 rounded-xl">
                      <Lock className="w-6 h-6 text-indigo-400 mb-3" />
                      <h4 className="text-lg font-bold text-white mb-1">Categorized Checklist Locked</h4>
-                     <p className="text-sm text-zinc-400 mb-1">Available in Standard & Premium</p>
+                     <p className="text-sm text-zinc-400 mb-1">Requires Standard Plan</p>
                      <button
                        type="button"
                        onClick={(e) => { e.preventDefault(); onPurchase?.('standard'); }}
@@ -793,16 +800,16 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
         </div>
       </div>
 
-      {/* Hidden PDF Content */}
+      {/* Hidden PDF Content — plan-conditional pages */}
       <div ref={pdfWrapperRef} style={{ display: 'none', position: 'absolute', left: '-9999px', top: 0, width: '800px', zIndex: -1 }}>
         <div ref={pdfContentRef} className="bg-white text-black" style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", width: '800px' }}>
 
-          {/* PAGE 1 — COVER */}
-          <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', minHeight: '1100px', pageBreakAfter: 'always' }}>
+          {/* PAGE 1 — COVER (always included) */}
+          <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', minHeight: '1100px' }}>
              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                <div style={{ borderBottom: '4px solid #1a1a2e', paddingBottom: '20px', marginBottom: '30px' }}>
                  <h1 style={{ fontSize: '36px', fontWeight: '800', margin: '0 0 8px 0', letterSpacing: '-0.5px', color: '#1a1a2e' }}>Visa Reapplication Preparation Package</h1>
-                 <p style={{ fontSize: '18px', color: '#555', margin: '0', fontWeight: '500' }}>Professional Consultant Case Assessment & Submission Document</p>
+                 <p style={{ fontSize: '18px', color: '#555', margin: '0', fontWeight: '500' }}>Professional Consultant Case Assessment &amp; Submission Document</p>
                </div>
 
                <div style={{ backgroundColor: '#f0f4ff', padding: '30px', borderRadius: '12px', marginBottom: '30px', border: '1px solid #dbe4ff' }}>
@@ -852,171 +859,309 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
              </div>
           </div>
 
-          {/* PAGE 2 — EXECUTIVE SUMMARY */}
-          <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', pageBreakAfter: 'always' }}>
-             <h2 style={{ fontSize: '22px', fontWeight: '800', borderBottom: '3px solid #1a1a2e', paddingBottom: '12px', marginBottom: '28px', textTransform: 'uppercase', letterSpacing: '1px', color: '#1a1a2e' }}>Executive Summary & Consultant Assessment</h2>
+          {/* PAGE 2 — READINESS SCORE (Standard+) */}
+          {hasFeature('readiness_score') && (
+            <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', minHeight: '1100px' }}>
+              <h2 style={{ fontSize: '22px', fontWeight: '800', borderBottom: '3px solid #1a1a2e', paddingBottom: '12px', marginBottom: '28px', textTransform: 'uppercase', letterSpacing: '1px', color: '#1a1a2e' }}>Application Readiness Score</h2>
 
-             <div style={{ marginBottom: '28px', backgroundColor: '#1a1a2e', color: '#fff', padding: '28px', borderRadius: '10px', pageBreakInside: 'avoid' }}>
-                <h3 style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '2px', color: '#94a3b8', fontWeight: '700', marginBottom: '20px' }}>AI Consultant Assessment</h3>
-
-                <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
-                  <div style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.06)', padding: '16px', borderRadius: '8px' }}>
-                     <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: '600', marginBottom: '6px' }}>Recommended Path</div>
-                     <div style={{ fontSize: '18px', fontWeight: '700', color: '#fff' }}>{result.case_assessment.consultantVerdict.recommendedPath}</div>
-                  </div>
-                  <div style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.06)', padding: '16px', borderRadius: '8px' }}>
-                     <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: '600', marginBottom: '6px' }}>Case Strength</div>
-                     <div style={{ fontSize: '18px', fontWeight: '700', color: result.case_assessment.score > 79 ? '#34d399' : result.case_assessment.score > 59 ? '#60a5fa' : result.case_assessment.score > 39 ? '#fbbf24' : '#f87171' }}>{result.case_assessment.consultantVerdict.currentCaseStrength}</div>
-                  </div>
-                  <div style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.06)', padding: '16px', borderRadius: '8px' }}>
-                     <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: '600', marginBottom: '6px' }}>Confidence Level</div>
-                     <div style={{ fontSize: '18px', fontWeight: '700', color: '#34d399' }}>{result.case_assessment.consultantVerdict.confidenceLevel}</div>
-                  </div>
+              <div style={{ backgroundColor: '#f0f4ff', padding: '30px', borderRadius: '12px', marginBottom: '30px', border: '1px solid #dbe4ff' }}>
+                <div style={{ fontSize: '48px', fontWeight: '800', textAlign: 'center', color: result.case_assessment.score > 79 ? '#059669' : result.case_assessment.score > 59 ? '#2563eb' : result.case_assessment.score > 39 ? '#d97706' : '#dc2626', lineHeight: '1', marginBottom: '12px' }}>
+                  {result.case_assessment.score}<span style={{ fontSize: '22px', color: '#888' }}>/100</span>
                 </div>
-
-                <div>
-                   <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: '600', marginBottom: '6px' }}>Consultant Reasoning</div>
-                   <p style={{ fontSize: '14px', margin: 0, color: '#e4e4e7', fontStyle: 'italic', lineHeight: '1.7' }}>"{result.case_assessment.consultantVerdict.reasoning}"</p>
+                <div style={{ width: '100%', backgroundColor: '#e5e7eb', borderRadius: '4px', height: '12px', overflow: 'hidden' }}>
+                  <div style={{ width: `${result.case_assessment.score}%`, backgroundColor: result.case_assessment.score > 79 ? '#059669' : result.case_assessment.score > 59 ? '#2563eb' : result.case_assessment.score > 39 ? '#d97706' : '#dc2626', height: '100%', borderRadius: '4px' }}></div>
                 </div>
-             </div>
+              </div>
 
-             <h3 style={{ fontSize: '16px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '14px', color: '#1a1a2e', pageBreakInside: 'avoid' }}>Readiness Outlook</h3>
-             <div style={{ marginBottom: '28px', display: 'flex', gap: '16px', pageBreakInside: 'avoid' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '14px', color: '#1a1a2e' }}>Readiness Outlook</h3>
+              <div style={{ marginBottom: '28px', display: 'flex', gap: '16px' }}>
                 <div style={{ flex: 1, border: '1px solid #e5e7eb', padding: '18px', borderRadius: '8px' }}>
-                   <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#888', fontWeight: '700', marginBottom: '6px' }}>Current Readiness</div>
-                   <div style={{ fontSize: '18px', fontWeight: '700', color: '#111' }}>{result.case_assessment.successOutlook?.currentReadiness || 'Low'}</div>
+                  <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#888', fontWeight: '700', marginBottom: '6px' }}>Current Readiness</div>
+                  <div style={{ fontSize: '18px', fontWeight: '700', color: '#111' }}>{result.case_assessment.successOutlook?.currentReadiness || 'Low'}</div>
                 </div>
                 <div style={{ flex: 1, border: '1px solid #e5e7eb', padding: '18px', borderRadius: '8px', backgroundColor: '#f0fdf4' }}>
-                   <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#059669', fontWeight: '700', marginBottom: '6px' }}>Post-Fixes Outlook</div>
-                   <div style={{ fontSize: '18px', fontWeight: '700', color: '#059669' }}>{result.case_assessment.successOutlook?.readinessAfterFixes || 'Strong'}</div>
+                  <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#059669', fontWeight: '700', marginBottom: '6px' }}>Post-Fixes Outlook</div>
+                  <div style={{ fontSize: '18px', fontWeight: '700', color: '#059669' }}>{result.case_assessment.successOutlook?.readinessAfterFixes || 'Strong'}</div>
                 </div>
                 <div style={{ flex: 1, border: '1px solid #e5e7eb', padding: '18px', borderRadius: '8px', backgroundColor: '#eff6ff' }}>
-                   <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#2563eb', fontWeight: '700', marginBottom: '6px' }}>Score Improvement</div>
-                   <div style={{ fontSize: '18px', fontWeight: '700', color: '#2563eb' }}>{result.case_assessment.successOutlook?.expectedScoreImprovement || '+20 Points'}</div>
+                  <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#2563eb', fontWeight: '700', marginBottom: '6px' }}>Score Improvement</div>
+                  <div style={{ fontSize: '18px', fontWeight: '700', color: '#2563eb' }}>{result.case_assessment.successOutlook?.expectedScoreImprovement || '+20 Points'}</div>
                 </div>
-             </div>
+              </div>
 
-             {result.case_assessment.successOutlook?.primaryObstacles?.length > 0 && (
-               <div style={{ marginBottom: '28px', pageBreakInside: 'avoid' }}>
-                 <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', color: '#dc2626', marginBottom: '10px' }}>Primary Obstacles to Address</h4>
-                 <ul style={{ paddingLeft: '20px', margin: 0, color: '#444', fontSize: '14px', lineHeight: '1.8' }}>
-                   {result.case_assessment.successOutlook.primaryObstacles.map((obs, i) => <li key={i}>{obs}</li>)}
-                 </ul>
-               </div>
-             )}
+              {result.case_assessment.successOutlook?.primaryObstacles?.length > 0 && (
+                <div style={{ marginBottom: '28px' }}>
+                  <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', color: '#dc2626', marginBottom: '10px' }}>Primary Obstacles to Address</h4>
+                  <ul style={{ paddingLeft: '20px', margin: 0, color: '#444', fontSize: '14px', lineHeight: '1.8' }}>
+                    {result.case_assessment.successOutlook.primaryObstacles.map((obs, i) => <li key={i}>{obs}</li>)}
+                  </ul>
+                </div>
+              )}
 
-             <h3 style={{ fontSize: '16px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '14px', color: '#1a1a2e', pageBreakInside: 'avoid' }}>Consultant Notes</h3>
-             <ul style={{ paddingLeft: '20px', marginBottom: '28px', pageBreakInside: 'avoid' }}>
-               {result.case_assessment.consultantNotes.map((note, i) => (
-                 <li key={i} style={{ fontSize: '14px', color: '#333', marginBottom: '10px', lineHeight: '1.6' }}>{note}</li>
-               ))}
-             </ul>
-          </div>
+              <h3 style={{ fontSize: '16px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '14px', color: '#1a1a2e' }}>Consultant Assessment</h3>
+              <div style={{ marginBottom: '28px', backgroundColor: '#1a1a2e', color: '#fff', padding: '28px', borderRadius: '10px' }}>
+                <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
+                  <div style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.06)', padding: '16px', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: '600', marginBottom: '6px' }}>Recommended Path</div>
+                    <div style={{ fontSize: '18px', fontWeight: '700', color: '#fff' }}>{result.case_assessment.consultantVerdict.recommendedPath}</div>
+                  </div>
+                  <div style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.06)', padding: '16px', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: '600', marginBottom: '6px' }}>Case Strength</div>
+                    <div style={{ fontSize: '18px', fontWeight: '700', color: result.case_assessment.score > 79 ? '#34d399' : result.case_assessment.score > 59 ? '#60a5fa' : result.case_assessment.score > 39 ? '#fbbf24' : '#f87171' }}>{result.case_assessment.consultantVerdict.currentCaseStrength}</div>
+                  </div>
+                  <div style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.06)', padding: '16px', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: '600', marginBottom: '6px' }}>Confidence Level</div>
+                    <div style={{ fontSize: '18px', fontWeight: '700', color: '#34d399' }}>{result.case_assessment.consultantVerdict.confidenceLevel}</div>
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: '600', marginBottom: '6px' }}>Consultant Reasoning</div>
+                  <p style={{ fontSize: '14px', margin: 0, color: '#e4e4e7', fontStyle: 'italic', lineHeight: '1.7' }}>"{result.case_assessment.consultantVerdict.reasoning}"</p>
+                </div>
+              </div>
 
-          {/* PAGE 3+ — REFUSAL ISSUES */}
-          <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', pageBreakAfter: 'always' }}>
-             <h2 style={{ fontSize: '22px', fontWeight: '800', borderBottom: '3px solid #1a1a2e', paddingBottom: '12px', marginBottom: '28px', textTransform: 'uppercase', letterSpacing: '1px', color: '#1a1a2e' }}>Refusal Issue Analysis</h2>
+              <div>
+                <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', color: '#1a1a2e', marginBottom: '10px' }}>Consultant Notes</h4>
+                <ul style={{ paddingLeft: '20px', margin: 0 }}>
+                  {result.case_assessment.consultantNotes.map((note, i) => (
+                    <li key={i} style={{ fontSize: '14px', color: '#333', marginBottom: '10px', lineHeight: '1.6' }}>{note}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
 
-             {result.issues.map((issue, idx) => (
-               <div key={idx} style={{ marginBottom: '28px', border: '1px solid #e5e7eb', padding: '24px', borderRadius: '8px', pageBreakInside: 'avoid' }}>
-                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px', paddingBottom: '14px', borderBottom: '1px solid #f3f4f6' }}>
+          {/* PAGE 3 — EXECUTIVE SUMMARY (Premium only) */}
+          {hasFeature('executive_summary') && (
+            <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', minHeight: '1100px' }}>
+              <h2 style={{ fontSize: '22px', fontWeight: '800', borderBottom: '3px solid #1a1a2e', paddingBottom: '12px', marginBottom: '28px', textTransform: 'uppercase', letterSpacing: '1px', color: '#1a1a2e' }}>Executive Summary</h2>
+
+              <div style={{ marginBottom: '28px', backgroundColor: '#1a1a2e', color: '#fff', padding: '28px', borderRadius: '10px' }}>
+                <h3 style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '2px', color: '#94a3b8', fontWeight: '700', marginBottom: '20px' }}>Case Overview</h3>
+                <p style={{ fontSize: '14px', margin: 0, color: '#e4e4e7', lineHeight: '1.8' }}>
+                  Applicant <strong>{result.case_assessment.applicantName || 'Confidential Client'}</strong> applied for <strong>{result.case_assessment.caseType}</strong>. Current readiness score is <strong>{result.case_assessment.score}/100</strong>, rated as <strong>{result.case_assessment.severityRating}</strong>. {result.case_assessment.consultantVerdict.reasoning}
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '16px', marginBottom: '28px' }}>
+                <div style={{ flex: 1, border: '1px solid #e5e7eb', padding: '18px', borderRadius: '8px' }}>
+                  <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#888', fontWeight: '700', marginBottom: '6px' }}>Current Readiness</div>
+                  <div style={{ fontSize: '18px', fontWeight: '700', color: '#111' }}>{result.case_assessment.successOutlook?.currentReadiness || 'Low'}</div>
+                </div>
+                <div style={{ flex: 1, border: '1px solid #e5e7eb', padding: '18px', borderRadius: '8px', backgroundColor: '#f0fdf4' }}>
+                  <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#059669', fontWeight: '700', marginBottom: '6px' }}>Post-Fixes Outlook</div>
+                  <div style={{ fontSize: '18px', fontWeight: '700', color: '#059669' }}>{result.case_assessment.successOutlook?.readinessAfterFixes || 'Strong'}</div>
+                </div>
+                <div style={{ flex: 1, border: '1px solid #e5e7eb', padding: '18px', borderRadius: '8px', backgroundColor: '#eff6ff' }}>
+                  <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#2563eb', fontWeight: '700', marginBottom: '6px' }}>Score Improvement</div>
+                  <div style={{ fontSize: '18px', fontWeight: '700', color: '#2563eb' }}>{result.case_assessment.successOutlook?.expectedScoreImprovement || '+20 Points'}</div>
+                </div>
+              </div>
+
+              {result.case_assessment.consultantNotes.length > 0 && (
+                <>
+                  <h3 style={{ fontSize: '16px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '14px', color: '#1a1a2e' }}>Consultant Notes</h3>
+                  <ul style={{ paddingLeft: '20px', marginBottom: '28px' }}>
+                    {result.case_assessment.consultantNotes.map((note, i) => (
+                      <li key={i} style={{ fontSize: '14px', color: '#333', marginBottom: '10px', lineHeight: '1.6' }}>{note}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
+
+              {result.case_assessment.successOutlook?.primaryObstacles?.length > 0 && (
+                <div style={{ marginBottom: '28px' }}>
+                  <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', color: '#dc2626', marginBottom: '10px' }}>Primary Obstacles to Address</h4>
+                  <ul style={{ paddingLeft: '20px', margin: 0, color: '#444', fontSize: '14px', lineHeight: '1.8' }}>
+                    {result.case_assessment.successOutlook.primaryObstacles.map((obs, i) => <li key={i}>{obs}</li>)}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* PAGE 4 — WEAKNESS / REFUSAL ANALYSIS (Premium only) */}
+          {hasFeature('refusal_analysis') && (
+            <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', minHeight: '1100px' }}>
+              <h2 style={{ fontSize: '22px', fontWeight: '800', borderBottom: '3px solid #1a1a2e', paddingBottom: '12px', marginBottom: '28px', textTransform: 'uppercase', letterSpacing: '1px', color: '#1a1a2e' }}>Weakness Analysis &amp; Refusal Breakdown</h2>
+
+              {result.issues.map((issue, idx) => (
+                <div key={idx} style={{ marginBottom: '28px', border: '1px solid #e5e7eb', padding: '24px', borderRadius: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px', paddingBottom: '14px', borderBottom: '1px solid #f3f4f6' }}>
                     <h4 style={{ fontSize: '17px', fontWeight: '700', margin: 0, color: '#111' }}>{issue.issue}</h4>
                     <span style={{ fontSize: '11px', fontWeight: '700', padding: '3px 10px', backgroundColor: issue.impact === 'Critical' ? '#fee2e2' : issue.impact === 'High' ? '#ffedd5' : '#dcfce7', color: issue.impact === 'Critical' ? '#991b1b' : issue.impact === 'High' ? '#9a3412' : '#166534', borderRadius: '20px', textTransform: 'uppercase' }}>{issue.impact}</span>
-                 </div>
+                  </div>
 
-                 <div style={{ marginBottom: '16px' }}>
-                   <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#6b7280', fontWeight: '700', marginBottom: '4px' }}>Consultant Finding</div>
-                   <div style={{ fontSize: '14px', color: '#374151', lineHeight: '1.6' }}>{issue.finding}</div>
-                 </div>
+                  <div style={{ marginBottom: '16px' }}>
+                    <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#6b7280', fontWeight: '700', marginBottom: '4px' }}>Consultant Finding</div>
+                    <div style={{ fontSize: '14px', color: '#374151', lineHeight: '1.6' }}>{issue.finding}</div>
+                  </div>
 
-                 <div style={{ marginBottom: '16px', backgroundColor: '#f0f4ff', padding: '14px', borderRadius: '6px', borderLeft: '4px solid #3b82f6' }}>
-                   <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#3b82f6', fontWeight: '700', marginBottom: '4px' }}>Recommended Resolution</div>
-                   <div style={{ fontSize: '14px', color: '#1e40af', fontWeight: '600', lineHeight: '1.5' }}>{issue.recommendedAction}</div>
-                 </div>
+                  <div style={{ marginBottom: '16px', backgroundColor: '#f0f4ff', padding: '14px', borderRadius: '6px', borderLeft: '4px solid #3b82f6' }}>
+                    <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#3b82f6', fontWeight: '700', marginBottom: '4px' }}>Recommended Resolution</div>
+                    <div style={{ fontSize: '14px', color: '#1e40af', fontWeight: '600', lineHeight: '1.5' }}>{issue.recommendedAction}</div>
+                  </div>
 
-                 <div>
-                   <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#6b7280', fontWeight: '700', marginBottom: '6px' }}>Required Evidence</div>
-                   <ul style={{ paddingLeft: '20px', margin: 0 }}>
-                     {issue.recommendedEvidence.map((ev, i) => (
-                       <li key={i} style={{ fontSize: '14px', color: '#4b5563', marginBottom: '4px', lineHeight: '1.5' }}>{ev}</li>
-                     ))}
-                   </ul>
-                 </div>
-               </div>
-             ))}
-          </div>
-
-          {/* STRATEGY PAGE */}
-          <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', pageBreakAfter: 'always' }}>
-             <h2 style={{ fontSize: '22px', fontWeight: '800', borderBottom: '3px solid #1a1a2e', paddingBottom: '12px', marginBottom: '28px', textTransform: 'uppercase', letterSpacing: '1px', color: '#1a1a2e' }}>Reapplication Strategy</h2>
-
-             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '28px' }}>
-               <div style={{ backgroundColor: '#f0fdf4', padding: '20px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
-                 <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '12px', color: '#166534' }}>Immediate Actions</h4>
-                 <ul style={{ paddingLeft: '20px', margin: 0, fontSize: '14px', lineHeight: '1.6', color: '#334155' }}>
-                   {result.strategy.immediateActions.map((action, i) => <li key={i} style={{ marginBottom: '6px' }}>{action}</li>)}
-                 </ul>
-               </div>
-               <div style={{ backgroundColor: '#eff6ff', padding: '20px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
-                 <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '12px', color: '#1e40af' }}>Evidence To Gather</h4>
-                 <ul style={{ paddingLeft: '20px', margin: 0, fontSize: '14px', lineHeight: '1.6', color: '#334155' }}>
-                   {result.strategy.evidenceToGather.map((item, i) => <li key={i} style={{ marginBottom: '6px' }}>{item}</li>)}
-                 </ul>
-               </div>
-             </div>
-
-             <div style={{ backgroundColor: '#fef2f2', padding: '20px', borderRadius: '8px', border: '1px solid #fecaca', marginBottom: '28px', pageBreakInside: 'avoid' }}>
-               <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '12px', color: '#991b1b' }}>Common Mistakes To Avoid</h4>
-               <ul style={{ paddingLeft: '20px', margin: 0, fontSize: '14px', lineHeight: '1.6', color: '#334155' }}>
-                 {result.strategy.commonMistakes.map((mistake, i) => <li key={i} style={{ marginBottom: '6px' }}>{mistake}</li>)}
-               </ul>
-             </div>
-
-             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', pageBreakInside: 'avoid' }}>
-               <div style={{ padding: '20px', border: '1px solid #e5e7eb', borderRadius: '8px', textAlign: 'center' }}>
-                 <h4 style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '8px', color: '#888' }}>Target Timeline</h4>
-                 <p style={{ fontSize: '18px', margin: 0, fontWeight: '700', color: '#111' }}>{result.strategy.timeline}</p>
-               </div>
-               <div style={{ padding: '20px', border: '1px solid #e5e7eb', borderRadius: '8px', textAlign: 'center', backgroundColor: '#f0fdf4' }}>
-                 <h4 style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '8px', color: '#059669' }}>Expected Outcome</h4>
-                 <p style={{ fontSize: '18px', margin: 0, fontWeight: '700', color: '#059669' }}>{result.strategy.expectedOutcome}</p>
-               </div>
-             </div>
-          </div>
-
-          {/* CHECKLIST PAGE */}
-          <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', pageBreakAfter: 'always' }}>
-             <h2 style={{ fontSize: '22px', fontWeight: '800', borderBottom: '3px solid #1a1a2e', paddingBottom: '12px', marginBottom: '28px', textTransform: 'uppercase', letterSpacing: '1px', color: '#1a1a2e' }}>Structured Document Checklist</h2>
-
-             {(['Financial', 'Employment', 'Academic', 'Travel', 'Identity', 'Other'] as const).map(category => {
-               const catKey = category.toLowerCase() as keyof ChecklistItem;
-               const items = result.checklist[catKey];
-               if (!items || items.length === 0) return null;
-
-               return (
-                 <div key={category} style={{ marginBottom: '24px', pageBreakInside: 'avoid', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px' }}>
-                   <h4 style={{ fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '14px', color: '#334155', display: 'inline-block', borderBottom: '2px solid #cbd5e1', paddingBottom: '4px' }}>{category} Evidence</h4>
-                   {items.map((item: any, i: number) => (
-                     <div key={i} style={{ display: 'flex', marginBottom: '10px', alignItems: 'flex-start' }}>
-                       <div style={{ fontSize: '18px', marginRight: '14px', color: '#94a3b8', lineHeight: '1' }}>☐</div>
-                       <div>
-                         <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', marginBottom: '2px' }}>{item.item}</div>
-                         <div style={{ fontSize: '12px', color: '#64748b', lineHeight: '1.5' }}>{item.explanation}</div>
-                       </div>
-                     </div>
-                   ))}
-                 </div>
-               );
-             })}
-          </div>
-
-          {/* APPEAL LETTER PAGE */}
-          <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box' }}>
-            <h2 style={{ fontSize: '22px', fontWeight: '800', borderBottom: '3px solid #1a1a2e', paddingBottom: '12px', marginBottom: '28px', textTransform: 'uppercase', letterSpacing: '1px', color: '#1a1a2e' }}>Supporting Explanation Draft</h2>
-            <div style={{ whiteSpace: 'pre-wrap', fontFamily: "'Times New Roman', Times, serif", fontSize: '14px', lineHeight: '1.8', color: '#111', textAlign: 'justify', padding: '40px', border: '1px solid #e5e7eb', backgroundColor: '#fafafa', borderRadius: '4px' }}>
-              {result.appeal_letter}
+                  <div>
+                    <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#6b7280', fontWeight: '700', marginBottom: '6px' }}>Required Evidence</div>
+                    <ul style={{ paddingLeft: '20px', margin: 0 }}>
+                      {issue.recommendedEvidence.map((ev, i) => (
+                        <li key={i} style={{ fontSize: '14px', color: '#4b5563', marginBottom: '4px', lineHeight: '1.5' }}>{ev}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
+          )}
+
+          {/* REAPPLICATION STRATEGY (Standard+) */}
+          {hasFeature('strategy') && (
+            <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', minHeight: '1100px' }}>
+              <h2 style={{ fontSize: '22px', fontWeight: '800', borderBottom: '3px solid #1a1a2e', paddingBottom: '12px', marginBottom: '28px', textTransform: 'uppercase', letterSpacing: '1px', color: '#1a1a2e' }}>Reapplication Strategy</h2>
+
+              <div style={{ marginBottom: '28px' }}>
+                <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '12px', color: '#166534' }}>Immediate Actions</h4>
+                <ul style={{ paddingLeft: '20px', margin: 0, fontSize: '14px', lineHeight: '1.6', color: '#334155' }}>
+                  {result.strategy.immediateActions.map((action, i) => <li key={i} style={{ marginBottom: '6px' }}>{action}</li>)}
+                </ul>
+              </div>
+
+              <div style={{ marginBottom: '28px' }}>
+                <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '12px', color: '#1e40af' }}>Evidence To Gather</h4>
+                <ul style={{ paddingLeft: '20px', margin: 0, fontSize: '14px', lineHeight: '1.6', color: '#334155' }}>
+                  {result.strategy.evidenceToGather.map((item, i) => <li key={i} style={{ marginBottom: '6px' }}>{item}</li>)}
+                </ul>
+              </div>
+
+              <div style={{ marginBottom: '28px' }}>
+                <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '12px', color: '#991b1b' }}>Common Mistakes To Avoid</h4>
+                <ul style={{ paddingLeft: '20px', margin: 0, fontSize: '14px', lineHeight: '1.6', color: '#334155' }}>
+                  {result.strategy.commonMistakes.map((mistake, i) => <li key={i} style={{ marginBottom: '6px' }}>{mistake}</li>)}
+                </ul>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                <div style={{ padding: '20px', border: '1px solid #e5e7eb', borderRadius: '8px', textAlign: 'center' }}>
+                  <h4 style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '8px', color: '#888' }}>Target Timeline</h4>
+                  <p style={{ fontSize: '18px', margin: 0, fontWeight: '700', color: '#111' }}>{result.strategy.timeline}</p>
+                </div>
+                <div style={{ padding: '20px', border: '1px solid #e5e7eb', borderRadius: '8px', textAlign: 'center', backgroundColor: '#f0fdf4' }}>
+                  <h4 style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '8px', color: '#059669' }}>Expected Outcome</h4>
+                  <p style={{ fontSize: '18px', margin: 0, fontWeight: '700', color: '#059669' }}>{result.strategy.expectedOutcome}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* STRUCTURED CHECKLIST (all paid plans, basic items for Starter, all categories for Standard+) */}
+          {hasFeature('basic_checklist') && (
+            <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', minHeight: '1100px' }}>
+              <h2 style={{ fontSize: '22px', fontWeight: '800', borderBottom: '3px solid #1a1a2e', paddingBottom: '12px', marginBottom: '28px', textTransform: 'uppercase', letterSpacing: '1px', color: '#1a1a2e' }}>Document Checklist</h2>
+
+              {result.checklist.identity && result.checklist.identity.length > 0 && (
+                <div style={{ marginBottom: '24px', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px' }}>
+                  <h4 style={{ fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '14px', color: '#334155', borderBottom: '2px solid #cbd5e1', paddingBottom: '4px', display: 'inline-block' }}>Identity Documents</h4>
+                  {result.checklist.identity.map((item, i) => (
+                    <div key={i} style={{ display: 'flex', marginBottom: '10px', alignItems: 'flex-start' }}>
+                      <div style={{ fontSize: '18px', marginRight: '14px', color: '#94a3b8', lineHeight: '1' }}>☐</div>
+                      <div>
+                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', marginBottom: '2px' }}>{item.item}</div>
+                        <div style={{ fontSize: '12px', color: '#64748b', lineHeight: '1.5' }}>{item.explanation}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {result.checklist.travel && result.checklist.travel.length > 0 && (
+                <div style={{ marginBottom: '24px', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px' }}>
+                  <h4 style={{ fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '14px', color: '#334155', borderBottom: '2px solid #cbd5e1', paddingBottom: '4px', display: 'inline-block' }}>Travel Documents</h4>
+                  {result.checklist.travel.map((item, i) => (
+                    <div key={i} style={{ display: 'flex', marginBottom: '10px', alignItems: 'flex-start' }}>
+                      <div style={{ fontSize: '18px', marginRight: '14px', color: '#94a3b8', lineHeight: '1' }}>☐</div>
+                      <div>
+                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', marginBottom: '2px' }}>{item.item}</div>
+                        <div style={{ fontSize: '12px', color: '#64748b', lineHeight: '1.5' }}>{item.explanation}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Categorized checklist items — Standard+ */}
+              {hasFeature('categorized_checklist') && (
+                <>
+                  {result.checklist.financial && result.checklist.financial.length > 0 && (
+                    <div style={{ marginBottom: '24px', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px' }}>
+                      <h4 style={{ fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '14px', color: '#334155', borderBottom: '2px solid #cbd5e1', paddingBottom: '4px', display: 'inline-block' }}>Financial Documents</h4>
+                      {result.checklist.financial.map((item, i) => (
+                        <div key={i} style={{ display: 'flex', marginBottom: '10px', alignItems: 'flex-start' }}>
+                          <div style={{ fontSize: '18px', marginRight: '14px', color: '#94a3b8', lineHeight: '1' }}>☐</div>
+                          <div>
+                            <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', marginBottom: '2px' }}>{item.item}</div>
+                            <div style={{ fontSize: '12px', color: '#64748b', lineHeight: '1.5' }}>{item.explanation}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {result.checklist.employment && result.checklist.employment.length > 0 && (
+                    <div style={{ marginBottom: '24px', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px' }}>
+                      <h4 style={{ fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '14px', color: '#334155', borderBottom: '2px solid #cbd5e1', paddingBottom: '4px', display: 'inline-block' }}>Employment Documents</h4>
+                      {result.checklist.employment.map((item, i) => (
+                        <div key={i} style={{ display: 'flex', marginBottom: '10px', alignItems: 'flex-start' }}>
+                          <div style={{ fontSize: '18px', marginRight: '14px', color: '#94a3b8', lineHeight: '1' }}>☐</div>
+                          <div>
+                            <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', marginBottom: '2px' }}>{item.item}</div>
+                            <div style={{ fontSize: '12px', color: '#64748b', lineHeight: '1.5' }}>{item.explanation}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {result.checklist.academic && result.checklist.academic.length > 0 && (
+                    <div style={{ marginBottom: '24px', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px' }}>
+                      <h4 style={{ fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '14px', color: '#334155', borderBottom: '2px solid #cbd5e1', paddingBottom: '4px', display: 'inline-block' }}>Academic Documents</h4>
+                      {result.checklist.academic.map((item, i) => (
+                        <div key={i} style={{ display: 'flex', marginBottom: '10px', alignItems: 'flex-start' }}>
+                          <div style={{ fontSize: '18px', marginRight: '14px', color: '#94a3b8', lineHeight: '1' }}>☐</div>
+                          <div>
+                            <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', marginBottom: '2px' }}>{item.item}</div>
+                            <div style={{ fontSize: '12px', color: '#64748b', lineHeight: '1.5' }}>{item.explanation}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {result.checklist.other && result.checklist.other.length > 0 && (
+                    <div style={{ marginBottom: '24px', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px' }}>
+                      <h4 style={{ fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '14px', color: '#334155', borderBottom: '2px solid #cbd5e1', paddingBottom: '4px', display: 'inline-block' }}>Other Documents</h4>
+                      {result.checklist.other.map((item, i) => (
+                        <div key={i} style={{ display: 'flex', marginBottom: '10px', alignItems: 'flex-start' }}>
+                          <div style={{ fontSize: '18px', marginRight: '14px', color: '#94a3b8', lineHeight: '1' }}>☐</div>
+                          <div>
+                            <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', marginBottom: '2px' }}>{item.item}</div>
+                            <div style={{ fontSize: '12px', color: '#64748b', lineHeight: '1.5' }}>{item.explanation}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* APPEAL LETTER (Starter+) */}
+          {hasFeature('appeal_letter') && (
+            <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', minHeight: '1100px' }}>
+              <h2 style={{ fontSize: '22px', fontWeight: '800', borderBottom: '3px solid #1a1a2e', paddingBottom: '12px', marginBottom: '28px', textTransform: 'uppercase', letterSpacing: '1px', color: '#1a1a2e' }}>Supporting Explanation Draft</h2>
+              <div style={{ whiteSpace: 'pre-wrap', fontFamily: "'Times New Roman', Times, serif", fontSize: '14px', lineHeight: '1.8', color: '#111', textAlign: 'justify', padding: '40px', border: '1px solid #e5e7eb', backgroundColor: '#fafafa', borderRadius: '4px' }}>
+                {result.appeal_letter}
+              </div>
+            </div>
+          )}
 
         </div>
       </div>
