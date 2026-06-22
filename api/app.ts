@@ -4,6 +4,7 @@ import analyzeRouter from './routes/analyze.js';
 import checkoutRouter from './routes/checkout.js';
 import webhookRouter from './routes/webhook.js';
 import adminRouter from './routes/admin.js';
+import sitemapRouter from './routes/sitemap.js';
 import { runAllChecks } from './validate.js';
 import { MODEL_FALLBACKS, getModelDiagnostics } from './services/gemini.js';
 console.log('BOOT 2 - app.ts all imports resolved');
@@ -35,6 +36,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/admin', adminRouter);
 app.use('/api/analyze', analyzeRouter);
 app.use('/api/checkout', checkoutRouter);
+
+app.use('/api', sitemapRouter);
+app.get('/sitemap.xml', async (_req, res) => {
+  res.redirect(301, '/api/sitemap.xml');
+});
 
 app.get('/api/health', async (_req, res) => {
   const checks = await runAllChecks();

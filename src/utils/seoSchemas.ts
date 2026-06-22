@@ -11,16 +11,33 @@ export const getOrganizationSchema = () => ({
   ]
 });
 
-export const getSoftwareAppSchema = () => ({
+export const getWebsiteSchema = () => ({
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Visa Appeal Builder",
+  "url": "https://visaappealbuilder.com",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": "https://visaappealbuilder.com/blog?q={search_term_string}"
+    },
+    "query-input": "required name=search_term_string"
+  }
+});
+
+export const getSoftwareAppSchema = (price: string = '29', priceCurrency: string = 'USD') => ({
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "name": "Visa Appeal Builder",
   "applicationCategory": "BusinessApplication",
   "operatingSystem": "All",
   "offers": {
-    "@type": "Offer",
-    "price": "9.99",
-    "priceCurrency": "USD"
+    "@type": "AggregateOffer",
+    "lowPrice": "29",
+    "highPrice": "99",
+    "priceCurrency": priceCurrency,
+    "offerCount": "3"
   },
   "aggregateRating": {
     "@type": "AggregateRating",
@@ -38,6 +55,19 @@ export const getSoftwareAppSchema = () => ({
     "Personalized Document Checklists",
     "Reapplication Strategy Generator"
   ]
+});
+
+export const getProductSchema = (name: string, description: string, price: string, currency: string = 'USD') => ({
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": name,
+  "description": description,
+  "offers": {
+    "@type": "Offer",
+    "price": price,
+    "priceCurrency": currency,
+    "availability": "https://schema.org/InStock"
+  }
 });
 
 export const getFAQSchema = () => ({
@@ -90,7 +120,15 @@ export const getBreadcrumbsSchema = (items: { name: string; url: string }[]) => 
   }))
 });
 
-export const getArticleSchema = (article: { title: string; description: string; url: string; datePublished: string; imageUrl?: string; authorName?: string }) => ({
+export const getArticleSchema = (article: {
+  title: string;
+  description: string;
+  url: string;
+  datePublished: string;
+  dateModified?: string;
+  imageUrl?: string;
+  authorName?: string;
+}) => ({
   "@context": "https://schema.org",
   "@type": "Article",
   "mainEntityOfPage": {
@@ -113,5 +151,26 @@ export const getArticleSchema = (article: { title: string; description: string; 
     }
   },
   "datePublished": article.datePublished,
-  "dateModified": new Date().toISOString().split('T')[0]
+  "dateModified": article.dateModified || article.datePublished
+});
+
+export const getCollectionPageSchema = (name: string, description: string, url: string) => ({
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "name": name,
+  "description": description,
+  "url": url,
+  "mainEntity": {
+    "@type": "ItemList",
+    "itemListElement": []
+  }
+});
+
+export const getWebPageSchema = (name: string, description: string, url: string, dateModified?: string) => ({
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": name,
+  "description": description,
+  "url": url,
+  ...(dateModified ? { dateModified } : {}),
 });

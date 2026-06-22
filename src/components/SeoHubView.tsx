@@ -1,65 +1,72 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, Globe2, FileText, ArrowRight } from 'lucide-react';
 import SEO from './SEO';
-import { getBreadcrumbsSchema } from '../utils/seoSchemas';
+import { getBreadcrumbsSchema, getCollectionPageSchema } from '../utils/seoSchemas';
+import { seoGuides } from '../data/seoGuides';
+
+const countryFlags: Record<string, string> = {
+  Canada: '🇨🇦', USA: '🇺🇸', 'United Kingdom': '🇬🇧', Australia: '🇦🇺',
+  Schengen: '🇪🇺', India: '🇮🇳', China: '🇨🇳', 'New Zealand': '🇳🇿',
+};
 
 export default function SeoHubView() {
-  const [guides] = useState<any[]>([]);
-  const loading = false;
+  const guides = seoGuides;
+  const title = "Visa Refusal Recovery Guides";
+  const description = "Expert analysis on overcoming the most common visa refusals worldwide. Understand the immigration logic and build a winning reapplication strategy.";
 
   return (
     <>
-      <SEO 
-        title="Visa Refusal Recovery Guides"
-        description="Expert analysis on overcoming the most common visa refusals worldwide. Understand the immigration logic and build a winning reapplication strategy."
+      <SEO
+        title={title}
+        description={description}
         schema={{
           "@context": "https://schema.org",
           "@graph": [
             getBreadcrumbsSchema([
               { name: "Home", url: "https://visaappealbuilder.com/" },
               { name: "Guides", url: "https://visaappealbuilder.com/guides" }
-            ])
+            ]),
+            getCollectionPageSchema(title, description, 'https://visaappealbuilder.com/guides')
           ]
         }}
       />
       <div className="flex flex-col py-24 px-6 max-w-6xl mx-auto w-full">
       <div className="text-center mb-16">
-        <h1 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">Visa Refusal Recovery Guides</h1>
-        <p className="text-xl text-zinc-400 max-w-2xl mx-auto">
-          Expert analysis on overcoming the most common visa refusals worldwide. Understand the immigration logic and build a winning reapplication strategy.
-        </p>
+        <h1 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">{title}</h1>
+        <p className="text-xl text-zinc-400 max-w-2xl mx-auto">{description}</p>
       </div>
 
-      {(
+      {guides.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {guides.map((guide) => (
-              <Link 
-                key={guide.id} 
+              <Link
+                key={guide.id}
                 to={`/guides/${guide.slug}`}
                 className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col hover:border-indigo-500/50 hover:bg-zinc-900/80 transition-all group"
               >
                 <div className="flex items-center gap-2 mb-4">
-                  {guide.category && (
+                  {guide.country && (
                     <span className="text-xs font-semibold px-2 py-1 bg-zinc-800 text-zinc-300 rounded-md flex items-center gap-1">
-                      <Globe2 className="w-3 h-3" />
-                      {guide.category}
+                      {countryFlags[guide.country] || <Globe2 className="w-3 h-3" />}
+                      {guide.country}
                     </span>
                   )}
-                  <span className="text-xs font-semibold px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded-md flex items-center gap-1">
-                    <FileText className="w-3 h-3" />
-                    Report
-                  </span>
+                  {guide.visaType && (
+                    <span className="text-xs font-semibold px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded-md flex items-center gap-1">
+                      <FileText className="w-3 h-3" />
+                      {guide.visaType}
+                    </span>
+                  )}
                 </div>
-                
+
                 <h2 className="text-xl font-bold text-white mb-3 leading-snug group-hover:text-indigo-300 transition-colors">
-                  {guide.title}
+                  {guide.seoTitle}
                 </h2>
-                
+
                 <p className="text-zinc-400 text-sm mb-6 flex-1 line-clamp-3">
-                  {guide.excerpt}
+                  {guide.metaDescription}
                 </p>
-                
+
                 <div className="flex items-center text-indigo-400 text-sm font-semibold gap-1 mt-auto group-hover:gap-2 transition-all">
                   <BookOpen className="w-4 h-4" />
                   Read Intelligence Report
@@ -69,7 +76,7 @@ export default function SeoHubView() {
             ))}
           </div>
       )}
-      
+
       <div className="mt-20 border border-zinc-800 bg-zinc-900/50 rounded-2xl p-8 md:p-12 text-center">
         <h2 className="text-2xl font-bold text-white mb-4">Need personalized help?</h2>
         <p className="text-zinc-400 mb-8 max-w-xl mx-auto">

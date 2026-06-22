@@ -34,7 +34,8 @@ export default function SeoGuideView() {
               title: guide.seoTitle,
               description: guide.metaDescription,
               url: `https://visaappealbuilder.com/guides/${guide.slug}`,
-              datePublished: '2026-06-01T08:00:00+08:00'
+              datePublished: '2026-06-01T08:00:00+08:00',
+              dateModified: '2026-06-15T08:00:00+08:00'
             })
           ]
         }}

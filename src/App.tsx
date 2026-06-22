@@ -1,3 +1,4 @@
+import { Analytics } from '@vercel/analytics/react';
 import { HelmetProvider } from 'react-helmet-async';
 import { useState } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
@@ -54,6 +55,7 @@ export default function App() {
       <BrowserRouter>
         <AppContent />
       </BrowserRouter>
+      <Analytics />
     </HelmetProvider>
   );
 }

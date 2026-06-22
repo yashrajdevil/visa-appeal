@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Lightbulb, FileText, CheckCircle2, ChevronRight, Zap, ShieldCheck, UploadCloud, Download, FileSearch } from 'lucide-react';
 import SEO from './SEO';
-import { getOrganizationSchema, getSoftwareAppSchema, getFAQSchema } from '../utils/seoSchemas';
+import { getOrganizationSchema, getWebsiteSchema, getSoftwareAppSchema, getFAQSchema } from '../utils/seoSchemas';
 import TrustSection from './TrustSection';
 import { ShowcaseSection } from './ShowcaseSection';
 import WorldMapBackground from './WorldMapBackground';
@@ -74,6 +74,7 @@ export default function LandingView({ onStartAppeal }: LandingViewProps) {
           "@context": "https://schema.org",
           "@graph": [
             getOrganizationSchema(),
+            getWebsiteSchema(),
             getSoftwareAppSchema(),
             getFAQSchema()
           ]

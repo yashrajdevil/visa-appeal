@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams, useLocation } from 'react-router-dom';
 import SEO from '../SEO';
-import { getBreadcrumbsSchema } from '../../utils/seoSchemas';
+import { getBreadcrumbsSchema, getCollectionPageSchema } from '../../utils/seoSchemas';
 import { useBlogPosts } from '../../hooks/useArticles';
 import { useCategories } from '../../hooks/useCategories';
 import { Search, Clock, ArrowRight, Loader2 } from 'lucide-react';
@@ -57,7 +57,8 @@ export default function BlogHubView() {
             getBreadcrumbsSchema([
               { name: "Home", url: "https://visaappealbuilder.com/" },
               { name: "Blog", url: "https://visaappealbuilder.com/blog" }
-            ])
+            ]),
+            getCollectionPageSchema(title, description, `https://visaappealbuilder.com${location.pathname}${location.search}`)
           ]
         }}
       />
@@ -98,7 +99,7 @@ export default function BlogHubView() {
                 <Link key={post.id} to={`/blog/${post.slug}`} className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden flex flex-col hover:border-indigo-500/50 hover:bg-zinc-900/80 transition-all group">
                   {post.featuredImage ? (
                     <div className="w-full h-48 bg-zinc-800 overflow-hidden">
-                      <img src={post.featuredImage} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <img src={post.featuredImage} alt={post.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     </div>
                   ) : (
                     <div className="w-full h-48 bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center">

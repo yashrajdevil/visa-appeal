@@ -68,6 +68,9 @@ export default function BlogArticleView() {
     return `<h${level} id="${id}"${attrs}>`;
   });
 
+  const publishedISO = article.publishedAt ? new Date(article.publishedAt).toISOString() : '';
+  const modifiedISO = article.updatedAt ? new Date(article.updatedAt).toISOString() : publishedISO;
+
   return (
     <>
       <SEO
@@ -75,6 +78,9 @@ export default function BlogArticleView() {
         description={article.seoDescription || article.excerpt}
         imageUrl={article.ogImage || article.featuredImage}
         canonicalUrl={article.canonicalUrl}
+        type="article"
+        publishedTime={publishedISO}
+        modifiedTime={modifiedISO}
         schema={{
           "@context": "https://schema.org",
           "@graph": [
@@ -88,7 +94,8 @@ export default function BlogArticleView() {
               description: article.excerpt,
               imageUrl: article.featuredImage,
               url: `https://visaappealbuilder.com/blog/${article.slug}`,
-              datePublished: article.publishedAt,
+              datePublished: publishedISO,
+              dateModified: modifiedISO,
               authorName: article.author,
             })
           ]
@@ -101,7 +108,7 @@ export default function BlogArticleView() {
 
         {article.featuredImage && (
           <div className="w-full aspect-video rounded-2xl overflow-hidden mb-8 bg-zinc-900">
-            <img src={article.featuredImage} alt={article.title} className="w-full h-full object-cover" />
+            <img src={article.featuredImage} alt={article.title} loading="lazy" className="w-full h-full object-cover" />
           </div>
         )}
 
