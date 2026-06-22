@@ -1,9 +1,22 @@
 console.log('BOOT TRACE - api/services/creem.ts loaded');
+const CREEM_API_KEY = process.env.CREEM_API_KEY || '';
 const CREEM_API_URL = 'https://api.creem.io/v1';
 
 function getCreemApiKey(): string {
-  return process.env.CREEM_API_KEY || '';
+  return CREEM_API_KEY;
 }
+
+// Boot diagnostics
+console.log('[creem-boot] CREEM_API_KEY length:', CREEM_API_KEY.length);
+console.log('[creem-boot] CREEM_API_KEY prefix:', CREEM_API_KEY.slice(0, 10));
+console.log('[creem-boot] CREEM_API_KEY suffix:', CREEM_API_KEY.slice(-5));
+console.log('[creem-boot] CREEM_API_KEY startsWith sk_', CREEM_API_KEY.startsWith('sk_'));
+console.log('[creem-boot] CREEM_API_KEY startsWith crm_', CREEM_API_KEY.startsWith('crm_'));
+console.log('[creem-boot] CREEM_API_KEY contains newline:', CREEM_API_KEY.includes('\n'));
+console.log('[creem-boot] CREEM_API_KEY contains space:', CREEM_API_KEY.includes(' '));
+console.log('[creem-boot] CREEM_API_URL:', CREEM_API_URL);
+console.log('[creem-boot] Endpoint being used:', `${CREEM_API_URL}/checkouts`);
+console.log('[creem-boot] Header format: x-api-key (not Authorization: Bearer)');
 
 export async function createCheckoutSession(params: {
   plan: 'starter' | 'standard' | 'premium';
@@ -31,7 +44,15 @@ export async function createCheckoutSession(params: {
     },
   };
 
+  console.log('[creem] Key length:', apiKey.length);
+  console.log('[creem] Key prefix:', apiKey.slice(0, 10));
+  console.log('[creem] Key suffix:', apiKey.slice(-5));
+  console.log('[creem] Key startsWith sk_:', apiKey.startsWith('sk_'));
+  console.log('[creem] Key startsWith crm_:', apiKey.startsWith('crm_'));
+  console.log('[creem] Key contains newline:', apiKey.includes('\n'));
+  console.log('[creem] Key contains space:', apiKey.includes(' '));
   console.log('[creem] Request URL:', `${CREEM_API_URL}/checkouts`);
+  console.log('[creem] Header format: x-api-key (NOT Authorization: Bearer)');
   console.log('[creem] Request headers:', JSON.stringify({
     'Content-Type': 'application/json',
     'x-api-key': apiKey.slice(0, 8) + '...' + apiKey.slice(-4),
