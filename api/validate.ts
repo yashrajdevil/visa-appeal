@@ -79,28 +79,37 @@ async function checkFirestoreRead(): Promise<CheckResult> {
 }
 
 async function checkGemini(): Promise<CheckResult> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  console.log('CHECK-GEMINI key prefix:', apiKey?.slice(0, 15));
-  console.log('CHECK-GEMINI key length:', apiKey?.length);
+  const rawKey = process.env.GEMINI_API_KEY;
+  const key = rawKey?.trim() ?? '';
+  console.log('CHECK-GEMINI raw length:', rawKey?.length);
+  console.log('CHECK-GEMINI trimmed length:', key.length);
+  console.log('CHECK-GEMINI prefix:', key.slice(0, 10));
   const model = 'gemini-2.0-flash';
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-  console.log('CHECK-GEMINI model:', model);
-  console.log('CHECK-GEMINI URL (redacted):', url.replace(apiKey || '', '***REDACTED***'));
+  const baseUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+  const url = `${baseUrl}?key=${key}`;
+  console.log('CHECK-GEMINI URL (redacted):', url.replace(key, '***REDACTED***'));
+  console.log('CHECK-GEMINI request body: {"contents":[{"parts":[{"text":"respond with the word OK"}]}]}');
   try {
     const response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': key,
+      },
       body: JSON.stringify({ contents: [{ parts: [{ text: 'respond with the word OK' }] }] }),
     });
+    console.log('CHECK-GEMINI status:', response.status);
     if (response.ok) {
       return { name: 'Gemini API', status: 'PASS' };
     }
     const errText = await response.text();
+    console.log('CHECK-GEMINI error body:', errText.slice(0, 1000));
     if (response.status === 429) {
       return { name: 'Gemini API', status: 'PASS', message: 'Rate limited (quota exceeded), API key is valid' };
     }
     return { name: 'Gemini API', status: 'FAIL', message: `HTTP ${response.status}: ${errText}` };
   } catch (err: any) {
+    console.log('CHECK-GEMINI exception:', err.message);
     return { name: 'Gemini API', status: 'FAIL', message: err.message };
   }
 }

@@ -34,15 +34,28 @@ app.get('/api/health', async (_req, res) => {
   });
 });
 
-app.get('/api/debug-gemini-key', (_req, res) => {
+app.get('/api/debug-gemini', (_req, res) => {
   const key = process.env.GEMINI_API_KEY;
-  const trimmed = key?.trim();
+  const trimmed = key?.trim() ?? '';
+  const model = 'gemini-2.0-flash';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+  const requestUrlWithoutKey = `${url}?key=***REDACTED***`;
+
   res.json({
-    length: key?.length ?? 0,
-    trimmedLength: trimmed?.length ?? 0,
+    model,
+    keyLength: key?.length ?? 0,
+    keyTrimmedLength: trimmed.length,
+    keyPrefix: key?.slice(0, 10) ?? null,
+    keySuffix: key ? key.slice(-5) : null,
     lastCharCode: key ? key.charCodeAt(key.length - 1) : null,
+    firstCharCode: key ? key.charCodeAt(0) : null,
     startsWithAIza: key?.startsWith('AIza') ?? false,
     containsNewline: key?.includes('\n') ?? false,
+    containsSpace: key?.includes(' ') ?? false,
+    containsTab: key?.includes('\t') ?? false,
+    trimmedEqualsRaw: key === trimmed,
+    requestUrlWithoutKey,
+    environment: process.env.VERCEL_ENV ?? 'local',
   });
 });
 
@@ -50,32 +63,41 @@ app.post('/api/test-gemini', async (_req, res) => {
   const rawKey = process.env.GEMINI_API_KEY;
   console.log('TEST-GEMINI raw length:', rawKey?.length);
   console.log('TEST-GEMINI last char code:', rawKey?.charCodeAt(rawKey.length - 1));
-  console.log('TEST-GEMINI key prefix:', rawKey?.slice(0, 15));
+  console.log('TEST-GEMINI first 10:', rawKey?.slice(0, 10));
+  console.log('TEST-GEMINI last 5:', rawKey?.slice(-5));
 
   const key = rawKey?.trim() ?? '';
   console.log('TEST-GEMINI trimmed length:', key.length);
 
   const model = 'gemini-2.0-flash';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+  const body = JSON.stringify({
+    contents: [{ parts: [{ text: 'hello' }] }],
+  });
   console.log('TEST-GEMINI model:', model);
-  console.log('TEST-GEMINI URL (redacted):', url.replace(key, '***REDACTED***'));
+  console.log('TEST-GEMINI full URL:', url.replace(key, '***REDACTED***'));
+  console.log('TEST-GEMINI request body:', body);
 
   try {
     const response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: 'hello' }] }],
-      }),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': key,
+      },
+      body,
     });
 
+    console.log('TEST-GEMINI response status:', response.status);
+    console.log('TEST-GEMINI response headers:', JSON.stringify(Object.fromEntries(response.headers.entries())));
+
     const text = await response.text();
-    console.log('TEST-GEMINI status:', response.status);
-    console.log('TEST-GEMINI response:', text.slice(0, 1000));
+    console.log('TEST-GEMINI response body:', text.slice(0, 2000));
 
     res.json({
       status: response.status,
       ok: response.ok,
+      headers: Object.fromEntries(response.headers.entries()),
       body: text,
     });
   } catch (err: any) {

@@ -25,33 +25,51 @@ export async function generateAnalysis(formData: {
 
   const trimmedKey = rawKey.trim();
   console.log('TRIMMED LENGTH:', trimmedKey.length);
+  console.log('TRIMMED PREFIX:', trimmedKey.slice(0, 10));
+  console.log('TRIMMED SUFFIX:', trimmedKey.slice(-5));
 
   const prompt = buildPrompt(formData);
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${trimmedKey}`;
-
-  console.log('GEMINI MODEL:', MODEL);
-  console.log('GEMINI URL (redacted):', apiUrl.replace(trimmedKey, '***REDACTED***'));
-
-  const response = await fetch(apiUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{
-        parts: [{ text: prompt }]
-      }],
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 8192,
-      },
-    }),
+  const model = MODEL;
+  const requestBody = JSON.stringify({
+    contents: [{
+      parts: [{ text: prompt }],
+    }],
+    generationConfig: {
+      temperature: 0.7,
+      maxOutputTokens: 8192,
+    },
   });
+  const baseUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+  const fullUrl = `${baseUrl}?key=${trimmedKey}`;
+
+  console.log('GEMINI MODEL:', model);
+  console.log('GEMINI BASE URL:', baseUrl);
+  console.log('GEMINI KEY LENGTH:', trimmedKey.length);
+  console.log('GEMINI FULL URL (redacted):', fullUrl.replace(trimmedKey, '***REDACTED***'));
+  console.log('GEMINI REQUEST BODY (first 500):', requestBody.slice(0, 500));
+
+  const response = await fetch(fullUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': trimmedKey,
+    },
+    body: requestBody,
+  });
+
+  console.log('GEMINI RESPONSE STATUS:', response.status);
+  console.log('GEMINI RESPONSE HEADERS:', JSON.stringify(Object.fromEntries(response.headers.entries())));
 
   if (!response.ok) {
     const err = await response.text();
+    console.log('GEMINI ERROR BODY:', err.slice(0, 2000));
     throw new Error(`Gemini API error: ${response.status} ${err}`);
   }
 
   const data = await response.json();
+  const responseText = JSON.stringify(data);
+  console.log('GEMINI RESPONSE BODY (first 500):', responseText.slice(0, 500));
+
   const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
   const json = extractJson(text);
 
