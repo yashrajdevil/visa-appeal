@@ -55,19 +55,29 @@ async function generateWithFallback(
       console.log(`FALLBACK response status=${response.status} model=${model}`);
       console.log(`FALLBACK response headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()))}`);
 
-      const text = await response.text();
+      const rawBody = await response.text();
 
       if (response.ok) {
         console.log(`FALLBACK success model=${model}`);
         lastSuccessfulModel = model;
-        return { text, model };
+        // Parse API response envelope to extract generated text from candidates
+        try {
+          const parsed = JSON.parse(rawBody);
+          const extractedText = parsed?.candidates?.[0]?.content?.parts?.[0]?.text || rawBody;
+          console.log(`FALLBACK extracted text length: ${extractedText.length}`);
+          return { text: extractedText, model };
+        } catch (parseErr: any) {
+          // Fall through to regular text if JSON parsing fails
+          console.log(`FALLBACK could not parse response JSON, using raw body`);
+          return { text: rawBody, model };
+        }
       }
 
-      console.log(`FALLBACK error body (first 2000) for model=${model}: ${text.slice(0, 2000)}`);
-      attempts.push({ model, status: response.status, error: text.slice(0, 500) });
+      console.log(`FALLBACK error body (first 2000) for model=${model}: ${rawBody.slice(0, 2000)}`);
+      attempts.push({ model, status: response.status, error: rawBody.slice(0, 500) });
 
-      if (!isRetryableError(response.status, text)) {
-        throw new Error(`Gemini API error (${model}): ${response.status} ${text.slice(0, 2000)}`);
+      if (!isRetryableError(response.status, rawBody)) {
+        throw new Error(`Gemini API error (${model}): ${response.status} ${rawBody.slice(0, 2000)}`);
       }
 
       console.log(`FALLBACK retryable error on model=${model}, moving to next`);

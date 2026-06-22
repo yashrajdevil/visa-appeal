@@ -149,28 +149,37 @@ export default function ResultsViewResolver({ onReset }: Props) {
   const analysisData = caseData.analysisData;
   console.log('=== Analysis data diagnostics ===');
   console.log('analysisData type:', typeof analysisData);
-  console.log('analysisData is array:', Array.isArray(analysisData));
   console.log('analysisData keys:', typeof analysisData === 'object' && analysisData !== null ? Object.keys(analysisData) : 'N/A');
-  console.log('analysisData.case_assessment:', typeof analysisData === 'object' && analysisData !== null ? analysisData.case_assessment : 'N/A');
-  console.log('paymentStatus:', caseData.paymentStatus);
-  console.log('purchasedPlan:', caseData.purchasedPlan);
 
-  // Guard: handle both old (JSON string) and new (object) format
-  let resolvedResult = analysisData;
-  if (typeof analysisData === 'string') {
-    console.warn('analysisData is a STRING (old format), attempting JSON.parse');
-    try {
-      resolvedResult = JSON.parse(analysisData);
-      console.log('JSON.parse succeeded, keys:', Object.keys(resolvedResult));
-    } catch (e) {
-      console.error('JSON.parse of analysisData failed:', e);
+  // Resolve analysisData from any storage format to GenerateAppealResponse
+  function resolveAnalysisData(raw: unknown): GenerateAppealResponse {
+    // Format 1: JSON string (old pre-Phase 2 server)
+    if (typeof raw === 'string') {
+      console.warn('analysisData is a STRING (old format), parsing');
+      try {
+        const parsed = JSON.parse(raw);
+        return resolveAnalysisData(parsed);
+      } catch { return raw as unknown as GenerateAppealResponse; }
     }
+    // Format 2: Gemini API envelope (broken fallback rewrite — this case)
+    if (raw && typeof raw === 'object' && !('case_assessment' in (raw as any))) {
+      const maybeEnvelope = raw as any;
+      const textFromCandidates = maybeEnvelope?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (textFromCandidates) {
+        console.warn('analysisData is a Gemini API envelope, extracting inner text');
+        try {
+          const extracted = JSON.parse(textFromCandidates);
+          if (extracted?.case_assessment) return extracted;
+        } catch { /* not JSON, fall through */ }
+      }
+    }
+    // Format 3: Assume it's already GenerateAppealResponse
+    return raw as GenerateAppealResponse;
   }
 
-  if (typeof resolvedResult === 'object' && resolvedResult !== null) {
-    console.log('case_assessment keys:', Object.keys(resolvedResult.case_assessment || {}));
-    console.log('appeal_letter length:', resolvedResult.appeal_letter?.length);
-  }
+  const resolvedResult = resolveAnalysisData(analysisData);
+  console.log('resolvedResult keys:', Object.keys(resolvedResult));
+  console.log('has case_assessment:', !!resolvedResult.case_assessment);
 
   return (
     <ResultsErrorBoundary caseId={caseId}>
