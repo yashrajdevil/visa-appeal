@@ -1,9 +1,91 @@
 console.log('BOOT TRACE - api/services/gemini.ts loaded');
-export const MODEL_NAME = 'gemini-2.5-flash';
 
-function getApiUrl(): string {
-  const key = (process.env.GEMINI_API_KEY || '').trim();
-  return `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${key}`;
+export const MODEL_FALLBACKS = [
+  'gemini-3.5-flash',
+  'gemini-3.1-flash-lite',
+  'gemini-2.5-flash',
+];
+
+let lastSuccessfulModel: string | null = null;
+
+export function getModelDiagnostics() {
+  return {
+    primaryModel: MODEL_FALLBACKS[0],
+    fallbacks: MODEL_FALLBACKS,
+    lastSuccessfulModel,
+  };
+}
+
+function isRetryableError(status: number, errorBody: string): boolean {
+  if (status === 429 || status === 503) return true;
+  if (errorBody.includes('UNAVAILABLE')) return true;
+  if (errorBody.includes('RESOURCE_EXHAUSTED')) return true;
+  return false;
+}
+
+async function generateWithFallback(
+  prompt: string,
+  generationConfig: { temperature: number; maxOutputTokens: number }
+): Promise<{ text: string; model: string }> {
+  const rawKey = process.env.GEMINI_API_KEY;
+  if (!rawKey) throw new Error('GEMINI_API_KEY is not configured');
+
+  const trimmedKey = rawKey.trim();
+
+  const attempts: { model: string; status: number | null; error: string | null }[] = [];
+
+  for (const model of MODEL_FALLBACKS) {
+    const requestBody = JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig,
+    });
+    const fullUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${trimmedKey}`;
+
+    console.log(`FALLBACK attempting model=${model}`);
+    console.log(`FALLBACK URL (redacted): ${fullUrl.replace(trimmedKey, '***REDACTED***')}`);
+
+    try {
+      const response = await fetch(fullUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': trimmedKey },
+        body: requestBody,
+      });
+
+      console.log(`FALLBACK response status=${response.status} model=${model}`);
+      console.log(`FALLBACK response headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()))}`);
+
+      const text = await response.text();
+
+      if (response.ok) {
+        console.log(`FALLBACK success model=${model}`);
+        lastSuccessfulModel = model;
+        return { text, model };
+      }
+
+      console.log(`FALLBACK error body (first 2000) for model=${model}: ${text.slice(0, 2000)}`);
+      attempts.push({ model, status: response.status, error: text.slice(0, 500) });
+
+      if (!isRetryableError(response.status, text)) {
+        throw new Error(`Gemini API error (${model}): ${response.status} ${text.slice(0, 2000)}`);
+      }
+
+      console.log(`FALLBACK retryable error on model=${model}, moving to next`);
+    } catch (err: any) {
+      if (err instanceof SyntaxError) {
+        console.log(`FALLBACK parse error model=${model}: ${err.message}`);
+        attempts.push({ model, status: null, error: err.message });
+        continue;
+      }
+      if (err.message?.startsWith('Gemini API error (')) {
+        throw err;
+      }
+      console.log(`FALLBACK exception model=${model}: ${err.message}`);
+      attempts.push({ model, status: null, error: err.message });
+    }
+  }
+
+  const summary = attempts.map(a => `${a.model}: status=${a.status}, error="${a.error?.slice(0, 200)}"`).join(' | ');
+  throw new Error(`All Gemini models failed: ${summary}`);
 }
 
 export async function generateAnalysis(formData: {
@@ -29,48 +111,8 @@ export async function generateAnalysis(formData: {
   console.log('TRIMMED SUFFIX:', trimmedKey.slice(-5));
 
   const prompt = buildPrompt(formData);
-  const model = MODEL_NAME;
-  const requestBody = JSON.stringify({
-    contents: [{
-      parts: [{ text: prompt }],
-    }],
-    generationConfig: {
-      temperature: 0.7,
-      maxOutputTokens: 8192,
-    },
-  });
-  const baseUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-  const fullUrl = `${baseUrl}?key=${trimmedKey}`;
+  const { text } = await generateWithFallback(prompt, { temperature: 0.7, maxOutputTokens: 8192 });
 
-  console.log('GEMINI MODEL:', model);
-  console.log('GEMINI BASE URL:', baseUrl);
-  console.log('GEMINI KEY LENGTH:', trimmedKey.length);
-  console.log('GEMINI FULL URL (redacted):', fullUrl.replace(trimmedKey, '***REDACTED***'));
-  console.log('GEMINI REQUEST BODY (first 500):', requestBody.slice(0, 500));
-
-  const response = await fetch(fullUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-goog-api-key': trimmedKey,
-    },
-    body: requestBody,
-  });
-
-  console.log('GEMINI RESPONSE STATUS:', response.status);
-  console.log('GEMINI RESPONSE HEADERS:', JSON.stringify(Object.fromEntries(response.headers.entries())));
-
-  if (!response.ok) {
-    const err = await response.text();
-    console.log('GEMINI ERROR BODY:', err.slice(0, 2000));
-    throw new Error(`Gemini API error: ${response.status} ${err}`);
-  }
-
-  const data = await response.json();
-  const responseText = JSON.stringify(data);
-  console.log('GEMINI RESPONSE BODY (first 500):', responseText.slice(0, 500));
-
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
   const json = extractJson(text);
 
   if (!json) {
@@ -154,9 +196,7 @@ Generate a detailed JSON analysis with exactly this structure. Do not include ma
 }
 
 function extractJson(text: string): any {
-  // Remove markdown code fences if present
   let cleaned = text.replace(/```(?:json)?\s*/gi, '').replace(/```\s*$/gi, '').trim();
-  // Find first { and last }
   const start = cleaned.indexOf('{');
   const end = cleaned.lastIndexOf('}');
   if (start === -1 || end === -1) return null;

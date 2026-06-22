@@ -4,7 +4,7 @@ import analyzeRouter from './routes/analyze.js';
 import checkoutRouter from './routes/checkout.js';
 import webhookRouter from './routes/webhook.js';
 import { runAllChecks } from './validate.js';
-import { MODEL_NAME } from './services/gemini.js';
+import { MODEL_FALLBACKS, getModelDiagnostics } from './services/gemini.js';
 console.log('BOOT 2 - app.ts all imports resolved');
 
 const app = express();
@@ -38,7 +38,7 @@ app.get('/api/health', async (_req, res) => {
 app.get('/api/debug-gemini', (_req, res) => {
   const key = process.env.GEMINI_API_KEY;
   const trimmed = key?.trim() ?? '';
-  const model = MODEL_NAME;
+  const model = MODEL_FALLBACKS[0];
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
   const requestUrlWithoutKey = `${url}?key=***REDACTED***`;
 
@@ -70,7 +70,7 @@ app.post('/api/test-gemini', async (_req, res) => {
   const key = rawKey?.trim() ?? '';
   console.log('TEST-GEMINI trimmed length:', key.length);
 
-  const model = MODEL_NAME;
+  const model = MODEL_FALLBACKS[0];
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
   const body = JSON.stringify({
     contents: [{ parts: [{ text: 'hello' }] }],
@@ -134,7 +134,7 @@ app.get('/api/debug-gemini-project', async (_req, res) => {
   }
 
   // 2) generateContent minimal (to compare quota behavior)
-  const genUrl = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${key}`;
+  const genUrl = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_FALLBACKS[0]}:generateContent?key=${key}`;
   const genPayload = { contents: [{ parts: [{ text: 'hello' }] }] };
 
   let genStatus: number | null = null;
@@ -175,7 +175,7 @@ app.get('/api/debug-gemini-project', async (_req, res) => {
 
 app.get('/api/test-generate-minimal', async (_req, res) => {
   const key = (process.env.GEMINI_API_KEY || '').trim();
-  const model = MODEL_NAME;
+  const model = MODEL_FALLBACKS[0];
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
   const fullUrl = `${url}?key=${key}`;
   const payload = {
@@ -227,7 +227,7 @@ app.get('/api/test-generate-minimal', async (_req, res) => {
 
 app.get('/api/test-gemini-direct', async (_req, res) => {
   const key = (process.env.GEMINI_API_KEY || '').trim();
-  const model = MODEL_NAME;
+  const model = MODEL_FALLBACKS[0];
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
   const fullUrl = `${url}?key=${key}`;
   const payload = { contents: [{ parts: [{ text: 'Say OK' }] }] };
@@ -253,6 +253,10 @@ app.get('/api/test-gemini-direct', async (_req, res) => {
     console.error('DIRECT error:', err.message);
     res.status(500).json({ error: err.message });
   }
+});
+
+app.get('/api/debug-model', (_req, res) => {
+  res.json(getModelDiagnostics());
 });
 
 console.log('BOOT 5 - app export');
