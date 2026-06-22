@@ -6,6 +6,7 @@ console.log('BOOT TRACE - api/routes/webhook.ts loaded');
 const router = Router();
 
 router.post('/', async (req: Request, res: Response) => {
+  console.log('CREEM WEBHOOK HIT');
   try {
     const signature = req.headers['x-creem-signature'] as string;
     const rawBody = JSON.stringify(req.body);

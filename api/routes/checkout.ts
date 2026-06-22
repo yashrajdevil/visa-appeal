@@ -33,16 +33,14 @@ router.post('/', verifyAuth, async (req: AuthenticatedRequest, res: Response) =>
       return res.status(400).json({ error: 'Already purchased' });
     }
 
-    const appUrl = process.env.APP_URL || 'http://localhost:5173';
+    const appUrl = process.env.APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:5173');
     const successUrl = `${appUrl}/results/${caseId}?purchase=success`;
-    const cancelUrl = `${appUrl}/results/${caseId}`;
 
     const session = await createCheckoutSession({
       plan,
       uid,
       caseId,
       successUrl,
-      cancelUrl,
     });
 
     console.log('[checkout] Plan:', plan);

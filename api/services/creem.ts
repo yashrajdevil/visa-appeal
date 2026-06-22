@@ -26,7 +26,6 @@ export async function createCheckoutSession(params: {
   uid: string;
   caseId: string;
   successUrl: string;
-  cancelUrl: string;
 }) {
   const apiKey = getCreemApiKey();
   if (!apiKey) {

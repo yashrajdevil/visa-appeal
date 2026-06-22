@@ -14,12 +14,18 @@ app.use(cors({
   credentials: true,
 }));
 
-app.use('/api/webhook', express.raw({ type: 'application/json' }), (req, _res, next) => {
+app.use('/api/webhooks/creem', express.raw({ type: 'application/json' }), (req, _res, next) => {
   if (Buffer.isBuffer(req.body)) {
     req.body = JSON.parse(req.body.toString('utf8'));
   }
   next();
 }, webhookRouter);
+
+// Temporary GET route to verify webhook route is alive
+app.get('/api/webhooks/creem', (_req, res) => {
+  console.log('CREEM WEBHOOK HIT (GET test)');
+  res.json({ status: 'webhook route alive' });
+});
 
 app.use(express.json());
 
