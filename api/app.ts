@@ -3,6 +3,7 @@ import cors from 'cors';
 import analyzeRouter from './routes/analyze.js';
 import checkoutRouter from './routes/checkout.js';
 import webhookRouter from './routes/webhook.js';
+import adminRouter from './routes/admin.js';
 import { runAllChecks } from './validate.js';
 import { MODEL_FALLBACKS, getModelDiagnostics } from './services/gemini.js';
 console.log('BOOT 2 - app.ts all imports resolved');
@@ -13,6 +14,8 @@ app.use(cors({
   origin: process.env.APP_URL || 'http://localhost:5173',
   credentials: true,
 }));
+
+app.use('/api/admin', adminRouter);
 
 app.use('/api/webhooks/creem', express.raw({ type: 'application/json' }), (req, _res, next) => {
   if (Buffer.isBuffer(req.body)) {

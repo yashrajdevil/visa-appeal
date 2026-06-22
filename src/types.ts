@@ -79,3 +79,33 @@ export interface GenerateAppealResponse {
   checklist: Checklist;
   appeal_letter: string;
 }
+
+export interface BlogCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  createdAt: number;
+}
+
+export interface Article {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  featuredImage: string;
+  status: 'draft' | 'published';
+  author: string;
+  categories: string[];
+  tags: string[];
+  seoTitle: string;
+  seoDescription: string;
+  ogImage: string;
+  canonicalUrl: string;
+  publishedAt: number | null;
+  createdAt: number;
+  updatedAt: number;
+  views: number;
+  readingTime: number;
+}
