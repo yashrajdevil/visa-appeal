@@ -38,7 +38,6 @@ export async function createCheckoutSession(params: {
   const requestBody = {
     product_id: priceId,
     success_url: params.successUrl,
-    cancel_url: params.cancelUrl,
     request_id: params.caseId,
     metadata: {
       uid: params.uid,
