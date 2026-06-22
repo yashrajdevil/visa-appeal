@@ -10,9 +10,19 @@ export async function verifyAuth(req: AuthenticatedRequest, res: Response, next:
 
   try {
     const decoded = await getAuth().verifyIdToken(token);
+    console.log('=== verifyAuth decoded token ===');
+    console.log('decodedToken.uid:', decoded.uid);
+    console.log('decodedToken.email:', decoded.email);
+    console.log('decodedToken.firebase.identities:', JSON.stringify((decoded as any).firebase?.identities));
+    console.log('decodedToken.firebase.sign_in_provider:', (decoded as any).firebase?.sign_in_provider);
+    console.log('decodedToken.role:', (decoded as any).role);
+    console.log('req.uid (before assignment):', req.uid);
     req.uid = decoded.uid;
+    console.log('req.uid (after assignment):', req.uid);
+    console.log('=== end verifyAuth ===');
     next();
   } catch (error: any) {
+    console.error('verifyAuth FAILED:', error.message);
     return res.status(401).json({ error: 'Invalid token' });
   }
 }

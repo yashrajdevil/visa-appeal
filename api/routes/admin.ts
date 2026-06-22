@@ -64,16 +64,33 @@ router.post('/login', async (req: Request, res: Response) => {
       let userRecord;
       try {
         userRecord = await auth.getUserByEmail(normalizedEmail);
+        console.log('[admin-login] Found existing user, uid:', userRecord.uid);
+        // Old bug: previous createCustomToken(email) created users with email-as-UID.
+        // Detect by checking if UID contains '@' and migrate to a proper UID.
+        if (userRecord.uid.includes('@')) {
+          console.log('[admin-login] Detected legacy email-as-UID user, migrating...');
+          await auth.deleteUser(userRecord.uid);
+          userRecord = await auth.createUser({
+            email: normalizedEmail,
+            emailVerified: true,
+            displayName: normalizedEmail.split('@')[0],
+          });
+          console.log('[admin-login] Migrated to new uid:', userRecord.uid);
+        }
       } catch {
+        console.log('[admin-login] No existing user, creating new one');
         userRecord = await auth.createUser({
           email: normalizedEmail,
           emailVerified: true,
           displayName: normalizedEmail.split('@')[0],
         });
+        console.log('[admin-login] Created new user, uid:', userRecord.uid);
       }
       const token = await auth.createCustomToken(userRecord.uid, { role, provider: 'env' });
+      console.log('[admin-login] Custom token created for uid:', userRecord.uid);
       return res.json({ token, email: normalizedEmail, role });
     } catch (fbErr: any) {
+      console.log('[admin-login] Falling back to sessionOnly, error:', fbErr.message);
       const sessionToken = Buffer.from(JSON.stringify({ email: normalizedEmail, role, iat: Date.now() })).toString('base64');
       return res.json({ token: sessionToken, email: normalizedEmail, role, sessionOnly: true });
     }
