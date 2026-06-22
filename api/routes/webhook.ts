@@ -51,6 +51,10 @@ router.post('/', async (req: Request, res: Response) => {
     return res.status(200).json({ received: true, warning: 'missing metadata' });
   }
 
+  console.log(`UID RECEIVED (from webhook metadata): ${uid}`);
+  const casePath = `users/${uid}/cases/${caseId}`;
+  console.log(`UID USED FOR FIRESTORE: ${uid}`);
+  console.log(`CASE PATH: ${casePath}`);
   const caseRef = getDb().collection('users').doc(uid).collection('cases').doc(caseId);
   const caseSnap = await caseRef.get();
 

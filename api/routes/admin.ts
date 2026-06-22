@@ -60,7 +60,18 @@ router.post('/login', async (req: Request, res: Response) => {
 
     try {
       const auth = getAuth();
-      const token = await auth.createCustomToken(normalizedEmail, { role, provider: 'env' });
+      // Use real Firebase Auth UID — never email as document ID
+      let userRecord;
+      try {
+        userRecord = await auth.getUserByEmail(normalizedEmail);
+      } catch {
+        userRecord = await auth.createUser({
+          email: normalizedEmail,
+          emailVerified: true,
+          displayName: normalizedEmail.split('@')[0],
+        });
+      }
+      const token = await auth.createCustomToken(userRecord.uid, { role, provider: 'env' });
       return res.json({ token, email: normalizedEmail, role });
     } catch (fbErr: any) {
       const sessionToken = Buffer.from(JSON.stringify({ email: normalizedEmail, role, iat: Date.now() })).toString('base64');

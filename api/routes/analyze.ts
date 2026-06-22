@@ -16,6 +16,8 @@ router.post('/', verifyAuth, async (req: AuthenticatedRequest, res: Response) =>
       return res.status(400).json({ error: 'Country and visa type are required' });
     }
 
+    console.log(`UID RECEIVED: ${uid}`);
+
     const caseId = uuidv4();
 
     const analysisData = await generateAnalysis({
@@ -28,7 +30,8 @@ router.post('/', verifyAuth, async (req: AuthenticatedRequest, res: Response) =>
     });
 
     const casePath = `users/${uid}/cases/${caseId}`;
-    console.log(`CASE LOOKUP PATH: ${casePath}`);
+    console.log(`UID USED FOR FIRESTORE: ${uid}`);
+    console.log(`CASE PATH: ${casePath}`);
     const existingSnap = await getDb().collection('users').doc(uid).collection('cases').doc(caseId).get();
     console.log(`CASE FOUND: ${existingSnap.exists}`);
 

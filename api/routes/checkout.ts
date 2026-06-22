@@ -2,8 +2,6 @@ import { Router, Response } from 'express';
 import { AuthenticatedRequest, verifyAuth } from '../middleware/auth.js';
 import { getDb } from '../firebase.js';
 import { createCheckoutSession } from '../services/creem.js';
-console.log('BOOT TRACE - api/routes/checkout.ts loaded');
-
 const router = Router();
 
 const VALID_PLANS = ['starter', 'standard', 'premium'] as const;
@@ -13,6 +11,8 @@ router.post('/', verifyAuth, async (req: AuthenticatedRequest, res: Response) =>
     const uid = req.uid!;
     const { caseId, plan } = req.body;
 
+    console.log(`UID RECEIVED: ${uid}`);
+
     if (!caseId) {
       return res.status(400).json({ error: 'caseId is required' });
     }
@@ -20,6 +20,9 @@ router.post('/', verifyAuth, async (req: AuthenticatedRequest, res: Response) =>
       return res.status(400).json({ error: 'Plan must be starter, standard, or premium' });
     }
 
+    const casePath = `users/${uid}/cases/${caseId}`;
+    console.log(`UID USED FOR FIRESTORE: ${uid}`);
+    console.log(`CASE PATH: ${casePath}`);
     const caseRef = getDb().collection('users').doc(uid).collection('cases').doc(caseId);
     const caseSnap = await caseRef.get();
 
