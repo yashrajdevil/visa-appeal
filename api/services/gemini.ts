@@ -2,7 +2,7 @@ console.log('BOOT TRACE - api/services/gemini.ts loaded');
 const MODEL = 'gemini-2.0-flash';
 
 function getApiUrl(): string {
-  const key = process.env.GEMINI_API_KEY || '';
+  const key = (process.env.GEMINI_API_KEY || '').trim();
   return `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`;
 }
 
@@ -14,16 +14,23 @@ export async function generateAnalysis(formData: {
   refusalReasons: string[];
   questionnaireResponses: { question: string; answer: string | boolean | string[] }[];
 }) {
-  if (!process.env.GEMINI_API_KEY) {
+  const rawKey = process.env.GEMINI_API_KEY;
+  if (!rawKey) {
     throw new Error('GEMINI_API_KEY is not configured');
   }
 
-  const prompt = buildPrompt(formData);
-  const apiUrl = getApiUrl();
+  console.log('GEMINI KEY LENGTH:', rawKey.length);
+  console.log('GEMINI KEY LAST CHAR CODE:', rawKey.charCodeAt(rawKey.length - 1));
+  console.log('GEMINI KEY PREFIX:', rawKey.slice(0, 15));
 
-  console.log('GEMINI KEY PREFIX:', process.env.GEMINI_API_KEY?.slice(0, 15));
+  const trimmedKey = rawKey.trim();
+  console.log('TRIMMED LENGTH:', trimmedKey.length);
+
+  const prompt = buildPrompt(formData);
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${trimmedKey}`;
+
   console.log('GEMINI MODEL:', MODEL);
-  console.log('GEMINI URL (redacted):', apiUrl.replace(process.env.GEMINI_API_KEY || '', '***REDACTED***'));
+  console.log('GEMINI URL (redacted):', apiUrl.replace(trimmedKey, '***REDACTED***'));
 
   const response = await fetch(apiUrl, {
     method: 'POST',

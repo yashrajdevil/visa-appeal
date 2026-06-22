@@ -34,15 +34,31 @@ app.get('/api/health', async (_req, res) => {
   });
 });
 
-app.post('/api/test-gemini', async (_req, res) => {
+app.get('/api/debug-gemini-key', (_req, res) => {
   const key = process.env.GEMINI_API_KEY;
-  console.log('TEST-GEMINI key prefix:', key?.slice(0, 15));
-  console.log('TEST-GEMINI key length:', key?.length);
+  const trimmed = key?.trim();
+  res.json({
+    length: key?.length ?? 0,
+    trimmedLength: trimmed?.length ?? 0,
+    lastCharCode: key ? key.charCodeAt(key.length - 1) : null,
+    startsWithAIza: key?.startsWith('AIza') ?? false,
+    containsNewline: key?.includes('\n') ?? false,
+  });
+});
+
+app.post('/api/test-gemini', async (_req, res) => {
+  const rawKey = process.env.GEMINI_API_KEY;
+  console.log('TEST-GEMINI raw length:', rawKey?.length);
+  console.log('TEST-GEMINI last char code:', rawKey?.charCodeAt(rawKey.length - 1));
+  console.log('TEST-GEMINI key prefix:', rawKey?.slice(0, 15));
+
+  const key = rawKey?.trim() ?? '';
+  console.log('TEST-GEMINI trimmed length:', key.length);
 
   const model = 'gemini-2.0-flash';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
   console.log('TEST-GEMINI model:', model);
-  console.log('TEST-GEMINI URL (redacted):', url.replace(key || '', '***REDACTED***'));
+  console.log('TEST-GEMINI URL (redacted):', url.replace(key, '***REDACTED***'));
 
   try {
     const response = await fetch(url, {
