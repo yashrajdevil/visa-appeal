@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { Download, Copy, CheckCircle2, ChevronLeft, FileText, CheckSquare, Clock, Briefcase, AlertCircle, Lock, ShoppingCart, Loader2, Zap, Shield, Crown, X } from 'lucide-react';
 import { GenerateAppealResponse, ChecklistItem } from '../types';
 import SEO from './SEO';
+import { markdownToHtml, stripMarkdown, escapeHtml } from '../utils/markdownToHtml';
 
 interface ResultsDashboardProps {
   result: GenerateAppealResponse;
@@ -467,7 +468,7 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
                        <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Consultant Reasoning:</div>
                     </div>
                     <p className="text-sm text-zinc-300 italic mb-6">
-                       "{result.case_assessment.consultantVerdict.reasoning}"
+                       "{stripMarkdown(result.case_assessment.consultantVerdict.reasoning)}"
                     </p>
 
                     <h4 className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-3">Consultant Notes</h4>
@@ -475,7 +476,7 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
                         {result.case_assessment.consultantNotes.map((note, i) => (
                           <li key={i} className="text-sm text-zinc-300 flex items-start gap-3">
                             <span className="w-1.5 h-1.5 rounded-full bg-zinc-600 mt-1.5 flex-shrink-0" />
-                            <span className="leading-relaxed">{note}</span>
+                            <span className="leading-relaxed" dangerouslySetInnerHTML={{ __html: markdownToHtml(note) }} />
                           </li>
                         ))}
                     </ul>
@@ -549,12 +550,12 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
                   <div className={`transition-opacity ${!hasFeature('refusal_analysis') ? 'opacity-30 blur-sm pointer-events-none' : ''}`}>
                     <div className="mb-4 bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/50">
                       <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Finding</div>
-                      <div className="text-sm text-zinc-300">{issue.finding}</div>
+                      <div className="text-sm text-zinc-300" dangerouslySetInnerHTML={{ __html: markdownToHtml(issue.finding) }} />
                     </div>
 
                     <div className="mb-4">
                       <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Recommended Action</div>
-                      <div className="text-sm text-indigo-300 font-medium">{issue.recommendedAction}</div>
+                      <div className="text-sm text-indigo-300 font-medium" dangerouslySetInnerHTML={{ __html: markdownToHtml(issue.recommendedAction) }} />
                     </div>
 
                     <div>
@@ -611,22 +612,20 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
                 }}
               >
                 <div className="max-w-[650px] mx-auto w-full relative z-10 text-black">
-                   <div className="whitespace-pre-wrap font-serif text-[15px] leading-[1.8] text-[#1a1a1a] tracking-normal text-justify">
-                     {hasFeature('appeal_letter') || isSample ? (
-                       <div className="outline-none focus:ring-2 ring-indigo-500/20 rounded-md p-2 -m-2 transition-all" contentEditable suppressContentEditableWarning>
-                          {result.appeal_letter}
-                       </div>
-                     ) : (
-                       <>
-                         <div>{result.appeal_letter.slice(0, 300)}...</div>
-                         <div className="mt-4 blur-[4px] opacity-40 select-none">
-                           {result.appeal_letter.slice(300, 1500)}
-                           <br/><br/>
-                           [Letter continues securely...]
-                         </div>
-                       </>
-                     )}
-                   </div>
+                    <div className="font-serif text-[15px] leading-[1.8] text-[#1a1a1a] tracking-normal text-justify">
+                      {hasFeature('appeal_letter') || isSample ? (
+                        <div className="outline-none focus:ring-2 ring-indigo-500/20 rounded-md p-2 -m-2 transition-all" dangerouslySetInnerHTML={{ __html: markdownToHtml(result.appeal_letter) }} contentEditable suppressContentEditableWarning />
+                      ) : (
+                        <>
+                          <div>{stripMarkdown(result.appeal_letter).slice(0, 300)}...</div>
+                          <div className="mt-4 blur-[4px] opacity-40 select-none">
+                            {stripMarkdown(result.appeal_letter).slice(300, 1500)}
+                            <br/><br/>
+                            [Letter continues securely...]
+                          </div>
+                        </>
+                      )}
+                    </div>
                 </div>
 
                 {/* Paywall Overlay */}
@@ -690,7 +689,7 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
                   {result.strategy.immediateActions.map((action, i) => (
                     <li key={i} className="text-sm text-zinc-300 flex items-start gap-3">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0" />
-                      <span>{action}</span>
+                      <span dangerouslySetInnerHTML={{ __html: markdownToHtml(action) }} />
                     </li>
                   ))}
                 </ul>
@@ -702,7 +701,7 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
                   {result.strategy.evidenceToGather.map((item, i) => (
                     <li key={i} className="text-sm text-zinc-300 flex items-start gap-3">
                       <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 flex-shrink-0" />
-                      <span>{item}</span>
+                      <span dangerouslySetInnerHTML={{ __html: markdownToHtml(item) }} />
                     </li>
                   ))}
                 </ul>
@@ -714,7 +713,7 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
                   {result.strategy.commonMistakes.map((mistake, i) => (
                     <li key={i} className="text-sm text-zinc-300 flex items-start gap-3">
                       <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-1.5 flex-shrink-0" />
-                      <span>{mistake}</span>
+                      <span dangerouslySetInnerHTML={{ __html: markdownToHtml(mistake) }} />
                     </li>
                   ))}
                 </ul>
@@ -916,58 +915,58 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
                 </div>
                 <div>
                   <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: '600', marginBottom: '6px' }}>Consultant Reasoning</div>
-                  <p style={{ fontSize: '14px', margin: 0, color: '#e4e4e7', fontStyle: 'italic', lineHeight: '1.7' }}>"{result.case_assessment.consultantVerdict.reasoning}"</p>
-                </div>
-              </div>
+                   <p style={{ fontSize: '14px', margin: 0, color: '#e4e4e7', fontStyle: 'italic', lineHeight: '1.7' }}>"{stripMarkdown(result.case_assessment.consultantVerdict.reasoning)}"</p>
+                 </div>
+               </div>
 
-              <div>
-                <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', color: '#1a1a2e', marginBottom: '10px' }}>Consultant Notes</h4>
-                <ul style={{ paddingLeft: '20px', margin: 0 }}>
-                  {result.case_assessment.consultantNotes.map((note, i) => (
-                    <li key={i} style={{ fontSize: '14px', color: '#333', marginBottom: '10px', lineHeight: '1.6' }}>{note}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          )}
+               <div>
+                 <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', color: '#1a1a2e', marginBottom: '10px' }}>Consultant Notes</h4>
+                 <ul style={{ paddingLeft: '20px', margin: 0 }}>
+                   {result.case_assessment.consultantNotes.map((note, i) => (
+                     <li key={i} style={{ fontSize: '14px', color: '#333', marginBottom: '10px', lineHeight: '1.6' }}>{stripMarkdown(note)}</li>
+                   ))}
+                 </ul>
+               </div>
+             </div>
+           )}
 
-          {/* PAGE 3 — EXECUTIVE SUMMARY (Premium only) */}
-          {hasFeature('executive_summary') && (
-            <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', minHeight: '1100px' }}>
-              <h2 style={{ fontSize: '22px', fontWeight: '800', borderBottom: '3px solid #1a1a2e', paddingBottom: '12px', marginBottom: '28px', textTransform: 'uppercase', letterSpacing: '1px', color: '#1a1a2e' }}>Executive Summary</h2>
+           {/* PAGE 3 — EXECUTIVE SUMMARY (Premium only) */}
+           {hasFeature('executive_summary') && (
+             <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', minHeight: '1100px' }}>
+               <h2 style={{ fontSize: '22px', fontWeight: '800', borderBottom: '3px solid #1a1a2e', paddingBottom: '12px', marginBottom: '28px', textTransform: 'uppercase', letterSpacing: '1px', color: '#1a1a2e' }}>Executive Summary</h2>
 
-              <div style={{ marginBottom: '28px', backgroundColor: '#1a1a2e', color: '#fff', padding: '28px', borderRadius: '10px' }}>
-                <h3 style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '2px', color: '#94a3b8', fontWeight: '700', marginBottom: '20px' }}>Case Overview</h3>
-                <p style={{ fontSize: '14px', margin: 0, color: '#e4e4e7', lineHeight: '1.8' }}>
-                  Applicant <strong>{result.case_assessment.applicantName || 'Confidential Client'}</strong> applied for <strong>{result.case_assessment.caseType}</strong>. Current readiness score is <strong>{result.case_assessment.score}/100</strong>, rated as <strong>{result.case_assessment.severityRating}</strong>. {result.case_assessment.consultantVerdict.reasoning}
-                </p>
-              </div>
+               <div style={{ marginBottom: '28px', backgroundColor: '#1a1a2e', color: '#fff', padding: '28px', borderRadius: '10px' }}>
+                 <h3 style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '2px', color: '#94a3b8', fontWeight: '700', marginBottom: '20px' }}>Case Overview</h3>
+                 <p style={{ fontSize: '14px', margin: 0, color: '#e4e4e7', lineHeight: '1.8' }}>
+                   Applicant <strong>{result.case_assessment.applicantName || 'Confidential Client'}</strong> applied for <strong>{result.case_assessment.caseType}</strong>. Current readiness score is <strong>{result.case_assessment.score}/100</strong>, rated as <strong>{result.case_assessment.severityRating}</strong>. {stripMarkdown(result.case_assessment.consultantVerdict.reasoning)}
+                 </p>
+               </div>
 
-              <div style={{ display: 'flex', gap: '16px', marginBottom: '28px' }}>
-                <div style={{ flex: 1, border: '1px solid #e5e7eb', padding: '18px', borderRadius: '8px' }}>
-                  <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#888', fontWeight: '700', marginBottom: '6px' }}>Current Readiness</div>
-                  <div style={{ fontSize: '18px', fontWeight: '700', color: '#111' }}>{result.case_assessment.successOutlook?.currentReadiness || 'Low'}</div>
-                </div>
-                <div style={{ flex: 1, border: '1px solid #e5e7eb', padding: '18px', borderRadius: '8px', backgroundColor: '#f0fdf4' }}>
-                  <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#059669', fontWeight: '700', marginBottom: '6px' }}>Post-Fixes Outlook</div>
-                  <div style={{ fontSize: '18px', fontWeight: '700', color: '#059669' }}>{result.case_assessment.successOutlook?.readinessAfterFixes || 'Strong'}</div>
-                </div>
-                <div style={{ flex: 1, border: '1px solid #e5e7eb', padding: '18px', borderRadius: '8px', backgroundColor: '#eff6ff' }}>
-                  <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#2563eb', fontWeight: '700', marginBottom: '6px' }}>Score Improvement</div>
-                  <div style={{ fontSize: '18px', fontWeight: '700', color: '#2563eb' }}>{result.case_assessment.successOutlook?.expectedScoreImprovement || '+20 Points'}</div>
-                </div>
-              </div>
+               <div style={{ display: 'flex', gap: '16px', marginBottom: '28px' }}>
+                 <div style={{ flex: 1, border: '1px solid #e5e7eb', padding: '18px', borderRadius: '8px' }}>
+                   <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#888', fontWeight: '700', marginBottom: '6px' }}>Current Readiness</div>
+                   <div style={{ fontSize: '18px', fontWeight: '700', color: '#111' }}>{result.case_assessment.successOutlook?.currentReadiness || 'Low'}</div>
+                 </div>
+                 <div style={{ flex: 1, border: '1px solid #e5e7eb', padding: '18px', borderRadius: '8px', backgroundColor: '#f0fdf4' }}>
+                   <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#059669', fontWeight: '700', marginBottom: '6px' }}>Post-Fixes Outlook</div>
+                   <div style={{ fontSize: '18px', fontWeight: '700', color: '#059669' }}>{result.case_assessment.successOutlook?.readinessAfterFixes || 'Strong'}</div>
+                 </div>
+                 <div style={{ flex: 1, border: '1px solid #e5e7eb', padding: '18px', borderRadius: '8px', backgroundColor: '#eff6ff' }}>
+                   <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#2563eb', fontWeight: '700', marginBottom: '6px' }}>Score Improvement</div>
+                   <div style={{ fontSize: '18px', fontWeight: '700', color: '#2563eb' }}>{result.case_assessment.successOutlook?.expectedScoreImprovement || '+20 Points'}</div>
+                 </div>
+               </div>
 
-              {result.case_assessment.consultantNotes.length > 0 && (
-                <>
-                  <h3 style={{ fontSize: '16px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '14px', color: '#1a1a2e' }}>Consultant Notes</h3>
-                  <ul style={{ paddingLeft: '20px', marginBottom: '28px' }}>
-                    {result.case_assessment.consultantNotes.map((note, i) => (
-                      <li key={i} style={{ fontSize: '14px', color: '#333', marginBottom: '10px', lineHeight: '1.6' }}>{note}</li>
-                    ))}
-                  </ul>
-                </>
-              )}
+               {result.case_assessment.consultantNotes.length > 0 && (
+                 <>
+                   <h3 style={{ fontSize: '16px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '14px', color: '#1a1a2e' }}>Consultant Notes</h3>
+                   <ul style={{ paddingLeft: '20px', marginBottom: '28px' }}>
+                     {result.case_assessment.consultantNotes.map((note, i) => (
+                       <li key={i} style={{ fontSize: '14px', color: '#333', marginBottom: '10px', lineHeight: '1.6' }}>{stripMarkdown(note)}</li>
+                     ))}
+                   </ul>
+                 </>
+               )}
 
               {result.case_assessment.successOutlook?.primaryObstacles?.length > 0 && (
                 <div style={{ marginBottom: '28px' }}>
@@ -994,12 +993,12 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
 
                   <div style={{ marginBottom: '16px' }}>
                     <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#6b7280', fontWeight: '700', marginBottom: '4px' }}>Consultant Finding</div>
-                    <div style={{ fontSize: '14px', color: '#374151', lineHeight: '1.6' }}>{issue.finding}</div>
+                    <div style={{ fontSize: '14px', color: '#374151', lineHeight: '1.6' }}>{stripMarkdown(issue.finding)}</div>
                   </div>
 
                   <div style={{ marginBottom: '16px', backgroundColor: '#f0f4ff', padding: '14px', borderRadius: '6px', borderLeft: '4px solid #3b82f6' }}>
                     <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#3b82f6', fontWeight: '700', marginBottom: '4px' }}>Recommended Resolution</div>
-                    <div style={{ fontSize: '14px', color: '#1e40af', fontWeight: '600', lineHeight: '1.5' }}>{issue.recommendedAction}</div>
+                    <div style={{ fontSize: '14px', color: '#1e40af', fontWeight: '600', lineHeight: '1.5' }}>{stripMarkdown(issue.recommendedAction)}</div>
                   </div>
 
                   <div>
@@ -1023,21 +1022,21 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
               <div style={{ marginBottom: '28px' }}>
                 <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '12px', color: '#166534' }}>Immediate Actions</h4>
                 <ul style={{ paddingLeft: '20px', margin: 0, fontSize: '14px', lineHeight: '1.6', color: '#334155' }}>
-                  {result.strategy.immediateActions.map((action, i) => <li key={i} style={{ marginBottom: '6px' }}>{action}</li>)}
+                  {result.strategy.immediateActions.map((action, i) => <li key={i} style={{ marginBottom: '6px' }}>{stripMarkdown(action)}</li>)}
                 </ul>
               </div>
 
               <div style={{ marginBottom: '28px' }}>
                 <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '12px', color: '#1e40af' }}>Evidence To Gather</h4>
                 <ul style={{ paddingLeft: '20px', margin: 0, fontSize: '14px', lineHeight: '1.6', color: '#334155' }}>
-                  {result.strategy.evidenceToGather.map((item, i) => <li key={i} style={{ marginBottom: '6px' }}>{item}</li>)}
+                  {result.strategy.evidenceToGather.map((item, i) => <li key={i} style={{ marginBottom: '6px' }}>{stripMarkdown(item)}</li>)}
                 </ul>
               </div>
 
               <div style={{ marginBottom: '28px' }}>
                 <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '12px', color: '#991b1b' }}>Common Mistakes To Avoid</h4>
                 <ul style={{ paddingLeft: '20px', margin: 0, fontSize: '14px', lineHeight: '1.6', color: '#334155' }}>
-                  {result.strategy.commonMistakes.map((mistake, i) => <li key={i} style={{ marginBottom: '6px' }}>{mistake}</li>)}
+                  {result.strategy.commonMistakes.map((mistake, i) => <li key={i} style={{ marginBottom: '6px' }}>{stripMarkdown(mistake)}</li>)}
                 </ul>
               </div>
 
@@ -1157,8 +1156,8 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
           {hasFeature('appeal_letter') && (
             <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', minHeight: '1100px' }}>
               <h2 style={{ fontSize: '22px', fontWeight: '800', borderBottom: '3px solid #1a1a2e', paddingBottom: '12px', marginBottom: '28px', textTransform: 'uppercase', letterSpacing: '1px', color: '#1a1a2e' }}>Supporting Explanation Draft</h2>
-              <div style={{ whiteSpace: 'pre-wrap', fontFamily: "'Times New Roman', Times, serif", fontSize: '14px', lineHeight: '1.8', color: '#111', textAlign: 'justify', padding: '40px', border: '1px solid #e5e7eb', backgroundColor: '#fafafa', borderRadius: '4px' }}>
-                {result.appeal_letter}
+              <div style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: '14px', lineHeight: '1.8', color: '#111', textAlign: 'justify', padding: '40px', border: '1px solid #e5e7eb', backgroundColor: '#fafafa', borderRadius: '4px' }}>
+                <div dangerouslySetInnerHTML={{ __html: markdownToHtml(result.appeal_letter) }} />
               </div>
             </div>
           )}
