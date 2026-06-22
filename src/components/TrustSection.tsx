@@ -39,6 +39,7 @@ const nodes: NetworkNode[] = [
     { id: 'secure_proc', label: 'Secure Processing', description: 'Protected document handling and transactions.', cat: 'payment', x: -120, y: 0, icon: <ShieldCheck className="w-5 h-5 text-emerald-400" /> },
     { id: 'ssl', label: 'SSL Secure', description: 'End-to-end 256-bit encryption.', cat: 'payment', x: -60, y: -104, icon: <Lock className="w-5 h-5 text-emerald-500" /> },
     { id: 'encrypted', label: 'Encrypted Data', description: 'Secure storage and transmission.', cat: 'payment', x: -120, y: 208, icon: <Server className="w-5 h-5 text-emerald-400" /> },
+    { id: 'enterprise_sec', label: 'Enterprise Security', description: 'SOC 2 compliant infrastructure with end-to-end protection.', cat: 'payment', x: -120, y: -208, icon: <ShieldCheck className="w-5 h-5 text-emerald-400" /> },
     { id: 'privacy', label: 'Data Privacy', description: 'Strict confidentiality and zero-retention policies.', cat: 'payment', x: -60, y: -312, icon: <ShieldCheck className="w-5 h-5 text-emerald-300" /> },
     
     { id: 'visa', label: 'Visa', description: 'Verified Visa payment processing.', cat: 'payment', x: -180, y: -104, icon: <span className="font-bold text-sm md:text-lg italic tracking-tighter text-white">VISA</span> },
