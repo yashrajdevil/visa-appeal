@@ -22,7 +22,6 @@ export default function Footer() {
             <Link to="/about" className="text-zinc-400 hover:text-white transition-colors text-sm">About Us</Link>
             <Link to="/why-choose-us" className="text-zinc-400 hover:text-white transition-colors text-sm">Why Choose Us</Link>
             <Link to="/contact" className="text-zinc-400 hover:text-white transition-colors text-sm">Contact Us</Link>
-            <Link to="/guides" className="text-zinc-400 hover:text-white transition-colors text-sm">Refusal Guides</Link>
           </div>
 
           <div className="flex flex-col gap-3">

@@ -12,13 +12,14 @@
   ],
   "routes": [
     {
-      "src": "/(sitemap\\.xml|robots\\.txt)",
+      "src": "/(sitemap\\.xml)",
       "dest": "api/index.ts"
     },
     {
       "src": "/api/(.*)",
       "dest": "api/index.ts"
     },
+    { "src": "/guides(/.*)?", "dest": "/blog", "status": 301 },
     { "handle": "filesystem" },
     {
       "src": "/(.*)",

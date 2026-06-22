@@ -42,6 +42,22 @@ app.get('/sitemap.xml', async (_req, res) => {
   res.redirect(301, '/api/sitemap.xml');
 });
 
+app.get('/robots.txt', async (_req, res) => {
+  res.setHeader('Content-Type', 'text/plain');
+  res.send(`User-agent: *
+Allow: /
+
+Disallow: /admin
+Disallow: /api
+
+Sitemap: https://visa-appeal.vercel.app/sitemap.xml
+`);
+});
+
+app.use('/guides', async (_req, res) => {
+  res.redirect(301, '/blog');
+});
+
 app.get('/api/health', async (_req, res) => {
   const checks = await runAllChecks();
   const allPassed = checks.every(c => c.status === 'PASS');

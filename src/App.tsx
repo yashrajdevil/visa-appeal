@@ -19,8 +19,6 @@ import TermsView from './components/TermsView';
 import RefundView from './components/RefundView';
 import WhyChooseUsView from './components/WhyChooseUsView';
 
-import SeoHubView from './components/SeoHubView';
-import SeoGuideView from './components/SeoGuideView';
 import BlogHubView from './components/blog/BlogHubView';
 import BlogArticleView from './components/blog/BlogArticleView';
 
@@ -145,9 +143,9 @@ function AppContent() {
           <Route path="/refund" element={<RefundView />} />
           <Route path="/why-choose-us" element={<WhyChooseUsView onClickStart={() => navigate('/flow')} />} />
           
-          {/* SEO Pages */}
-          <Route path="/guides" element={<SeoHubView />} />
-          <Route path="/guides/:slug" element={<BlogArticleView />} />
+          {/* Guides Redirect */}
+          <Route path="/guides" element={<Navigate to="/blog" replace />} />
+          <Route path="/guides/*" element={<Navigate to="/blog" replace />} />
 
           {/* Blog Pages */}
           <Route path="/blog" element={<BlogHubView />} />

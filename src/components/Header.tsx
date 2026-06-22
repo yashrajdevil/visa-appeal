@@ -41,9 +41,6 @@ export default function Header() {
           <button onClick={() => handleNavClick('#pricing')} className="text-sm font-medium text-zinc-400 hover:text-white transition-colors duration-200">
             Pricing
           </button>
-          <button onClick={() => handleNavClick('guides')} className="text-sm font-medium text-zinc-400 hover:text-white transition-colors duration-200">
-            Guides
-          </button>
           
           {user ? (
             <button 

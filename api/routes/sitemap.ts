@@ -14,7 +14,6 @@ function getSiteUrl(): string {
 const staticPages = [
   { loc: '/', changefreq: 'weekly', priority: '1.0' },
   { loc: '/sample-report', changefreq: 'monthly', priority: '0.6' },
-  { loc: '/guides', changefreq: 'weekly', priority: '0.8' },
   { loc: '/blog', changefreq: 'daily', priority: '0.9' },
   { loc: '/contact', changefreq: 'monthly', priority: '0.5' },
   { loc: '/about', changefreq: 'monthly', priority: '0.5' },

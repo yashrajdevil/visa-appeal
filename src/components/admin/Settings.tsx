@@ -210,7 +210,7 @@ export default function Settings() {
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
           <h2 className="text-xl font-bold text-white mb-6">Feature Toggles</h2>
           <div className="space-y-4">
-            {(['enableBlog', 'enableGuides', 'enableSampleReport'] as const).map(f => (
+            {(['enableBlog', 'enableSampleReport'] as const).map(f => (
               <label key={f} className="flex items-center justify-between p-4 bg-zinc-950 border border-zinc-800 rounded-lg cursor-pointer hover:border-zinc-700 transition-colors">
                 <span className="text-zinc-300 font-medium capitalize">{f.replace('enable', '').replace(/([A-Z])/g, ' $1')}</span>
                 <div className="relative">
