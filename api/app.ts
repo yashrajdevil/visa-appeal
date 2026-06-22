@@ -106,5 +106,23 @@ app.post('/api/test-gemini', async (_req, res) => {
   }
 });
 
+app.get('/api/debug-gemini-project', async (_req, res) => {
+  const key = (process.env.GEMINI_API_KEY || '').trim();
+  const url = `https://generativelanguage.googleapis.com/v1/models?key=${key}`;
+  console.log('DEBUG-PROJECT URL (redacted):', url.replace(key, '***REDACTED***'));
+  try {
+    const response = await fetch(url);
+    const text = await response.text();
+    console.log('DEBUG-PROJECT status:', response.status);
+    res.json({
+      status: response.status,
+      body: text,
+    });
+  } catch (err: any) {
+    console.error('DEBUG-PROJECT error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 console.log('BOOT 5 - app export');
 export default app;
