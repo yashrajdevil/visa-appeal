@@ -89,44 +89,32 @@ router.post('/', async (req: Request, res: Response) => {
     });
   }
 
-  // 5. Process event
-  const event = req.body;
-  const eventType = event.type || '';
+  // 5. Process event — actual Creem structure: { eventType, object: { metadata, customer: { metadata }, request_id } }
+  const payload = req.body;
+  const eventType = payload.eventType || payload.type || '';
   console.log('EVENT type:', eventType);
-  console.log('EVENT top-level keys:', Object.keys(event));
-  console.log('EVENT full payload:', JSON.stringify(event, null, 2));
+  console.log('EVENT top-level keys:', Object.keys(payload));
 
-  // Check all possible metadata locations
-  const metadataSources = {
-    'event.data?.metadata': event.data?.metadata,
-    'event.metadata': event.metadata,
-    'event.data?.object?.metadata': event.data?.object?.metadata,
-    'event.data?.object?.customer?.metadata': event.data?.object?.customer?.metadata,
-  };
-  console.log('METADATA sources:', JSON.stringify(metadataSources, null, 2));
+  // Log object and customer metadata explicitly
+  console.log('METADATA source object.metadata:', JSON.stringify(payload?.object?.metadata));
+  console.log('METADATA source customer.metadata:', JSON.stringify(payload?.object?.customer?.metadata));
+  console.log('REQUEST_ID from object:', payload?.object?.request_id);
 
-  for (const [src, val] of Object.entries(metadataSources)) {
-    if (val && (val.uid || val.caseId)) {
-      console.log('METADATA FOUND in:', src, JSON.stringify(val));
-    }
-  }
+  // Extract metadata: Creem puts it in object.metadata
+  const metadata = payload?.object?.metadata || payload?.object?.customer?.metadata || {};
+  const uid = metadata.uid || '';
+  const caseId = metadata.caseId || metadata.request_id || payload?.object?.request_id || '';
+  const plan = metadata.plan || '';
 
-  const metadata = event.data?.metadata || event.metadata || event.data?.object?.metadata || {};
-  const metadataSource = event.data?.metadata ? 'event.data.metadata' : event.metadata ? 'event.metadata' : event.data?.object?.metadata ? 'event.data.object.metadata' : 'NONE';
-  console.log('METADATA USED source:', metadataSource);
-  console.log('METADATA resolved:', JSON.stringify(metadata));
-  console.log('METADATA uid:', metadata.uid);
-  console.log('METADATA caseId:', metadata.caseId);
-  console.log('METADATA plan:', metadata.plan);
+  console.log('FINAL uid:', uid);
+  console.log('FINAL caseId:', caseId);
+  console.log('FINAL plan:', plan);
 
-  if (!metadata.uid || !metadata.caseId || !metadata.plan) {
-    const requestId = event.data?.request_id || event.request_id || event.data?.object?.request_id;
-    console.log('REQUEST_ID from event:', requestId);
-    console.error('[Webhook] Missing metadata', metadata);
+  if (!uid || !caseId || !plan) {
+    console.error('[Webhook] Missing metadata', { uid, caseId, plan });
     return res.status(200).json({ received: true, warning: 'missing metadata' });
   }
 
-  const { uid, caseId, plan } = metadata;
   console.log('LOOKING UP case:', { uid, caseId });
 
   const caseRef = getDb().collection('users').doc(uid).collection('cases').doc(caseId);
@@ -140,6 +128,7 @@ router.post('/', async (req: Request, res: Response) => {
   console.log('CASE found, current paymentStatus:', caseSnap.data()?.paymentStatus);
 
   const isCompletedEvent =
+    eventType === 'checkout.completed' ||
     eventType === 'checkout.session.completed' ||
     eventType === 'payment_intent.succeeded' ||
     eventType === 'charge.succeeded';
@@ -150,11 +139,16 @@ router.post('/', async (req: Request, res: Response) => {
 
   if (isCompletedEvent) {
     console.log('UPDATING case paymentStatus -> completed');
-    await caseRef.update({
+    const updateData: Record<string, unknown> = {
       paymentStatus: 'completed',
       purchasedPlan: plan,
       updatedAt: new Date(),
-    });
+    };
+    // Save checkout details if present
+    if (payload.object?.id) updateData.checkoutId = payload.object.id;
+    if (payload.object?.order?.id) updateData.orderId = payload.object.order.id;
+    if (payload.object?.customer?.id) updateData.customerId = payload.object.customer.id;
+    await caseRef.update(updateData);
     console.log('[Webhook] Payment completed for', { uid, caseId, plan });
   } else if (isRefundedEvent) {
     console.log('UPDATING case paymentStatus -> refunded');
