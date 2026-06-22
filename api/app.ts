@@ -16,7 +16,8 @@ app.use(cors({
 
 app.use('/api/webhooks/creem', express.raw({ type: 'application/json' }), (req, _res, next) => {
   if (Buffer.isBuffer(req.body)) {
-    req.body = JSON.parse(req.body.toString('utf8'));
+    (req as any).rawBody = req.body.toString('utf8');
+    req.body = JSON.parse((req as any).rawBody);
   }
   next();
 }, webhookRouter);

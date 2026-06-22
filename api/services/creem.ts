@@ -88,21 +88,21 @@ export async function createCheckoutSession(params: {
   return parsed as { checkout_url: string; id: string };
 }
 
+import crypto from 'crypto';
+
 export async function verifyWebhookSignature(body: string, signature: string): Promise<boolean> {
   const secret = process.env.CREEM_WEBHOOK_SECRET;
   if (!secret) return false;
 
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    'raw',
-    encoder.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['verify']
-  );
-
-  const sigBytes = new Uint8Array(signature.match(/.{1,2}/g)!.map(b => parseInt(b, 16)));
-  return crypto.subtle.verify('HMAC', key, sigBytes, encoder.encode(body));
+  try {
+    const computed = crypto.createHmac('sha256', secret).update(body).digest('hex');
+    console.log('COMPUTED signature:', computed.slice(0, 20) + '...');
+    console.log('RECEIVED signature:', signature.slice(0, 20) + '...');
+    return crypto.timingSafeEqual(Buffer.from(computed, 'hex'), Buffer.from(signature, 'hex'));
+  } catch (err) {
+    console.error('[verifyWebhookSignature] Error:', err);
+    return false;
+  }
 }
 
 function getPriceId(plan: string): string {
