@@ -1,4 +1,5 @@
 import { getDb, getAuth } from './firebase.js';
+import { MODEL_NAME } from './services/gemini.js';
 console.log('BOOT TRACE - api/validate.ts loaded');
 
 interface CheckResult {
@@ -84,7 +85,7 @@ async function checkGemini(): Promise<CheckResult> {
   console.log('CHECK-GEMINI raw length:', rawKey?.length);
   console.log('CHECK-GEMINI trimmed length:', key.length);
   console.log('CHECK-GEMINI prefix:', key.slice(0, 10));
-  const model = 'gemini-2.0-flash';
+  const model = MODEL_NAME;
   const baseUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
   const url = `${baseUrl}?key=${key}`;
   console.log('CHECK-GEMINI URL (redacted):', url.replace(key, '***REDACTED***'));

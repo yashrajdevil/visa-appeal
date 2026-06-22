@@ -1,9 +1,9 @@
 console.log('BOOT TRACE - api/services/gemini.ts loaded');
-const MODEL = 'gemini-2.0-flash';
+export const MODEL_NAME = 'gemini-2.5-flash';
 
 function getApiUrl(): string {
   const key = (process.env.GEMINI_API_KEY || '').trim();
-  return `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`;
+  return `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${key}`;
 }
 
 export async function generateAnalysis(formData: {
@@ -29,7 +29,7 @@ export async function generateAnalysis(formData: {
   console.log('TRIMMED SUFFIX:', trimmedKey.slice(-5));
 
   const prompt = buildPrompt(formData);
-  const model = MODEL;
+  const model = MODEL_NAME;
   const requestBody = JSON.stringify({
     contents: [{
       parts: [{ text: prompt }],
