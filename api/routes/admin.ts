@@ -2,11 +2,10 @@ import { Router, Request, Response } from 'express';
 import express from 'express';
 import { getDb, getAuth } from '../firebase.js';
 import { Timestamp } from 'firebase-admin/firestore';
+import { verifyAdmin } from '../middleware/auth.js';
 
 const router = Router();
 
-// Belt-and-suspenders: apply JSON body parser directly to this router
-// to ensure body is parsed even if app-level express.json() fails
 router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
 
@@ -41,23 +40,12 @@ router.get('/verify', async (req: Request, res: Response) => {
 });
 
 router.post('/login', async (req: Request, res: Response) => {
-  console.log('ADMIN LOGIN HIT');
-  console.log('METHOD:', req.method);
-  console.log('HEADERS:', req.headers);
-  console.log('CONTENT TYPE:', req.headers['content-type']);
-  console.log('REQ BODY:', req.body);
   try {
     const body = req.body || {};
     const { email, password } = body;
 
     if (!email || !password) {
-      console.error('[Admin Login] Missing credentials');
-      return res.status(400).json({
-        success: false,
-        bodyReceived: req.body,
-        contentType: req.headers['content-type'],
-        error: 'Email and password are required',
-      });
+      return res.status(400).json({ error: 'Email and password are required' });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
@@ -75,17 +63,15 @@ router.post('/login', async (req: Request, res: Response) => {
       const token = await auth.createCustomToken(normalizedEmail, { role, provider: 'env' });
       return res.json({ token, email: normalizedEmail, role });
     } catch (fbErr: any) {
-      console.error('[Admin] Firebase custom token failed, falling back to session token:', fbErr.message);
       const sessionToken = Buffer.from(JSON.stringify({ email: normalizedEmail, role, iat: Date.now() })).toString('base64');
       return res.json({ token: sessionToken, email: normalizedEmail, role, sessionOnly: true });
     }
   } catch (err: any) {
-    console.error('[Admin Login Error]', err);
     return res.status(500).json({ error: 'Login failed. Please try again.' });
   }
 });
 
-router.get('/settings', async (_req: Request, res: Response) => {
+router.get('/settings', verifyAdmin, async (_req: Request, res: Response) => {
   try {
     const db = getDb();
     const doc = await db.collection('admin').doc('settings').get();
@@ -93,7 +79,7 @@ router.get('/settings', async (_req: Request, res: Response) => {
       pricing: { starter: 29, standard: 59, premium: 99, currency: 'USD' },
       cta: { headline: 'Build Your Visa Appeal', subtitle: 'AI-powered analysis in minutes', buttonText: 'Start Your Appeal' },
       seo: { siteTitle: 'Visa Appeal Builder', metaDescription: '', ogImage: '' },
-      features: { enableBlog: true, enableGuides: true, enableSampleReport: true },
+      features: { enableBlog: true, enableSampleReport: true },
       branding: { siteName: 'Visa Appeal Builder', logoUrl: '', faviconUrl: '' },
     };
     if (!doc.exists) {
@@ -103,12 +89,11 @@ router.get('/settings', async (_req: Request, res: Response) => {
     const data = doc.data();
     return res.json({ ...defaults, ...data });
   } catch (err: any) {
-    console.error('[Admin Settings GET Error]', err);
     return res.status(500).json({ error: err.message });
   }
 });
 
-router.put('/settings', async (req: Request, res: Response) => {
+router.put('/settings', verifyAdmin, async (req: Request, res: Response) => {
   try {
     const db = getDb();
     const allowed = ['pricing', 'cta', 'seo', 'features', 'branding'];
@@ -127,24 +112,22 @@ router.put('/settings', async (req: Request, res: Response) => {
     const updated = await db.collection('admin').doc('settings').get();
     return res.json(updated.data());
   } catch (err: any) {
-    console.error('[Admin Settings PUT Error]', err);
     return res.status(500).json({ error: err.message });
   }
 });
 
-router.get('/users', async (_req: Request, res: Response) => {
+router.get('/users', verifyAdmin, async (_req: Request, res: Response) => {
   try {
     const db = getDb();
     const snapshot = await db.collection('admin').doc('users').collection('list').orderBy('createdAt', 'desc').get();
     const users = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     return res.json(users);
   } catch (err: any) {
-    console.error('[Admin Users GET Error]', err);
     return res.status(500).json({ error: err.message });
   }
 });
 
-router.post('/users', async (req: Request, res: Response) => {
+router.post('/users', verifyAdmin, async (req: Request, res: Response) => {
   try {
     const body = req.body || {};
     const { email, role } = body;
@@ -167,12 +150,11 @@ router.post('/users', async (req: Request, res: Response) => {
     const created = await docRef.get();
     return res.json({ id: created.id, ...created.data() });
   } catch (err: any) {
-    console.error('[Admin Users POST Error]', err);
     return res.status(500).json({ error: err.message });
   }
 });
 
-router.patch('/users/:id', async (req: Request, res: Response) => {
+router.patch('/users/:id', verifyAdmin, async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
     const body = req.body || {};
@@ -185,19 +167,17 @@ router.patch('/users/:id', async (req: Request, res: Response) => {
     const updated = await db.collection('admin').doc('users').collection('list').doc(id).get();
     return res.json({ id: updated.id, ...updated.data() });
   } catch (err: any) {
-    console.error('[Admin Users PATCH Error]', err);
     return res.status(500).json({ error: err.message });
   }
 });
 
-router.delete('/users/:id', async (req: Request, res: Response) => {
+router.delete('/users/:id', verifyAdmin, async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
     const db = getDb();
     await db.collection('admin').doc('users').collection('list').doc(id).delete();
     return res.json({ success: true });
   } catch (err: any) {
-    console.error('[Admin Users DELETE Error]', err);
     return res.status(500).json({ error: err.message });
   }
 });
