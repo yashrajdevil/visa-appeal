@@ -19,31 +19,47 @@ export async function createCheckoutSession(params: {
 
   const priceId = getPriceId(params.plan);
 
+  const requestBody = {
+    product_id: priceId,
+    success_url: params.successUrl,
+    cancel_url: params.cancelUrl,
+    request_id: params.caseId,
+    metadata: {
+      uid: params.uid,
+      caseId: params.caseId,
+      plan: params.plan,
+    },
+  };
+
+  console.log('[creem] Request URL:', `${CREEM_API_URL}/checkouts`);
+  console.log('[creem] Request headers:', JSON.stringify({
+    'Content-Type': 'application/json',
+    'x-api-key': apiKey.slice(0, 8) + '...' + apiKey.slice(-4),
+  }));
+  console.log('[creem] Request body:', JSON.stringify(requestBody));
+
   const response = await fetch(`${CREEM_API_URL}/checkouts`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'x-api-key': apiKey,
     },
-    body: JSON.stringify({
-      product_id: priceId,
-      success_url: params.successUrl,
-      cancel_url: params.cancelUrl,
-      request_id: params.caseId,
-      metadata: {
-        uid: params.uid,
-        caseId: params.caseId,
-        plan: params.plan,
-      },
-    }),
+    body: JSON.stringify(requestBody),
   });
 
+  const responseBody = await response.text();
+  console.log('[creem] Response status:', response.status);
+  console.log('[creem] Response body:', responseBody);
+
   if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`Creem API error: ${response.status} ${err}`);
+    throw new Error(`Creem API error: ${response.status} ${responseBody}`);
   }
 
-  return response.json() as Promise<{ checkout_url: string; id: string }>;
+  const parsed = JSON.parse(responseBody);
+  console.log('[creem] checkout_url:', parsed.checkout_url);
+  console.log('[creem] session id:', parsed.id);
+
+  return parsed as { checkout_url: string; id: string };
 }
 
 export async function verifyWebhookSignature(body: string, signature: string): Promise<boolean> {

@@ -45,6 +45,9 @@ router.post('/', verifyAuth, async (req: AuthenticatedRequest, res: Response) =>
       cancelUrl,
     });
 
+    console.log('[checkout] Plan:', plan);
+    console.log('[checkout] checkout_url returned by Creem:', session.checkout_url);
+
     await caseRef.update({
       paymentStatus: 'pending',
       purchasedPlan: plan,
