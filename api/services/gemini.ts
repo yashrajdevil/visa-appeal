@@ -19,8 +19,13 @@ export async function generateAnalysis(formData: {
   }
 
   const prompt = buildPrompt(formData);
+  const apiUrl = getApiUrl();
 
-  const response = await fetch(getApiUrl(), {
+  console.log('GEMINI KEY PREFIX:', process.env.GEMINI_API_KEY?.slice(0, 15));
+  console.log('GEMINI MODEL:', MODEL);
+  console.log('GEMINI URL (redacted):', apiUrl.replace(process.env.GEMINI_API_KEY || '', '***REDACTED***'));
+
+  const response = await fetch(apiUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

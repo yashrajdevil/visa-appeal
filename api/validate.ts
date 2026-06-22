@@ -80,7 +80,12 @@ async function checkFirestoreRead(): Promise<CheckResult> {
 
 async function checkGemini(): Promise<CheckResult> {
   const apiKey = process.env.GEMINI_API_KEY;
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  console.log('CHECK-GEMINI key prefix:', apiKey?.slice(0, 15));
+  console.log('CHECK-GEMINI key length:', apiKey?.length);
+  const model = 'gemini-2.0-flash';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  console.log('CHECK-GEMINI model:', model);
+  console.log('CHECK-GEMINI URL (redacted):', url.replace(apiKey || '', '***REDACTED***'));
   try {
     const response = await fetch(url, {
       method: 'POST',

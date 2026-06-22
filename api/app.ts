@@ -34,5 +34,39 @@ app.get('/api/health', async (_req, res) => {
   });
 });
 
+app.post('/api/test-gemini', async (_req, res) => {
+  const key = process.env.GEMINI_API_KEY;
+  console.log('TEST-GEMINI key prefix:', key?.slice(0, 15));
+  console.log('TEST-GEMINI key length:', key?.length);
+
+  const model = 'gemini-2.0-flash';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+  console.log('TEST-GEMINI model:', model);
+  console.log('TEST-GEMINI URL (redacted):', url.replace(key || '', '***REDACTED***'));
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: 'hello' }] }],
+      }),
+    });
+
+    const text = await response.text();
+    console.log('TEST-GEMINI status:', response.status);
+    console.log('TEST-GEMINI response:', text.slice(0, 1000));
+
+    res.json({
+      status: response.status,
+      ok: response.ok,
+      body: text,
+    });
+  } catch (err: any) {
+    console.error('TEST-GEMINI error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 console.log('BOOT 5 - app export');
 export default app;
