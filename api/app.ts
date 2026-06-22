@@ -15,8 +15,6 @@ app.use(cors({
   credentials: true,
 }));
 
-app.use('/api/admin', adminRouter);
-
 app.use('/api/webhooks/creem', express.raw({ type: 'application/json' }), (req, _res, next) => {
   if (Buffer.isBuffer(req.body)) {
     (req as any).rawBody = req.body.toString('utf8');
@@ -32,7 +30,9 @@ app.get('/api/webhooks/creem', (_req, res) => {
 });
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
+app.use('/api/admin', adminRouter);
 app.use('/api/analyze', analyzeRouter);
 app.use('/api/checkout', checkoutRouter);
 

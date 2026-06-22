@@ -1,8 +1,14 @@
 import { Router, Request, Response } from 'express';
+import express from 'express';
 import { getDb, getAuth } from '../firebase.js';
 import { Timestamp } from 'firebase-admin/firestore';
 
 const router = Router();
+
+// Belt-and-suspenders: apply JSON body parser directly to this router
+// to ensure body is parsed even if app-level express.json() fails
+router.use(express.json());
+router.use(express.urlencoded({ extended: true }));
 
 function getAdminEmails(): { email: string; password: string }[] {
   const primaryEmail = process.env.ADMIN_EMAIL?.trim();
@@ -35,10 +41,23 @@ router.get('/verify', async (req: Request, res: Response) => {
 });
 
 router.post('/login', async (req: Request, res: Response) => {
+  console.log('ADMIN LOGIN HIT');
+  console.log('METHOD:', req.method);
+  console.log('HEADERS:', req.headers);
+  console.log('CONTENT TYPE:', req.headers['content-type']);
+  console.log('REQ BODY:', req.body);
   try {
-    const { email, password } = req.body;
+    const body = req.body || {};
+    const { email, password } = body;
+
     if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
+      console.error('[Admin Login] Missing credentials');
+      return res.status(400).json({
+        success: false,
+        bodyReceived: req.body,
+        contentType: req.headers['content-type'],
+        error: 'Email and password are required',
+      });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
@@ -127,7 +146,8 @@ router.get('/users', async (_req: Request, res: Response) => {
 
 router.post('/users', async (req: Request, res: Response) => {
   try {
-    const { email, role } = req.body;
+    const body = req.body || {};
+    const { email, role } = body;
     if (!email || !role) {
       return res.status(400).json({ error: 'Email and role are required' });
     }
@@ -141,7 +161,7 @@ router.post('/users', async (req: Request, res: Response) => {
       email: email.toLowerCase().trim(),
       role,
       createdAt: Timestamp.now(),
-      createdBy: req.body.createdBy || 'admin',
+      createdBy: body.createdBy || 'admin',
       status: 'active',
     });
     const created = await docRef.get();
@@ -155,7 +175,8 @@ router.post('/users', async (req: Request, res: Response) => {
 router.patch('/users/:id', async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
-    const { role, status } = req.body;
+    const body = req.body || {};
+    const { role, status } = body;
     const db = getDb();
     const update: Record<string, any> = { updatedAt: Timestamp.now() };
     if (role) update.role = role;
