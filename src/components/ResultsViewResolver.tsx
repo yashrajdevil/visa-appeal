@@ -5,7 +5,54 @@ import { db, auth } from '../firebase';
 import { createCheckout } from '../services/api';
 import ResultsDashboard from './ResultsDashboard';
 import { GenerateAppealResponse } from '../types';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2, AlertTriangle, Clock } from 'lucide-react';
+
+function PurchasePending({ caseId, paymentStatus }: { caseId: string; paymentStatus: string }) {
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowDiagnostics(true), 30000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!showDiagnostics) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
+        <h2 className="text-xl font-semibold text-white">Processing your purchase...</h2>
+        <p className="text-zinc-400">Your results will unlock automatically once payment is confirmed.</p>
+      </div>
+    );
+  }
+
+  const params = new URLSearchParams(window.location.search);
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8">
+      <Clock className="w-12 h-12 text-amber-400" />
+      <h2 className="text-xl font-semibold text-white">Payment Confirmed — Waiting for Processing</h2>
+      <p className="text-zinc-400 text-center max-w-md">
+        Your payment was received but the unlock hasn't completed yet.
+        If this persists, try refreshing the page.
+      </p>
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 w-full max-w-lg space-y-2 text-sm font-mono">
+        <div className="text-zinc-300"><span className="text-zinc-500">caseId:</span> {caseId}</div>
+        <div className="text-zinc-300"><span className="text-zinc-500">paymentStatus:</span> {paymentStatus}</div>
+        <div className="text-zinc-300"><span className="text-zinc-500">request_id:</span> {params.get('request_id') || 'N/A'}</div>
+        <div className="text-zinc-300"><span className="text-zinc-500">checkout_id:</span> {params.get('checkout_id') || 'N/A'}</div>
+        <div className="text-zinc-300"><span className="text-zinc-500">order_id:</span> {params.get('order_id') || 'N/A'}</div>
+        <div className="text-zinc-300"><span className="text-zinc-500">customer_id:</span> {params.get('customer_id') || 'N/A'}</div>
+        <div className="text-zinc-300"><span className="text-zinc-500">product_id:</span> {params.get('product_id') || 'N/A'}</div>
+      </div>
+      <button
+        onClick={() => window.location.reload()}
+        className="mt-2 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-500 transition"
+      >
+        Refresh
+      </button>
+    </div>
+  );
+}
 
 class ResultsErrorBoundary extends Component<
   { children: React.ReactNode; caseId?: string },
@@ -137,13 +184,7 @@ export default function ResultsViewResolver({ onReset }: Props) {
   }
 
   if (isPurchaseSuccess && caseData.paymentStatus !== 'completed') {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
-        <h2 className="text-xl font-semibold text-white">Processing your purchase...</h2>
-        <p className="text-zinc-400">Your results will unlock automatically once payment is confirmed.</p>
-      </div>
-    );
+    return <PurchasePending caseId={caseId} paymentStatus={caseData.paymentStatus} />;
   }
 
   const analysisData = caseData.analysisData;
