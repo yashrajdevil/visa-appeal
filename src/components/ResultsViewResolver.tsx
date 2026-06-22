@@ -130,6 +130,9 @@ export default function ResultsViewResolver({ onReset }: Props) {
     const user = auth.currentUser;
     if (!user) return;
 
+    const resultsPath = `users/${user.uid}/cases/${caseId}`;
+    console.log(`RESULTS PAGE QUERY PATH: ${resultsPath}`);
+
     const caseRef = doc(db, 'users', user.uid, 'cases', caseId);
 
     const unsubscribe = onSnapshot(caseRef, (snap) => {

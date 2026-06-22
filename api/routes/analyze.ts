@@ -4,7 +4,6 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { AuthenticatedRequest, verifyAuth } from '../middleware/auth.js';
 import { getDb } from '../firebase.js';
 import { generateAnalysis } from '../services/gemini.js';
-console.log('BOOT TRACE - api/routes/analyze.ts loaded');
 
 const router = Router();
 
@@ -28,6 +27,11 @@ router.post('/', verifyAuth, async (req: AuthenticatedRequest, res: Response) =>
       questionnaireResponses: questionnaireResponses || [],
     });
 
+    const casePath = `users/${uid}/cases/${caseId}`;
+    console.log(`CASE LOOKUP PATH: ${casePath}`);
+    const existingSnap = await getDb().collection('users').doc(uid).collection('cases').doc(caseId).get();
+    console.log(`CASE FOUND: ${existingSnap.exists}`);
+
     const caseDoc = {
       caseId,
       createdAt: Timestamp.now(),
@@ -41,10 +45,11 @@ router.post('/', verifyAuth, async (req: AuthenticatedRequest, res: Response) =>
     };
 
     await getDb().collection('users').doc(uid).collection('cases').doc(caseId).set(caseDoc);
+    console.log(`CASE WRITE SUCCESS: ${casePath}`);
 
     return res.json({ caseId });
   } catch (err: any) {
-    console.error('[Analyze]', err);
+    console.error(`CASE WRITE FAILED:`, err);
     return res.status(500).json({ error: err.message || 'Analysis failed' });
   }
 });

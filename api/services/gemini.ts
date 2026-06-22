@@ -1,5 +1,3 @@
-console.log('BOOT TRACE - api/services/gemini.ts loaded');
-
 export const MODEL_FALLBACKS = [
   'gemini-3.5-flash',
   'gemini-3.1-flash-lite',
@@ -112,15 +110,7 @@ export async function generateAnalysis(formData: {
     throw new Error('GEMINI_API_KEY is not configured');
   }
 
-  console.log('GEMINI KEY LENGTH:', rawKey.length);
-  console.log('GEMINI KEY LAST CHAR CODE:', rawKey.charCodeAt(rawKey.length - 1));
-  console.log('GEMINI KEY PREFIX:', rawKey.slice(0, 15));
-
   const trimmedKey = rawKey.trim();
-  console.log('TRIMMED LENGTH:', trimmedKey.length);
-  console.log('TRIMMED PREFIX:', trimmedKey.slice(0, 10));
-  console.log('TRIMMED SUFFIX:', trimmedKey.slice(-5));
-
   const prompt = buildPrompt(formData);
   const { text } = await generateWithFallback(prompt, { temperature: 0.7, maxOutputTokens: 8192 });
 
