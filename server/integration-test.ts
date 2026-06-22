@@ -184,7 +184,7 @@ async function flowD(idToken: string, caseId: string) {
     // D2 — Verify Creem metadata via Creem API
     const sessionId = data.checkoutUrl?.split('/').pop();
     if (sessionId) {
-      const creemRes = await fetch(`https://api.creem.io/v1/checkout-sessions/${sessionId}`, {
+      const creemRes = await fetch(`https://api.creem.io/v1/checkouts?checkout_id=${sessionId}`, {
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': process.env.CREEM_API_KEY!,

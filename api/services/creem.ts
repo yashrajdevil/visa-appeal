@@ -19,16 +19,17 @@ export async function createCheckoutSession(params: {
 
   const priceId = getPriceId(params.plan);
 
-  const response = await fetch(`${CREEM_API_URL}/checkout-sessions`, {
+  const response = await fetch(`${CREEM_API_URL}/checkouts`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'x-api-key': apiKey,
     },
     body: JSON.stringify({
-      price_id: priceId,
+      product_id: priceId,
       success_url: params.successUrl,
       cancel_url: params.cancelUrl,
+      request_id: params.caseId,
       metadata: {
         uid: params.uid,
         caseId: params.caseId,
