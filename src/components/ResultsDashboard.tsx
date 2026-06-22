@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion } from 'motion/react';
-import { Download, Copy, CheckCircle2, ChevronLeft, FileText, CheckSquare, Clock, Briefcase, AlertCircle, Lock, ShoppingCart, Loader2 } from 'lucide-react';
+import { Download, Copy, CheckCircle2, ChevronLeft, FileText, CheckSquare, Clock, Briefcase, AlertCircle, Lock, ShoppingCart, Loader2, Zap, Shield, Crown, X } from 'lucide-react';
 import { GenerateAppealResponse, ChecklistItem } from '../types';
 import SEO from './SEO';
 
@@ -13,42 +13,88 @@ interface ResultsDashboardProps {
   isPurchasing?: boolean;
 }
 
-const PLAN_TIERS = ['starter', 'standard', 'premium'];
+const PLAN_TIERS = ['starter', 'standard', 'premium'] as const;
 
 function hasAccess(purchasedPlan: string | undefined, requiredTier: string): boolean {
   if (!purchasedPlan) return false;
-  return PLAN_TIERS.indexOf(purchasedPlan) >= PLAN_TIERS.indexOf(requiredTier);
+  return PLAN_TIERS.indexOf(purchasedPlan as any) >= PLAN_TIERS.indexOf(requiredTier as any);
 }
 
 const PLANS = [
-  { id: 'starter', name: 'Starter', price: '$9.99', features: ['Document Draft', 'Basic Checklist', 'PDF Export'], color: 'indigo' },
-  { id: 'standard', name: 'Standard', price: '$19.99', features: ['Everything in Starter', 'Readiness Score', 'Reapplication Planner', 'Country-Specific Recommendations', 'Embassy-Ready Formatting'], color: 'indigo', recommended: true },
-  { id: 'premium', name: 'Premium', price: '$34.99', features: ['Everything in Standard', 'Detailed Refusal Analysis', 'Evidence Roadmap', 'Weakness Analysis', 'Readiness Outlook Report', 'Complete Premium PDF Package'], color: 'purple' },
+  { id: 'starter', name: 'Starter', price: '$9.99', icon: Zap, color: 'indigo' },
+  { id: 'standard', name: 'Standard', price: '$19.99', icon: Shield, color: 'indigo', recommended: true },
+  { id: 'premium', name: 'Premium', price: '$34.99', icon: Crown, color: 'purple' },
 ];
+
+const FEATURES = [
+  { key: 'appeal_letter', label: 'Explanation Letter Draft', starter: true, standard: true, premium: true },
+  { key: 'basic_checklist', label: 'Basic Document Checklist', starter: true, standard: true, premium: true },
+  { key: 'pdf_export', label: 'PDF Export', starter: true, standard: true, premium: true },
+  { key: 'readiness_score', label: 'Application Readiness Score', starter: false, standard: true, premium: true },
+  { key: 'strategy', label: 'Reapplication Strategy Planner', starter: false, standard: true, premium: true },
+  { key: 'categorized_checklist', label: 'Categorized Document Checklist', starter: false, standard: true, premium: true },
+  { key: 'refusal_analysis', label: 'Detailed Refusal Analysis', starter: false, standard: false, premium: true },
+  { key: 'executive_summary', label: 'Executive Summary & Assessment', starter: false, standard: false, premium: true },
+];
+
+type FeatureKey = typeof FEATURES[number]['key'];
+
+const FEATURE_PLAN: Record<FeatureKey, 'starter' | 'standard' | 'premium'> = {
+  appeal_letter: 'starter',
+  basic_checklist: 'starter',
+  pdf_export: 'starter',
+  readiness_score: 'standard',
+  strategy: 'standard',
+  categorized_checklist: 'standard',
+  refusal_analysis: 'premium',
+  executive_summary: 'premium',
+};
+
+function getRequiredPlanLabel(featureKey: FeatureKey): string {
+  const plan = FEATURE_PLAN[featureKey];
+  if (plan === 'starter') return 'Starter';
+  if (plan === 'standard') return 'Standard & Premium';
+  return 'Premium';
+}
 
 function PlanCard({ plan, onPurchase, isPurchasing }: { plan: typeof PLANS[0]; onPurchase: (plan: 'starter' | 'standard' | 'premium') => void; isPurchasing?: boolean }) {
   const isPurple = plan.color === 'purple';
-  const accentColor = isPurple ? 'purple' : 'indigo';
+  const Icon = plan.icon;
   return (
-    <div className={`bg-zinc-900 border rounded-2xl p-6 flex flex-col ${plan.recommended ? `border-${accentColor}-500 shadow-[0_0_40px_rgba(99,102,241,0.1)]` : 'border-zinc-800'}`}>
+    <div className={`bg-zinc-900 border rounded-2xl p-6 flex flex-col ${plan.recommended ? `border-indigo-500 shadow-[0_0_40px_rgba(99,102,241,0.15)]` : 'border-zinc-800'}`}>
       {plan.recommended && (
         <div className="text-center -mt-10 mb-4">
           <span className="px-3 py-1 bg-indigo-500 text-white text-xs font-bold uppercase tracking-wide rounded-full">Most Popular</span>
         </div>
       )}
-      <h3 className="text-xl font-semibold mb-2">{plan.name}</h3>
-      <div className="text-3xl font-bold mb-6">{plan.price}</div>
-      <ul className="space-y-3 mb-8 flex-1">
-        {plan.features.map((f, i) => (
-          <li key={i} className="text-sm text-zinc-300 flex items-start gap-2">
-            <span className={`text-${accentColor}-400 mt-0.5`}>&#10003;</span> {f}
-          </li>
-        ))}
-      </ul>
+      <div className="flex items-center gap-3 mb-4">
+        <div className={`p-2 rounded-lg ${isPurple ? 'bg-purple-500/10' : 'bg-indigo-500/10'}`}>
+          <Icon className={`w-5 h-5 ${isPurple ? 'text-purple-400' : 'text-indigo-400'}`} />
+        </div>
+        <div>
+          <h3 className="text-xl font-semibold text-white">{plan.name}</h3>
+          <div className="text-3xl font-bold text-white">{plan.price}</div>
+        </div>
+      </div>
+      <div className="flex-1 space-y-2 mb-6">
+        {FEATURES.map((f) => {
+          const included = f[plan.id as keyof typeof f];
+          return (
+            <div key={f.key} className={`flex items-center gap-2 text-sm ${included ? 'text-zinc-300' : 'text-zinc-600'}`}>
+              {included ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+              ) : (
+                <X className="w-4 h-4 text-zinc-700 flex-shrink-0" />
+              )}
+              {f.label}
+            </div>
+          );
+        })}
+      </div>
       <button
         onClick={() => onPurchase(plan.id as 'starter' | 'standard' | 'premium')}
         disabled={isPurchasing}
-        className={`w-full py-3 rounded-full bg-${accentColor}-600 text-white font-semibold hover:bg-${accentColor}-500 transition disabled:opacity-50 flex items-center justify-center gap-2`}
+        className={`w-full py-3 rounded-full ${isPurple ? 'bg-purple-600 hover:bg-purple-500' : 'bg-indigo-600 hover:bg-indigo-500'} text-white font-semibold transition disabled:opacity-50 flex items-center justify-center gap-2`}
       >
         {isPurchasing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingCart className="w-4 h-4" />}
         {isPurchasing ? 'Redirecting...' : `Choose ${plan.name}`}
@@ -57,31 +103,112 @@ function PlanCard({ plan, onPurchase, isPurchasing }: { plan: typeof PLANS[0]; o
   );
 }
 
-function LockOverlay({ label, onPurchase, plan = 'starter' }: { label: string; onPurchase?: (plan: 'starter' | 'standard' | 'premium') => void; plan?: 'starter' | 'standard' | 'premium' }) {
+function PlanBadge({ plan }: { plan: string }) {
+  const p = PLANS.find(x => x.id === plan);
+  if (!p) return null;
+  const colors: Record<string, string> = { starter: 'bg-zinc-700 text-zinc-300', standard: 'bg-indigo-500/20 text-indigo-300', premium: 'bg-purple-500/20 text-purple-300' };
+  return <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider ${colors[plan] || colors.starter}`}>{p.name}</span>;
+}
+
+function LockOverlay({ featureKey, onPurchase }: { featureKey: FeatureKey; onPurchase?: (plan: 'starter' | 'standard' | 'premium') => void }) {
+  const plan = FEATURE_PLAN[featureKey];
+  const feature = FEATURES.find(f => f.key === featureKey);
+  const p = PLANS.find(x => x.id === plan);
   return (
-    <div className="absolute inset-0 z-20 backdrop-blur-md bg-zinc-950/80 flex flex-col items-center justify-center p-4 text-center rounded-2xl">
+    <div className="absolute inset-0 z-20 backdrop-blur-md bg-zinc-950/80 flex flex-col items-center justify-center p-6 text-center rounded-2xl">
       <Lock className="w-6 h-6 text-amber-400 mb-2" />
-      <p className="text-sm text-zinc-300 font-medium mb-3">{label}</p>
+      <p className="text-sm text-zinc-300 font-medium mb-1">{feature?.label || featureKey}</p>
+      <p className="text-xs text-zinc-500 mb-4">Available in {getRequiredPlanLabel(featureKey)}</p>
       {onPurchase && (
         <button
           type="button"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPurchase(plan); }}
           className="text-sm px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold rounded-full transition-colors shadow-lg"
         >
-          Unlock Now
+          Unlock {p?.name || plan} ({p?.price})
         </button>
       )}
     </div>
   );
 }
 
+function PricingTable({ onPurchase }: { onPurchase?: (plan: 'starter' | 'standard' | 'premium') => void }) {
+  return (
+    <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-zinc-800">
+              <th className="text-left py-4 px-6 text-zinc-400 font-medium">Feature</th>
+              {PLANS.map(p => (
+                <th key={p.id} className={`text-center py-4 px-4 ${p.recommended ? 'bg-indigo-500/5' : ''}`}>
+                  <div className="flex items-center justify-center gap-1.5 mb-1">
+                    <p.icon className={`w-4 h-4 ${p.color === 'purple' ? 'text-purple-400' : 'text-indigo-400'}`} />
+                    <span className="text-white font-semibold">{p.name}</span>
+                  </div>
+                  <div className="text-lg font-bold text-white">{p.price}</div>
+                  {p.recommended && <div className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider mt-1">Recommended</div>}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {FEATURES.map((f) => (
+              <tr key={f.key} className="border-b border-zinc-800/50">
+                <td className="py-3.5 px-6 text-zinc-300">{f.label}</td>
+                {PLANS.map(p => {
+                  const included = f[p.id as keyof typeof f];
+                  return (
+                    <td key={p.id} className={`text-center py-3.5 px-4 ${p.recommended ? 'bg-indigo-500/5' : ''}`}>
+                      {included ? (
+                        <CheckCircle2 className="w-5 h-5 text-emerald-500 mx-auto" />
+                      ) : (
+                        <X className="w-5 h-5 text-zinc-700 mx-auto" />
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="p-6 border-t border-zinc-800">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {PLANS.map(p => (
+            <button
+              key={p.id}
+              onClick={() => onPurchase?.(p.id as 'starter' | 'standard' | 'premium')}
+              className={`w-full py-3 rounded-xl font-semibold text-sm transition ${
+                p.recommended ? 'bg-indigo-600 text-white hover:bg-indigo-500' :
+                p.color === 'purple' ? 'bg-purple-600 text-white hover:bg-purple-500' :
+                'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+              }`}
+            >
+              Choose {p.name}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ResultsDashboard({ result, onReset, purchasedPlan, isSample = false, onPurchase, isPurchasing }: ResultsDashboardProps) {
   const [copied, setCopied] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const pdfContentRef = useRef<HTMLDivElement>(null);
+  const pdfWrapperRef = useRef<HTMLDivElement>(null);
   const isPreview = !purchasedPlan && !isSample;
   const isStarter = hasAccess(purchasedPlan, 'starter');
   const isStandard = hasAccess(purchasedPlan, 'standard');
   const isPremium = hasAccess(purchasedPlan, 'premium');
+
+  const hasFeature = (key: FeatureKey): boolean => {
+    if (isSample) return true;
+    if (isPreview) return false;
+    return hasAccess(purchasedPlan, FEATURE_PLAN[key]);
+  };
 
   const handleCopy = () => {
     navigator.clipboard.writeText(result.appeal_letter);
@@ -89,59 +216,112 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleDownload = async () => {
+  const handleDownloadPdf = async () => {
     if (isPreview && onPurchase) {
       onPurchase('starter');
       return;
     }
-    if (pdfContentRef.current) {
-      const element = pdfContentRef.current;
-      element.style.display = 'block';
+    if (!hasFeature('pdf_export')) {
+      onPurchase?.('starter');
+      return;
+    }
 
-      try {
-        const { default: html2canvas } = await import('html2canvas');
-        const { jsPDF } = await import('jspdf');
-        
-        const canvas = await html2canvas(element, { scale: 2, useCORS: true });
-        const imgData = canvas.toDataURL('image/jpeg', 0.98);
-        const pdf = new jsPDF({ unit: 'in', format: 'a4', orientation: 'portrait' });
-        
-        const pdfWidth = 8.27;
-        const pdfHeight = 11.69;
-        const imgWidth = canvas.width;
-        const imgHeight = canvas.height;
-        const ratio = imgWidth / pdfWidth;
-        const computedHeight = imgHeight / ratio;
+    setPdfLoading(true);
+    console.log('[PDF] Starting PDF generation...');
 
-        let heightLeft = computedHeight;
-        let position = 0;
+    if (!pdfWrapperRef.current) {
+      console.error('[PDF] pdfWrapperRef not found');
+      setPdfLoading(false);
+      return;
+    }
 
-        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, computedHeight);
-        heightLeft -= pdfHeight;
+    const wrapper = pdfWrapperRef.current;
+    const content = pdfContentRef.current;
+    if (!content) {
+      console.error('[PDF] pdfContentRef not found');
+      setPdfLoading(false);
+      return;
+    }
 
-        while (heightLeft >= 0) {
-          position = heightLeft - computedHeight;
+    try {
+      wrapper.style.display = 'block';
+      content.style.display = 'block';
+      console.log('[PDF] Hidden wrapper revealed for capture');
+
+      await new Promise(r => setTimeout(r, 300));
+
+      console.log('[PDF] Importing html2canvas and jspdf...');
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ]);
+      console.log('[PDF] Libraries loaded successfully');
+
+      console.log('[PDF] Capturing content with html2canvas...');
+      const canvas = await html2canvas(content, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: true,
+        width: content.scrollWidth,
+        height: content.scrollHeight,
+        windowWidth: content.scrollWidth,
+        windowHeight: content.scrollHeight,
+      });
+      console.log('[PDF] Canvas captured, dimensions:', canvas.width, 'x', canvas.height);
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const pdf = new jsPDF({ unit: 'in', format: 'a4', orientation: 'portrait' });
+
+      const pdfWidth = 8.27;
+      const pdfHeight = 11.69;
+      const margin = 0.4;
+      const usableWidth = pdfWidth - 2 * margin;
+      const usableHeight = pdfHeight - 2 * margin;
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = imgWidth / usableWidth;
+      const pageContentHeight = imgHeight / ratio;
+
+      console.log('[PDF] Page dimensions - usable:', usableWidth, 'x', usableHeight, 'content:', pageContentHeight);
+
+      let heightLeft = pageContentHeight;
+      let position = -margin * ratio;
+      let pageNum = 1;
+
+      while (heightLeft > 0) {
+        if (pageNum > 1) {
           pdf.addPage();
-          pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, computedHeight);
-          heightLeft -= pdfHeight;
+          position = -(margin * ratio) - ((pageNum - 1) * usableHeight * ratio - pageContentHeight * (pageNum - 1) / Math.ceil(pageContentHeight / usableHeight));
         }
-
-        pdf.save('Visa_Appeal_Package.pdf');
-      } catch (err) {
-        console.error("PDF generation failed:", err);
-        alert("An error occurred while generating the PDF. Please try again or use the Copy button to save your content in the meantime.");
-      } finally {
-        element.style.display = 'none';
+        console.log(`[PDF] Adding page ${pageNum}, position:`, position);
+        pdf.addImage(imgData, 'JPEG', margin, margin, usableWidth, pageContentHeight, undefined, 'FAST');
+        heightLeft -= usableHeight;
+        pageNum++;
       }
+
+      console.log('[PDF] Total pages:', pageNum - 1);
+      pdf.save('Visa_Appeal_Package.pdf');
+      console.log('[PDF] Download triggered successfully');
+    } catch (err: any) {
+      console.error('[PDF] Generation failed:', err.message);
+      console.error('[PDF] Stack:', err.stack);
+      alert('An error occurred while generating the PDF. Please try again or use the Copy button to save your content in the meantime.');
+    } finally {
+      wrapper.style.display = 'none';
+      if (content) content.style.display = 'none';
+      setPdfLoading(false);
+      console.log('[PDF] Generation complete, hidden wrapper restored');
     }
   };
 
-  const scoreColor = 
-    result.case_assessment.severityRating === 'Strong' ? 'text-emerald-400' : 
+  const scoreColor =
+    result.case_assessment.severityRating === 'Strong' ? 'text-emerald-400' :
     result.case_assessment.severityRating === 'Moderate' ? 'text-blue-400' :
     result.case_assessment.severityRating === 'High Risk' ? 'text-amber-400' : 'text-rose-400';
 
-  const severityBadgeColor = 
+  const severityBadgeColor =
     result.case_assessment.severityRating === 'Critical' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' :
     result.case_assessment.severityRating === 'High Risk' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
     result.case_assessment.severityRating === 'Moderate' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
@@ -173,7 +353,7 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
       <div className="min-h-screen pt-24 pb-24 px-4 sm:px-6 max-w-5xl mx-auto w-full relative z-10 flex flex-col">
       <div className="flex items-start sm:items-center justify-between mb-12 flex-col sm:flex-row gap-6">
         <div>
-          <button 
+          <button
             onClick={onReset}
             className="flex items-center text-sm text-zinc-400 hover:text-white transition-colors mb-4 bg-zinc-900 border border-zinc-700 px-4 py-2 rounded-xl"
           >
@@ -187,44 +367,47 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
             <p className="text-emerald-400 flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> <span className="capitalize">{purchasedPlan}</span> Package Unlocked</p>
           )}
         </div>
-        
+
         <div className="flex z-20 items-center gap-3 w-full sm:w-auto">
-          <button 
+          <button
             onClick={handleCopy}
             className="flex-1 sm:flex-none items-center justify-center flex gap-1.5 px-4 py-2 text-sm font-medium bg-zinc-900 border border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors disabled:opacity-50"
+            disabled={!hasFeature('appeal_letter')}
           >
             {copied ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-            {copied ? 'Copied' : 'Copy'}
+            {copied ? 'Copied' : 'Copy Letter'}
           </button>
-          <button 
-            onClick={handleDownload}
-            className="flex-1 sm:flex-none items-center justify-center flex gap-1.5 px-6 py-2 text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-500 rounded-lg transition-colors shadow-lg shadow-indigo-900/20"
+          <button
+            onClick={handleDownloadPdf}
+            disabled={pdfLoading}
+            className="flex-1 sm:flex-none items-center justify-center flex gap-1.5 px-6 py-2 text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-500 rounded-lg transition-colors shadow-lg shadow-indigo-900/20 disabled:opacity-50"
           >
-            <Download className="w-4 h-4" />
-            Export PDF
+            {pdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            {pdfLoading ? 'Generating...' : 'Export PDF'}
           </button>
         </div>
       </div>
 
       <div className="space-y-16">
-        {/* SECTION 1 - CONSULTANT REVIEW */}
+        {/* SECTION 1 — CASE ASSESSMENT */}
         <section>
           <div className="flex items-center gap-2 mb-6">
             <Briefcase className="w-5 h-5 text-indigo-400" />
             <h3 className="text-xl font-medium text-white">Case Assessment</h3>
+            {!isSample && purchasedPlan && <PlanBadge plan={purchasedPlan} />}
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Score & Severity */}
             <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 flex flex-col items-start shadow-lg overflow-hidden relative">
-              {isPreview && (
-                <LockOverlay label="Unlock to view Case Readiness Score" onPurchase={onPurchase} plan="standard" />
+              {!hasFeature('readiness_score') && (
+                <LockOverlay featureKey="readiness_score" onPurchase={onPurchase} />
               )}
               <div className="text-sm text-zinc-400 uppercase tracking-wider mb-2 font-medium">Application Readiness Score</div>
               <div className={`text-5xl font-bold ${scoreColor} mb-4`}>
                 {result.case_assessment.score}<span className="text-2xl text-zinc-600 font-medium">/100</span>
               </div>
-              
+
               <div className="w-full pt-4 border-t border-zinc-800">
                 <div className="text-xs text-zinc-500 uppercase tracking-wider mb-2">Severity Rating</div>
                 <div className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${severityBadgeColor}`}>
@@ -235,14 +418,25 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
                 <div className="text-xs text-zinc-500 uppercase tracking-wider mb-2">Case Type</div>
                 <div className="text-sm text-zinc-300 font-medium">{result.case_assessment.caseType}</div>
               </div>
+              <div className="w-full pt-4 mt-4 border-t border-zinc-800">
+                <div className="text-xs text-zinc-500 uppercase tracking-wider mb-2">Applicant</div>
+                <div className="text-sm text-zinc-300 font-medium">{result.case_assessment.applicantName || 'Confidential Client'}</div>
+              </div>
             </div>
-            
+
             <div className="md:col-span-2 flex flex-col gap-6">
-              {/* Verdict & Path */}
+              {/* Executive Summary / Verdict */}
               <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 shadow-lg relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-8 opacity-5">
                    <Briefcase className="w-32 h-32" />
                 </div>
+
+                <div className="flex items-center gap-2 mb-4">
+                  <Shield className="w-4 h-4 text-indigo-400" />
+                  <h4 className="text-sm font-semibold text-zinc-200">Consultant Assessment</h4>
+                  {!isSample && purchasedPlan && <PlanBadge plan={purchasedPlan} />}
+                </div>
+
                 <div className="flex flex-col sm:flex-row gap-6 mb-6 pb-6 border-b border-zinc-800/80 relative z-10">
                   <div className="flex-1">
                     <div className="text-xs text-zinc-500 uppercase tracking-wider mb-2">Current Case Strength</div>
@@ -258,14 +452,10 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
                 </div>
 
                 <div className="mb-6 relative z-10 overflow-hidden">
-                  {(isPreview || (!isPremium && !isPreview)) && (
-                    <LockOverlay
-                      label={isPreview ? 'Unlock to see full AI Assessment' : 'Upgrade to Premium for Enhanced AI Assessment Summary'}
-                      onPurchase={onPurchase}
-                      plan={isPreview ? 'standard' : 'premium'}
-                    />
+                  {!hasFeature('executive_summary') && (
+                    <LockOverlay featureKey="executive_summary" onPurchase={onPurchase} />
                   )}
-                  <div className={`transition-opacity ${!isPremium && !isSample ? 'opacity-30 blur-sm pointer-events-none' : ''}`}>
+                  <div className={`transition-opacity ${!hasFeature('executive_summary') ? 'opacity-30 blur-sm pointer-events-none' : ''}`}>
                     <div className="flex items-center gap-2 mb-2">
                        <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Consultant Reasoning:</div>
                     </div>
@@ -284,18 +474,19 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
                     </ul>
                   </div>
                 </div>
-                
+
                 {result.case_assessment.successOutlook && (
                   <div className="pt-6 border-t border-zinc-800/80 relative z-10 overflow-hidden">
-                    {(isPreview || (!isPremium && !isPreview)) && (
-                      <LockOverlay
-                        label={isPreview ? 'Unlock to see Readiness Outlook' : 'Upgrade to Premium for Readiness Outlook & Weakness Analysis'}
-                        onPurchase={onPurchase}
-                        plan={isPreview ? 'standard' : 'premium'}
-                      />
+                    {!hasFeature('readiness_score') && (
+                      <LockOverlay featureKey="readiness_score" onPurchase={onPurchase} />
                     )}
-                    <div className={`transition-opacity ${!isPremium && !isSample ? 'opacity-30 blur-sm pointer-events-none' : ''}`}>
+                    <div className={`transition-opacity ${!hasFeature('readiness_score') ? 'opacity-30 blur-sm pointer-events-none' : ''}`}>
+                      <h4 className="text-xs text-zinc-500 uppercase tracking-wider mb-3 font-semibold">Readiness Outlook</h4>
                       <div className="flex flex-col sm:flex-row gap-6">
+                         <div className="flex-1">
+                           <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1 font-semibold">Current Readiness</div>
+                           <div className="text-white font-medium">{result.case_assessment.successOutlook.currentReadiness}</div>
+                         </div>
                          <div className="flex-1">
                            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1 font-semibold">Post-Fixes Outlook</div>
                            <div className="text-emerald-400 font-medium">{result.case_assessment.successOutlook.readinessAfterFixes}</div>
@@ -323,16 +514,17 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
           </div>
         </section>
 
-        {/* ISSUE BREAKDOWN FORMAT */}
+        {/* REFUSAL ISSUE BREAKDOWN */}
         <section>
           <div className="flex items-center gap-2 mb-6">
             <AlertCircle className="w-5 h-5 text-indigo-400" />
             <h3 className="text-xl font-medium text-white">Refusal Issue Breakdown</h3>
+            {!isSample && purchasedPlan && <PlanBadge plan={purchasedPlan} />}
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {result.issues.map((issue, idx) => (
-              <div key={idx} className="bg-zinc-900/30 border border-zinc-800/80 rounded-xl p-5 shadow-sm">
+              <div key={idx} className="bg-zinc-900/30 border border-zinc-800/80 rounded-xl p-5 shadow-sm relative overflow-hidden">
                 <div className="flex justify-between items-start mb-3">
                   <h4 className="text-base font-semibold text-white">{issue.issue}</h4>
                   <span className={`text-xs px-2 py-0.5 rounded font-medium ${
@@ -342,17 +534,17 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
                     {issue.impact} Impact
                   </span>
                 </div>
-                
+
                 <div className="relative mt-4">
-                  {isPreview && (
-                    <LockOverlay label="Unlock for Detailed Breakdown & Evidence Roadmap" onPurchase={onPurchase} plan="premium" />
+                  {!hasFeature('refusal_analysis') && (
+                    <LockOverlay featureKey="refusal_analysis" onPurchase={onPurchase} />
                   )}
-                  <div className={`transition-opacity ${isPreview ? 'opacity-30 blur-sm pointer-events-none' : ''}`}>
+                  <div className={`transition-opacity ${!hasFeature('refusal_analysis') ? 'opacity-30 blur-sm pointer-events-none' : ''}`}>
                     <div className="mb-4 bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/50">
                       <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Finding</div>
                       <div className="text-sm text-zinc-300">{issue.finding}</div>
                     </div>
-                    
+
                     <div className="mb-4">
                       <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Recommended Action</div>
                       <div className="text-sm text-indigo-300 font-medium">{issue.recommendedAction}</div>
@@ -376,98 +568,99 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
           </div>
         </section>
 
-        {/* SECTION 2 - APPEAL LETTER DOCUMENT VIEWER */}
+        {/* EXPLANATION LETTER DRAFT */}
         <section>
           <div className="flex items-center gap-2 mb-6">
             <FileText className="w-5 h-5 text-indigo-400" />
             <h3 className="text-xl font-medium text-white">Supporting Explanation Draft</h3>
+            {!isSample && purchasedPlan && <PlanBadge plan={purchasedPlan} />}
           </div>
-          
+
           <div className="relative">
              <div className="bg-zinc-800/30 -mx-4 sm:-mx-8 p-4 sm:p-8 rounded-3xl border border-zinc-800/50 shadow-inner overflow-x-auto flex flex-col items-center pb-24">
-               
-               {/* Viewer Header Toolbar */}
-               <div className="mb-4 w-full max-w-[800px] flex justify-between items-center bg-zinc-900 px-4 py-2.5 rounded-xl border border-zinc-700/50 shadow-sm">
-                  <div className="flex items-center gap-3">
-                     <div className="p-1.5 bg-indigo-500/10 rounded-md">
-                        <FileText className="w-4 h-4 text-indigo-400" />
-                     </div>
-                     <span className="text-sm font-medium text-zinc-200 tracking-wide">formal_supporting_explanation_draft.docx</span>
-                  </div>
-                  <div className="flex gap-1.5 opacity-50">
-                     <div className="w-3 h-3 rounded-full bg-zinc-600"></div>
-                     <div className="w-3 h-3 rounded-full bg-zinc-600"></div>
-                     <div className="w-3 h-3 rounded-full bg-zinc-600"></div>
-                  </div>
-               </div>
 
-               {/* A4 Document Canvas */}
-               <div 
-                 className="relative bg-white shrink-0 shadow-2xl rounded-sm py-16 px-10 sm:py-24 sm:px-16"
-                 style={{ 
-                   width: '100%',
-                   maxWidth: '800px',
-                   minHeight: '1050px'
-                 }}
-               >
-                 <div className="max-w-[650px] mx-auto w-full relative z-10 text-black">
-                    <div className="whitespace-pre-wrap font-serif text-[15px] leading-[1.8] text-[#1a1a1a] tracking-normal text-justify">
-                      {(isStarter && !isPreview) || isSample ? (
-                        <div className="outline-none focus:ring-2 ring-indigo-500/20 rounded-md p-2 -m-2 transition-all" contentEditable suppressContentEditableWarning>
-                           {result.appeal_letter}
-                        </div>
-                      ) : (
-                        <>
-                          <div>{result.appeal_letter.slice(0, 300)}...</div>
-                          <div className="mt-4 blur-[4px] opacity-40 select-none">
-                            {result.appeal_letter.slice(300, 1500)}
-                            <br/><br/>
-                            [Letter continues securely...]
-                          </div>
-                        </>
-                      )}
+              {/* Viewer Header Toolbar */}
+              <div className="mb-4 w-full max-w-[800px] flex justify-between items-center bg-zinc-900 px-4 py-2.5 rounded-xl border border-zinc-700/50 shadow-sm">
+                 <div className="flex items-center gap-3">
+                    <div className="p-1.5 bg-indigo-500/10 rounded-md">
+                       <FileText className="w-4 h-4 text-indigo-400" />
                     </div>
+                    <span className="text-sm font-medium text-zinc-200 tracking-wide">formal_supporting_explanation_draft.docx</span>
                  </div>
+                 <div className="flex gap-1.5 opacity-50">
+                    <div className="w-3 h-3 rounded-full bg-zinc-600"></div>
+                    <div className="w-3 h-3 rounded-full bg-zinc-600"></div>
+                    <div className="w-3 h-3 rounded-full bg-zinc-600"></div>
+                 </div>
+              </div>
 
-                 {/* Paywall Overlay inside the letter canvas */}
-                 {isPreview && (
-                   <div className="absolute inset-x-0 bottom-0 top-[200px] z-20 flex flex-col items-center justify-center p-6 bg-gradient-to-t from-white via-white/95 to-transparent rounded-b-[4px]">
-                     <div className="w-full max-w-md bg-zinc-950 p-8 rounded-3xl shadow-2xl border border-zinc-800 mt-32 text-left">
-                       <div className="text-center mb-8">
-                          <Lock className="w-8 h-8 text-indigo-400 mx-auto mb-3" />
-                          <h3 className="text-2xl font-bold text-white mb-2 tracking-tight">Unlock Application Package</h3>
-                          <p className="text-sm text-zinc-400">Choose a plan to generate your full appeal package.</p>
+              {/* A4 Document Canvas */}
+              <div
+                className="relative bg-white shrink-0 shadow-2xl rounded-sm py-16 px-10 sm:py-24 sm:px-16"
+                style={{
+                  width: '100%',
+                  maxWidth: '800px',
+                  minHeight: '1050px'
+                }}
+              >
+                <div className="max-w-[650px] mx-auto w-full relative z-10 text-black">
+                   <div className="whitespace-pre-wrap font-serif text-[15px] leading-[1.8] text-[#1a1a1a] tracking-normal text-justify">
+                     {hasFeature('appeal_letter') || isSample ? (
+                       <div className="outline-none focus:ring-2 ring-indigo-500/20 rounded-md p-2 -m-2 transition-all" contentEditable suppressContentEditableWarning>
+                          {result.appeal_letter}
                        </div>
-
-                       <div className="space-y-4">
-                         {PLANS.map((plan) => (
-                           <div
-                             key={plan.id}
-                             className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer ${
-                               plan.recommended ? 'border-indigo-500/50 bg-indigo-500/10 hover:bg-indigo-500/20' :
-                               plan.color === 'purple' ? 'border-purple-500/30 bg-purple-500/5 hover:bg-purple-500/10' :
-                               'border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800/80'
-                             }`}
-                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPurchase?.(plan.id as 'starter' | 'standard' | 'premium'); }}
-                           >
-                             {plan.recommended && (
-                               <div className="absolute -top-2.5 right-4 px-2 py-0.5 bg-indigo-500 text-white text-[9px] uppercase font-bold tracking-wider rounded-sm">Recommended</div>
-                             )}
-                             <div>
-                               <div className="font-semibold text-white mb-1">{plan.name}</div>
-                               <div className="text-xs text-zinc-400">{plan.features[0]}</div>
-                             </div>
-                             <div className="text-right flex flex-col justify-center items-end">
-                               <div className="font-bold text-white tracking-tight">{plan.price}</div>
-                               <button className="mt-1 text-[10px] px-3 py-1 bg-white text-zinc-950 font-semibold uppercase tracking-wide rounded-full">Unlock</button>
-                             </div>
-                           </div>
-                         ))}
-                       </div>
-                     </div>
+                     ) : (
+                       <>
+                         <div>{result.appeal_letter.slice(0, 300)}...</div>
+                         <div className="mt-4 blur-[4px] opacity-40 select-none">
+                           {result.appeal_letter.slice(300, 1500)}
+                           <br/><br/>
+                           [Letter continues securely...]
+                         </div>
+                       </>
+                     )}
                    </div>
-                 )}
-               </div>
+                </div>
+
+                {/* Paywall Overlay */}
+                {isPreview && (
+                  <div className="absolute inset-x-0 bottom-0 top-[200px] z-20 flex flex-col items-center justify-center p-6 bg-gradient-to-t from-white via-white/95 to-transparent rounded-b-[4px]">
+                    <div className="w-full max-w-md bg-zinc-950 p-8 rounded-3xl shadow-2xl border border-zinc-800 mt-32 text-left">
+                      <div className="text-center mb-8">
+                         <Lock className="w-8 h-8 text-indigo-400 mx-auto mb-3" />
+                         <h3 className="text-2xl font-bold text-white mb-2 tracking-tight">Unlock Application Package</h3>
+                         <p className="text-sm text-zinc-400">Choose a plan to generate your full appeal package.</p>
+                      </div>
+
+                      <div className="space-y-3">
+                        {PLANS.map((plan) => (
+                          <div
+                            key={plan.id}
+                            className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer relative ${
+                              plan.recommended ? 'border-indigo-500/50 bg-indigo-500/10 hover:bg-indigo-500/20' :
+                              plan.color === 'purple' ? 'border-purple-500/30 bg-purple-500/5 hover:bg-purple-500/10' :
+                              'border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800/80'
+                            }`}
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPurchase?.(plan.id as 'starter' | 'standard' | 'premium'); }}
+                          >
+                            {plan.recommended && (
+                              <div className="absolute -top-2.5 right-4 px-2 py-0.5 bg-indigo-500 text-white text-[9px] uppercase font-bold tracking-wider rounded-sm">Recommended</div>
+                            )}
+                            <div className="flex items-center gap-3">
+                              <plan.icon className={`w-5 h-5 ${plan.color === 'purple' ? 'text-purple-400' : 'text-indigo-400'}`} />
+                              <div>
+                                <div className="font-semibold text-white">{plan.name}</div>
+                                <div className="text-xs text-zinc-400">{plan.price}</div>
+                              </div>
+                            </div>
+                            <button className="text-xs px-4 py-1.5 bg-white text-zinc-950 font-semibold uppercase tracking-wide rounded-full">Unlock</button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
              </div>
           </div>
         </section>
@@ -477,12 +670,13 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
           <div className="flex items-center gap-2 mb-6">
             <Clock className="w-5 h-5 text-indigo-400" />
             <h3 className="text-xl font-medium text-white">Reapplication Strategy Planner</h3>
+            {!isSample && purchasedPlan && <PlanBadge plan={purchasedPlan} />}
           </div>
           <div className="relative">
-            {isPreview && (
-              <LockOverlay label="Unlock to see personalized Reapplication Strategy" onPurchase={onPurchase} plan="standard" />
+            {!hasFeature('strategy') && (
+              <LockOverlay featureKey="strategy" onPurchase={onPurchase} />
             )}
-            <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${isPreview ? 'blur-sm opacity-40 select-none' : ''}`}>
+            <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${!hasFeature('strategy') ? 'blur-sm opacity-40 select-none' : ''}`}>
              <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-6">
                 <h4 className="text-sm font-bold text-emerald-400 uppercase tracking-wider mb-4 flex items-center gap-2">Immediate Actions</h4>
                 <ul className="space-y-3">
@@ -494,7 +688,7 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
                   ))}
                 </ul>
              </div>
-             
+
              <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-xl p-6">
                 <h4 className="text-sm font-bold text-indigo-400 uppercase tracking-wider mb-4 flex items-center gap-2">Evidence To Gather</h4>
                 <ul className="space-y-3">
@@ -522,7 +716,7 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
              <div className="bg-zinc-800/20 border border-zinc-800/80 rounded-xl p-6 flex flex-col justify-center text-center">
                 <h4 className="text-xs text-zinc-500 uppercase tracking-wider mb-2 font-bold">Recommended Timeline</h4>
                 <div className="text-lg font-medium text-white mb-4">{result.strategy.timeline}</div>
-                
+
                 <h4 className="text-xs text-zinc-500 uppercase tracking-wider mb-2 font-bold pt-4 border-t border-zinc-800">Expected Outcome</h4>
                 <div className="text-sm text-emerald-400 font-medium">{result.strategy.expectedOutcome}</div>
              </div>
@@ -534,64 +728,62 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
         <section className="pb-16 border-t border-zinc-800/80 pt-12">
           <div className="flex items-center gap-2 mb-8">
             <CheckSquare className="w-5 h-5 text-indigo-400" />
-            <h3 className="text-xl font-medium text-white">{isStarter ? 'Detailed Categorized Checklist' : 'Basic Document Checklist'}</h3>
+            <h3 className="text-xl font-medium text-white">Document Checklist</h3>
+            {!isSample && purchasedPlan && <PlanBadge plan={purchasedPlan} />}
           </div>
-          
+
+          {/* Basic checklist — always visible with Starter+ */}
           <div className="max-w-3xl relative z-10">
-            {renderChecklistSection('Identity Documents', result.checklist.identity)}
-            {renderChecklistSection('Travel Documents', result.checklist.travel)}
-            
-            {/* Standard Tier Checklist Expansion */}
-            {(!isPreview && isStarter) || isSample ? (
-              <div className="relative mt-8">
-                <div className={`transition-opacity`}>
+            <div className={`relative ${!hasFeature('basic_checklist') && !hasFeature('categorized_checklist') ? '' : ''}`}>
+              {renderChecklistSection('Identity Documents', result.checklist.identity)}
+              {renderChecklistSection('Travel Documents', result.checklist.travel)}
+
+              {/* Categorized checklist — Standard+ */}
+              {hasFeature('categorized_checklist') || isSample ? (
+                <div className="relative mt-8">
                   {renderChecklistSection('Financial Documents', result.checklist.financial)}
                   {renderChecklistSection('Employment Documents', result.checklist.employment)}
                   {renderChecklistSection('Academic Documents', result.checklist.academic)}
                   {renderChecklistSection('Other Documents', result.checklist.other)}
                 </div>
-              </div>
-            ) : isPreview ? (
-              <div className="relative mt-8">
-                <div className="absolute inset-0 z-20 backdrop-blur-md bg-zinc-950/80 flex flex-col items-center justify-center p-6 text-center border border-zinc-800 rounded-xl">
-                   <Lock className="w-6 h-6 text-indigo-400 mb-3" />
-                   <h4 className="text-lg font-bold text-white mb-2">Detailed Checklist Locked</h4>
-                   <p className="text-sm text-zinc-300 mb-4">Upgrade to unlock Financial, Employment, and Academic checks.</p>
-                   <button
-                     type="button"
-                     onClick={(e) => { e.preventDefault(); onPurchase?.('standard'); }}
-                     className="text-sm px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold rounded-full transition-colors shadow-lg"
-                   >
-                     Unlock Standard ($19.99)
-                   </button>
+              ) : !isPreview ? (
+                <div className="relative mt-8">
+                  <div className="absolute inset-0 z-20 backdrop-blur-md bg-zinc-950/80 flex flex-col items-center justify-center p-6 text-center border border-zinc-800 rounded-xl">
+                     <Lock className="w-6 h-6 text-indigo-400 mb-3" />
+                     <h4 className="text-lg font-bold text-white mb-1">Categorized Checklist Locked</h4>
+                     <p className="text-sm text-zinc-400 mb-1">Available in Standard & Premium</p>
+                     <button
+                       type="button"
+                       onClick={(e) => { e.preventDefault(); onPurchase?.('standard'); }}
+                       className="text-sm px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold rounded-full transition-colors shadow-lg"
+                     >
+                       Unlock Standard ($19.99)
+                     </button>
+                  </div>
+                  <div className="opacity-30 blur-sm pointer-events-none">
+                    {renderChecklistSection('Financial Documents', result.checklist.financial)}
+                    {renderChecklistSection('Employment Documents', result.checklist.employment)}
+                    {renderChecklistSection('Academic Documents', result.checklist.academic)}
+                    {renderChecklistSection('Other Documents', result.checklist.other)}
+                  </div>
                 </div>
-                <div className="opacity-30 blur-sm pointer-events-none">
-                  {renderChecklistSection('Financial Documents', result.checklist.financial)}
-                  {renderChecklistSection('Employment Documents', result.checklist.employment)}
-                  {renderChecklistSection('Academic Documents', result.checklist.academic)}
-                  {renderChecklistSection('Other Documents', result.checklist.other)}
-                </div>
-              </div>
-            ) : null}
+              ) : null}
+            </div>
           </div>
         </section>
       </div>
 
-      {/* Pricing Cards for Preview Mode */}
+      {/* Pricing Comparison Table */}
       {isPreview && onPurchase && (
         <div className="mt-16 pt-12 border-t border-zinc-800">
-          <div className="flex items-center gap-3 mb-8">
+          <div className="flex items-center gap-3 mb-6">
             <Lock className="w-6 h-6 text-amber-400" />
-            <h2 className="text-2xl font-bold text-white">Unlock Your Reapplication Preparation Package</h2>
+            <h2 className="text-2xl font-bold text-white">Choose Your Plan</h2>
           </div>
           <p className="text-zinc-400 mb-8">
-            Your analysis is ready. Choose a plan to unlock the full appeal package including the appeal letter, checklists, and strategy planner.
+            Your analysis is ready. Select a plan to unlock your full reapplication preparation package.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {PLANS.map((plan) => (
-              <PlanCard key={plan.id} plan={plan} onPurchase={onPurchase} isPurchasing={isPurchasing} />
-            ))}
-          </div>
+          <PricingTable onPurchase={onPurchase} />
         </div>
       )}
 
@@ -601,129 +793,152 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
         </div>
       </div>
 
-      <div style={{ display: 'none' }}>
-        <div ref={pdfContentRef} className="bg-white text-black" style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
-          
-          <div style={{ padding: '60px 80px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', minHeight: '1000px', pageBreakAfter: 'always' }}>
-             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
-               <h1 style={{ fontSize: '42px', fontWeight: '800', margin: '0 0 16px 0', letterSpacing: '-1px', color: '#111' }}>Visa Reapplication Preparation Package</h1>
-               <p style={{ fontSize: '20px', color: '#555', margin: '0 0 40px 0', fontWeight: '500' }}>Professional Consultant Case Assessment & Submission</p>
-               <div style={{ borderTop: '3px solid #111', width: '80px', margin: '0 auto 40px auto' }}></div>
-               
-               <div style={{ backgroundColor: '#f8f9fa', padding: '30px', borderRadius: '12px', width: '100%', maxWidth: '400px', margin: '0 auto 40px auto', border: '1px solid #eaeaea', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
-                 <div style={{ fontSize: '13px', textTransform: 'uppercase', color: '#666', fontWeight: '700', letterSpacing: '1px', marginBottom: '8px' }}>Application Readiness Score</div>
-                 <div style={{ fontSize: '56px', fontWeight: '800', color: result.case_assessment.score > 79 ? '#10b981' : result.case_assessment.score > 59 ? '#3b82f6' : result.case_assessment.score > 39 ? '#f59e0b' : '#ef4444', lineHeight: '1' }}>{result.case_assessment.score}<span style={{ fontSize: '24px', color: '#888' }}>/100</span></div>
-                 <div style={{ marginTop: '16px', display: 'inline-block', padding: '6px 12px', backgroundColor: '#111', color: '#fff', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px', textTransform: 'uppercase' }}>SEVERITY: {result.case_assessment.severityRating}</div>
+      {/* Hidden PDF Content */}
+      <div ref={pdfWrapperRef} style={{ display: 'none', position: 'absolute', left: '-9999px', top: 0, width: '800px', zIndex: -1 }}>
+        <div ref={pdfContentRef} className="bg-white text-black" style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", width: '800px' }}>
+
+          {/* PAGE 1 — COVER */}
+          <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', minHeight: '1100px', pageBreakAfter: 'always' }}>
+             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+               <div style={{ borderBottom: '4px solid #1a1a2e', paddingBottom: '20px', marginBottom: '30px' }}>
+                 <h1 style={{ fontSize: '36px', fontWeight: '800', margin: '0 0 8px 0', letterSpacing: '-0.5px', color: '#1a1a2e' }}>Visa Reapplication Preparation Package</h1>
+                 <p style={{ fontSize: '18px', color: '#555', margin: '0', fontWeight: '500' }}>Professional Consultant Case Assessment & Submission Document</p>
                </div>
 
-               <div style={{ textAlign: 'center', marginTop: '20px' }}>
-                 <p style={{ fontSize: '16px', color: '#555', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Applicant Name</p>
-                 <p style={{ fontSize: '24px', color: '#111', fontWeight: '700', margin: '0 0 24px 0' }}>{result.case_assessment.applicantName || 'Confidential Client'}</p>
-                 
-                 <p style={{ fontSize: '16px', color: '#555', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Visa Type / Case Context</p>
-                 <p style={{ fontSize: '20px', color: '#111', fontWeight: '600', margin: '0 0 0 0' }}>{result.case_assessment.caseType}</p>
+               <div style={{ backgroundColor: '#f0f4ff', padding: '30px', borderRadius: '12px', marginBottom: '30px', border: '1px solid #dbe4ff' }}>
+                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                   <div>
+                     <div style={{ fontSize: '13px', textTransform: 'uppercase', color: '#3b3b5c', fontWeight: '700', letterSpacing: '1px', marginBottom: '4px' }}>Application Readiness Score</div>
+                     <div style={{ fontSize: '48px', fontWeight: '800', color: result.case_assessment.score > 79 ? '#059669' : result.case_assessment.score > 59 ? '#2563eb' : result.case_assessment.score > 39 ? '#d97706' : '#dc2626', lineHeight: '1' }}>{result.case_assessment.score}<span style={{ fontSize: '22px', color: '#888' }}>/100</span></div>
+                   </div>
+                   <div style={{ textAlign: 'right' }}>
+                     <div style={{ fontSize: '13px', textTransform: 'uppercase', color: '#3b3b5c', fontWeight: '700', letterSpacing: '1px', marginBottom: '4px' }}>Severity Rating</div>
+                     <div style={{ display: 'inline-block', padding: '6px 16px', backgroundColor: '#1a1a2e', color: '#fff', borderRadius: '4px', fontSize: '13px', fontWeight: 'bold', letterSpacing: '1px', textTransform: 'uppercase' }}>{result.case_assessment.severityRating}</div>
+                   </div>
+                 </div>
+                 <div style={{ width: '100%', backgroundColor: '#e5e7eb', borderRadius: '4px', height: '8px', overflow: 'hidden' }}>
+                   <div style={{ width: `${result.case_assessment.score}%`, backgroundColor: result.case_assessment.score > 79 ? '#059669' : result.case_assessment.score > 59 ? '#2563eb' : result.case_assessment.score > 39 ? '#d97706' : '#dc2626', height: '100%', borderRadius: '4px' }}></div>
+                 </div>
+               </div>
+
+               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '30px' }}>
+                 <div style={{ padding: '16px', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
+                   <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#888', fontWeight: '700', letterSpacing: '1px', marginBottom: '4px' }}>Applicant</div>
+                   <div style={{ fontSize: '18px', fontWeight: '700', color: '#111' }}>{result.case_assessment.applicantName || 'Confidential Client'}</div>
+                 </div>
+                 <div style={{ padding: '16px', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
+                   <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#888', fontWeight: '700', letterSpacing: '1px', marginBottom: '4px' }}>Visa Type</div>
+                   <div style={{ fontSize: '18px', fontWeight: '600', color: '#111' }}>{result.case_assessment.caseType}</div>
+                 </div>
+                 <div style={{ padding: '16px', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
+                   <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#888', fontWeight: '700', letterSpacing: '1px', marginBottom: '4px' }}>Case Strength</div>
+                   <div style={{ fontSize: '18px', fontWeight: '700', color: result.case_assessment.score > 79 ? '#059669' : result.case_assessment.score > 59 ? '#2563eb' : result.case_assessment.score > 39 ? '#d97706' : '#dc2626' }}>{result.case_assessment.consultantVerdict.currentCaseStrength}</div>
+                 </div>
+                 <div style={{ padding: '16px', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
+                   <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#888', fontWeight: '700', letterSpacing: '1px', marginBottom: '4px' }}>Generated</div>
+                   <div style={{ fontSize: '18px', fontWeight: '600', color: '#111' }}>{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                 </div>
+               </div>
+
+               <div style={{ padding: '20px', backgroundColor: '#fafafa', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
+                 <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#3b82f6', fontWeight: '700', letterSpacing: '1px', marginBottom: '8px' }}>Recommended Path</div>
+                 <div style={{ fontSize: '20px', fontWeight: '700', color: '#1a1a2e' }}>{result.case_assessment.consultantVerdict.recommendedPath}</div>
                </div>
              </div>
-             
-             <div style={{ textAlign: 'center', marginTop: 'auto', borderTop: '1px solid #eaeaea', paddingTop: '20px' }}>
-               <p style={{ fontSize: '12px', color: '#888', fontWeight: '500', marginBottom: '4px' }}><strong>Disclaimer:</strong> This document provides structural preparation assistance only. It does not constitute immigration or legal advice.</p>
-               <p style={{ fontSize: '14px', color: '#888', fontWeight: '500', margin: 0 }}>Generated Date: {new Date().toLocaleDateString()} | Strictly Confidential</p>
+
+             <div style={{ textAlign: 'center', borderTop: '1px solid #eaeaea', paddingTop: '16px', marginTop: '20px' }}>
+               <p style={{ fontSize: '11px', color: '#888', margin: '0 0 4px 0' }}><strong>Disclaimer:</strong> This document provides structural preparation assistance only. It does not constitute immigration or legal advice.</p>
+               <p style={{ fontSize: '12px', color: '#888', margin: 0 }}>Generated: {new Date().toLocaleDateString()} | Strictly Confidential</p>
              </div>
           </div>
 
-          <div style={{ padding: '60px 80px', boxSizing: 'border-box', pageBreakAfter: 'always' }}>
-             <h2 style={{ fontSize: '24px', fontWeight: '800', borderBottom: '2px solid #111', paddingBottom: '16px', marginBottom: '32px', textTransform: 'uppercase', letterSpacing: '1px', color: '#111' }}>Executive Summary</h2>
-             
-             <div style={{ marginBottom: '32px', backgroundColor: '#111', color: '#fff', padding: '32px', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', pageBreakInside: 'avoid' }}>
-                <h3 style={{ fontSize: '14px', textTransform: 'uppercase', letterSpacing: '2px', color: '#a1a1aa', fontWeight: '700', marginBottom: '24px' }}>AI Assessment Summary</h3>
-                
-                <div style={{ display: 'flex', gap: '24px', marginBottom: '24px' }}>
-                  <div style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '8px' }}>
-                     <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#a1a1aa', fontWeight: '600', marginBottom: '8px' }}>Recommended Path</div>
-                     <div style={{ fontSize: '20px', fontWeight: '700', color: '#fff' }}>{result.case_assessment.consultantVerdict.recommendedPath}</div>
+          {/* PAGE 2 — EXECUTIVE SUMMARY */}
+          <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', pageBreakAfter: 'always' }}>
+             <h2 style={{ fontSize: '22px', fontWeight: '800', borderBottom: '3px solid #1a1a2e', paddingBottom: '12px', marginBottom: '28px', textTransform: 'uppercase', letterSpacing: '1px', color: '#1a1a2e' }}>Executive Summary & Consultant Assessment</h2>
+
+             <div style={{ marginBottom: '28px', backgroundColor: '#1a1a2e', color: '#fff', padding: '28px', borderRadius: '10px', pageBreakInside: 'avoid' }}>
+                <h3 style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '2px', color: '#94a3b8', fontWeight: '700', marginBottom: '20px' }}>AI Consultant Assessment</h3>
+
+                <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
+                  <div style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.06)', padding: '16px', borderRadius: '8px' }}>
+                     <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: '600', marginBottom: '6px' }}>Recommended Path</div>
+                     <div style={{ fontSize: '18px', fontWeight: '700', color: '#fff' }}>{result.case_assessment.consultantVerdict.recommendedPath}</div>
                   </div>
-                  <div style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '8px' }}>
-                     <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#a1a1aa', fontWeight: '600', marginBottom: '8px' }}>Case Strength</div>
-                     <div style={{ fontSize: '20px', fontWeight: '700', color: result.case_assessment.score > 79 ? '#34d399' : result.case_assessment.score > 59 ? '#60a5fa' : result.case_assessment.score > 39 ? '#fbbf24' : '#f87171' }}>{result.case_assessment.consultantVerdict.currentCaseStrength}</div>
+                  <div style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.06)', padding: '16px', borderRadius: '8px' }}>
+                     <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: '600', marginBottom: '6px' }}>Case Strength</div>
+                     <div style={{ fontSize: '18px', fontWeight: '700', color: result.case_assessment.score > 79 ? '#34d399' : result.case_assessment.score > 59 ? '#60a5fa' : result.case_assessment.score > 39 ? '#fbbf24' : '#f87171' }}>{result.case_assessment.consultantVerdict.currentCaseStrength}</div>
+                  </div>
+                  <div style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.06)', padding: '16px', borderRadius: '8px' }}>
+                     <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: '600', marginBottom: '6px' }}>Confidence Level</div>
+                     <div style={{ fontSize: '18px', fontWeight: '700', color: '#34d399' }}>{result.case_assessment.consultantVerdict.confidenceLevel}</div>
                   </div>
                 </div>
-                
+
                 <div>
-                   <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#a1a1aa', fontWeight: '600', marginBottom: '8px' }}>Consultant Reasoning</div>
-                   <p style={{ fontSize: '15px', margin: 0, color: '#e4e4e7', fontStyle: 'italic', lineHeight: '1.6' }}>"{result.case_assessment.consultantVerdict.reasoning}"</p>
+                   <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: '600', marginBottom: '6px' }}>Consultant Reasoning</div>
+                   <p style={{ fontSize: '14px', margin: 0, color: '#e4e4e7', fontStyle: 'italic', lineHeight: '1.7' }}>"{result.case_assessment.consultantVerdict.reasoning}"</p>
                 </div>
              </div>
 
-             <h3 style={{ fontSize: '16px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px', color: '#111', pageBreakInside: 'avoid' }}>Readiness Outlook</h3>
-             <div style={{ marginBottom: '32px', display: 'flex', gap: '20px', alignItems: 'stretch', pageBreakInside: 'avoid' }}>
-                <div style={{ flex: 1, border: '1px solid #eaeaea', padding: '20px', borderRadius: '8px' }}>
-                   <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#666', fontWeight: '700', marginBottom: '8px' }}>Current Readiness</div>
+             <h3 style={{ fontSize: '16px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '14px', color: '#1a1a2e', pageBreakInside: 'avoid' }}>Readiness Outlook</h3>
+             <div style={{ marginBottom: '28px', display: 'flex', gap: '16px', pageBreakInside: 'avoid' }}>
+                <div style={{ flex: 1, border: '1px solid #e5e7eb', padding: '18px', borderRadius: '8px' }}>
+                   <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#888', fontWeight: '700', marginBottom: '6px' }}>Current Readiness</div>
                    <div style={{ fontSize: '18px', fontWeight: '700', color: '#111' }}>{result.case_assessment.successOutlook?.currentReadiness || 'Low'}</div>
                 </div>
-                <div style={{ flex: 1, border: '1px solid #eaeaea', padding: '20px', borderRadius: '8px' }}>
-                   <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#666', fontWeight: '700', marginBottom: '8px' }}>Post-Fixes Outlook</div>
-                   <div style={{ fontSize: '18px', fontWeight: '700', color: '#10b981' }}>{result.case_assessment.successOutlook?.readinessAfterFixes || 'Strong'}</div>
+                <div style={{ flex: 1, border: '1px solid #e5e7eb', padding: '18px', borderRadius: '8px', backgroundColor: '#f0fdf4' }}>
+                   <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#059669', fontWeight: '700', marginBottom: '6px' }}>Post-Fixes Outlook</div>
+                   <div style={{ fontSize: '18px', fontWeight: '700', color: '#059669' }}>{result.case_assessment.successOutlook?.readinessAfterFixes || 'Strong'}</div>
                 </div>
-                <div style={{ flex: 1, border: '1px solid #eaeaea', padding: '20px', borderRadius: '8px', backgroundColor: '#f8f9fa' }}>
-                   <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#666', fontWeight: '700', marginBottom: '8px' }}>Pot. Score Improvement</div>
-                   <div style={{ fontSize: '18px', fontWeight: '700', color: '#3b82f6' }}>{result.case_assessment.successOutlook?.expectedScoreImprovement || '+20 Points'}</div>
+                <div style={{ flex: 1, border: '1px solid #e5e7eb', padding: '18px', borderRadius: '8px', backgroundColor: '#eff6ff' }}>
+                   <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#2563eb', fontWeight: '700', marginBottom: '6px' }}>Score Improvement</div>
+                   <div style={{ fontSize: '18px', fontWeight: '700', color: '#2563eb' }}>{result.case_assessment.successOutlook?.expectedScoreImprovement || '+20 Points'}</div>
                 </div>
              </div>
-             
-             {result.case_assessment.successOutlook?.primaryObstacles && result.case_assessment.successOutlook.primaryObstacles.length > 0 && (
-               <div style={{ marginBottom: '32px', pageBreakInside: 'avoid' }}>
-                 <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', color: '#ef4444', marginBottom: '12px' }}>Primary Obstacles to Address</h4>
-                 <ul style={{ paddingLeft: '20px', margin: 0, color: '#444', fontSize: '14px', lineHeight: '1.6' }}>
+
+             {result.case_assessment.successOutlook?.primaryObstacles?.length > 0 && (
+               <div style={{ marginBottom: '28px', pageBreakInside: 'avoid' }}>
+                 <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', color: '#dc2626', marginBottom: '10px' }}>Primary Obstacles to Address</h4>
+                 <ul style={{ paddingLeft: '20px', margin: 0, color: '#444', fontSize: '14px', lineHeight: '1.8' }}>
                    {result.case_assessment.successOutlook.primaryObstacles.map((obs, i) => <li key={i}>{obs}</li>)}
                  </ul>
                </div>
              )}
 
-             <h3 style={{ fontSize: '16px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px', color: '#111', pageBreakInside: 'avoid' }}>Main Refusal Issues</h3>
-             <ul style={{ paddingLeft: '20px', marginBottom: '32px', pageBreakInside: 'avoid' }}>
-               {result.issues.map((issue, i) => (
-                 <li key={i} style={{ fontSize: '15px', color: '#333', marginBottom: '12px', lineHeight: '1.5' }}>
-                   <strong>{issue.issue}</strong>
-                   <span style={{ display: 'inline-block', backgroundColor: issue.impact === 'Critical' || issue.impact === 'High' ? '#fee2e2' : '#fef3c7', color: issue.impact === 'Critical' || issue.impact === 'High' ? '#991b1b' : '#92400e', fontWeight: '700', fontSize: '11px', padding: '2px 8px', borderRadius: '12px', marginLeft: '8px', textTransform: 'uppercase', verticalAlign: 'middle' }}>
-                     {issue.impact} Risk
-                   </span>
-                 </li>
-               ))}
-             </ul>
-
-             <h3 style={{ fontSize: '16px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px', color: '#111', pageBreakInside: 'avoid' }}>Top Required Actions</h3>
-             <ul style={{ paddingLeft: '20px', marginBottom: '20px', pageBreakInside: 'avoid' }}>
-               {result.strategy.immediateActions.map((action, i) => (
-                 <li key={i} style={{ fontSize: '14px', color: '#333', marginBottom: '12px', lineHeight: '1.6' }}>{action}</li>
+             <h3 style={{ fontSize: '16px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '14px', color: '#1a1a2e', pageBreakInside: 'avoid' }}>Consultant Notes</h3>
+             <ul style={{ paddingLeft: '20px', marginBottom: '28px', pageBreakInside: 'avoid' }}>
+               {result.case_assessment.consultantNotes.map((note, i) => (
+                 <li key={i} style={{ fontSize: '14px', color: '#333', marginBottom: '10px', lineHeight: '1.6' }}>{note}</li>
                ))}
              </ul>
           </div>
 
-          <div style={{ padding: '60px 80px', boxSizing: 'border-box' }}>
-             <h2 style={{ fontSize: '24px', fontWeight: '800', borderBottom: '2px solid #111', paddingBottom: '16px', marginBottom: '32px', textTransform: 'uppercase', letterSpacing: '1px', color: '#111' }}>Refusal Issue Analysis</h2>
-             
+          {/* PAGE 3+ — REFUSAL ISSUES */}
+          <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', pageBreakAfter: 'always' }}>
+             <h2 style={{ fontSize: '22px', fontWeight: '800', borderBottom: '3px solid #1a1a2e', paddingBottom: '12px', marginBottom: '28px', textTransform: 'uppercase', letterSpacing: '1px', color: '#1a1a2e' }}>Refusal Issue Analysis</h2>
+
              {result.issues.map((issue, idx) => (
-               <div key={idx} style={{ marginBottom: '32px', backgroundColor: '#fff', border: '1px solid #e5e7eb', padding: '24px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', pageBreakInside: 'avoid' }}>
-                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #f3f4f6' }}>
-                    <h4 style={{ fontSize: '18px', fontWeight: '700', margin: 0, color: '#111' }}>{issue.issue}</h4>
-                    <span style={{ fontSize: '12px', fontWeight: '700', padding: '4px 12px', backgroundColor: issue.impact === 'Critical' ? '#fee2e2' : issue.impact === 'High' ? '#ffedd5' : '#dcfce7', color: issue.impact === 'Critical' ? '#991b1b' : issue.impact === 'High' ? '#9a3412' : '#166534', borderRadius: '20px', textTransform: 'uppercase' }}>{issue.impact}</span>
+               <div key={idx} style={{ marginBottom: '28px', border: '1px solid #e5e7eb', padding: '24px', borderRadius: '8px', pageBreakInside: 'avoid' }}>
+                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px', paddingBottom: '14px', borderBottom: '1px solid #f3f4f6' }}>
+                    <h4 style={{ fontSize: '17px', fontWeight: '700', margin: 0, color: '#111' }}>{issue.issue}</h4>
+                    <span style={{ fontSize: '11px', fontWeight: '700', padding: '3px 10px', backgroundColor: issue.impact === 'Critical' ? '#fee2e2' : issue.impact === 'High' ? '#ffedd5' : '#dcfce7', color: issue.impact === 'Critical' ? '#991b1b' : issue.impact === 'High' ? '#9a3412' : '#166534', borderRadius: '20px', textTransform: 'uppercase' }}>{issue.impact}</span>
                  </div>
-                 
-                 <div style={{ marginBottom: '20px' }}>
-                   <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#6b7280', fontWeight: '700', marginBottom: '6px' }}>Consultant Finding</div>
+
+                 <div style={{ marginBottom: '16px' }}>
+                   <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#6b7280', fontWeight: '700', marginBottom: '4px' }}>Consultant Finding</div>
                    <div style={{ fontSize: '14px', color: '#374151', lineHeight: '1.6' }}>{issue.finding}</div>
                  </div>
 
-                 <div style={{ marginBottom: '20px', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '6px', borderLeft: '4px solid #3b82f6' }}>
-                   <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#3b82f6', fontWeight: '700', marginBottom: '6px' }}>Recommended Resolution</div>
-                   <div style={{ fontSize: '14px', color: '#1e3a8a', fontWeight: '600', lineHeight: '1.5' }}>{issue.recommendedAction}</div>
+                 <div style={{ marginBottom: '16px', backgroundColor: '#f0f4ff', padding: '14px', borderRadius: '6px', borderLeft: '4px solid #3b82f6' }}>
+                   <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#3b82f6', fontWeight: '700', marginBottom: '4px' }}>Recommended Resolution</div>
+                   <div style={{ fontSize: '14px', color: '#1e40af', fontWeight: '600', lineHeight: '1.5' }}>{issue.recommendedAction}</div>
                  </div>
 
                  <div>
-                   <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#6b7280', fontWeight: '700', marginBottom: '8px' }}>Mandatory Evidence</div>
+                   <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#6b7280', fontWeight: '700', marginBottom: '6px' }}>Required Evidence</div>
                    <ul style={{ paddingLeft: '20px', margin: 0 }}>
                      {issue.recommendedEvidence.map((ev, i) => (
-                       <li key={i} style={{ fontSize: '14px', color: '#4b5563', marginBottom: '6px', lineHeight: '1.5' }}>{ev}</li>
+                       <li key={i} style={{ fontSize: '14px', color: '#4b5563', marginBottom: '4px', lineHeight: '1.5' }}>{ev}</li>
                      ))}
                    </ul>
                  </div>
@@ -731,52 +946,62 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
              ))}
           </div>
 
-          <div style={{ padding: '60px 80px', boxSizing: 'border-box' }}>
-            <h2 style={{ fontSize: '24px', fontWeight: '800', borderBottom: '2px solid #111', paddingBottom: '16px', marginBottom: '32px', textTransform: 'uppercase', letterSpacing: '1px', color: '#111' }}>Draft Preparation Submission (Supporting Explanation)</h2>
-            <div style={{ whiteSpace: 'pre-wrap', fontFamily: "'Times New Roman', Times, serif", fontSize: '15px', lineHeight: '1.8', color: '#111', textJustify: 'inter-word', textAlign: 'justify', padding: '40px', border: '1px solid #e5e7eb', backgroundColor: '#fafafa', borderRadius: '4px' }}>
-              {result.appeal_letter}
-            </div>
-          </div>
-          
-          <div style={{ padding: '60px 80px', boxSizing: 'border-box' }}>
-             <h2 style={{ fontSize: '24px', fontWeight: '800', borderBottom: '2px solid #111', paddingBottom: '16px', marginBottom: '32px', textTransform: 'uppercase', letterSpacing: '1px', color: '#111' }}>Evidence Checklist & Strategy</h2>
+          {/* STRATEGY PAGE */}
+          <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', pageBreakAfter: 'always' }}>
+             <h2 style={{ fontSize: '22px', fontWeight: '800', borderBottom: '3px solid #1a1a2e', paddingBottom: '12px', marginBottom: '28px', textTransform: 'uppercase', letterSpacing: '1px', color: '#1a1a2e' }}>Reapplication Strategy</h2>
 
-             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', marginBottom: '40px', pageBreakInside: 'avoid' }}>
-               <div style={{ backgroundColor: '#f8fafc', padding: '24px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                  <h4 style={{ fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '16px', color: '#0f172a' }}>Immediate Strategy Actions</h4>
-                  <ul style={{ paddingLeft: '20px', margin: 0, fontSize: '14px', lineHeight: '1.6', color: '#334155' }}>
-                    {result.strategy.immediateActions.map((action, i) => <li key={i} style={{ marginBottom: '8px' }}>{action}</li>)}
-                  </ul>
+             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '28px' }}>
+               <div style={{ backgroundColor: '#f0fdf4', padding: '20px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                 <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '12px', color: '#166534' }}>Immediate Actions</h4>
+                 <ul style={{ paddingLeft: '20px', margin: 0, fontSize: '14px', lineHeight: '1.6', color: '#334155' }}>
+                   {result.strategy.immediateActions.map((action, i) => <li key={i} style={{ marginBottom: '6px' }}>{action}</li>)}
+                 </ul>
                </div>
-
-               <div>
-                 <div style={{ marginBottom: '24px', paddingBottom: '24px', borderBottom: '1px solid #e5e7eb' }}>
-                    <h4 style={{ fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '8px', color: '#64748b' }}>Target Timeline</h4>
-                    <p style={{ fontSize: '16px', margin: 0, fontWeight: '600', color: '#0f172a' }}>{result.strategy.timeline}</p>
-                 </div>
-                 <div>
-                    <h4 style={{ fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '8px', color: '#64748b' }}>Expected Outcome</h4>
-                    <p style={{ fontSize: '16px', margin: 0, fontWeight: '600', color: '#059669' }}>{result.strategy.expectedOutcome}</p>
-                 </div>
+               <div style={{ backgroundColor: '#eff6ff', padding: '20px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
+                 <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '12px', color: '#1e40af' }}>Evidence To Gather</h4>
+                 <ul style={{ paddingLeft: '20px', margin: 0, fontSize: '14px', lineHeight: '1.6', color: '#334155' }}>
+                   {result.strategy.evidenceToGather.map((item, i) => <li key={i} style={{ marginBottom: '6px' }}>{item}</li>)}
+                 </ul>
                </div>
              </div>
 
-             <h3 style={{ fontSize: '18px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '24px', color: '#111' }}>Structured Document Checklist</h3>
+             <div style={{ backgroundColor: '#fef2f2', padding: '20px', borderRadius: '8px', border: '1px solid #fecaca', marginBottom: '28px', pageBreakInside: 'avoid' }}>
+               <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '12px', color: '#991b1b' }}>Common Mistakes To Avoid</h4>
+               <ul style={{ paddingLeft: '20px', margin: 0, fontSize: '14px', lineHeight: '1.6', color: '#334155' }}>
+                 {result.strategy.commonMistakes.map((mistake, i) => <li key={i} style={{ marginBottom: '6px' }}>{mistake}</li>)}
+               </ul>
+             </div>
 
-             {['Financial', 'Employment', 'Academic', 'Travel', 'Identity', 'Other'].map(category => {
+             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', pageBreakInside: 'avoid' }}>
+               <div style={{ padding: '20px', border: '1px solid #e5e7eb', borderRadius: '8px', textAlign: 'center' }}>
+                 <h4 style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '8px', color: '#888' }}>Target Timeline</h4>
+                 <p style={{ fontSize: '18px', margin: 0, fontWeight: '700', color: '#111' }}>{result.strategy.timeline}</p>
+               </div>
+               <div style={{ padding: '20px', border: '1px solid #e5e7eb', borderRadius: '8px', textAlign: 'center', backgroundColor: '#f0fdf4' }}>
+                 <h4 style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '8px', color: '#059669' }}>Expected Outcome</h4>
+                 <p style={{ fontSize: '18px', margin: 0, fontWeight: '700', color: '#059669' }}>{result.strategy.expectedOutcome}</p>
+               </div>
+             </div>
+          </div>
+
+          {/* CHECKLIST PAGE */}
+          <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', pageBreakAfter: 'always' }}>
+             <h2 style={{ fontSize: '22px', fontWeight: '800', borderBottom: '3px solid #1a1a2e', paddingBottom: '12px', marginBottom: '28px', textTransform: 'uppercase', letterSpacing: '1px', color: '#1a1a2e' }}>Structured Document Checklist</h2>
+
+             {(['Financial', 'Employment', 'Academic', 'Travel', 'Identity', 'Other'] as const).map(category => {
                const catKey = category.toLowerCase() as keyof ChecklistItem;
                const items = result.checklist[catKey];
                if (!items || items.length === 0) return null;
-               
+
                return (
                  <div key={category} style={{ marginBottom: '24px', pageBreakInside: 'avoid', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px' }}>
-                   <h4 style={{ fontSize: '15px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '16px', color: '#334155', display: 'inline-block', borderBottom: '2px solid #cbd5e1', paddingBottom: '4px' }}>{category} Evidence</h4>
+                   <h4 style={{ fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '14px', color: '#334155', display: 'inline-block', borderBottom: '2px solid #cbd5e1', paddingBottom: '4px' }}>{category} Evidence</h4>
                    {items.map((item: any, i: number) => (
-                     <div key={i} style={{ display: 'flex', marginBottom: '12px', alignItems: 'flex-start' }}>
-                       <div style={{ fontSize: '20px', marginRight: '16px', color: '#94a3b8', lineHeight: '1' }}>☐</div>
+                     <div key={i} style={{ display: 'flex', marginBottom: '10px', alignItems: 'flex-start' }}>
+                       <div style={{ fontSize: '18px', marginRight: '14px', color: '#94a3b8', lineHeight: '1' }}>☐</div>
                        <div>
-                         <div style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', marginBottom: '2px' }}>{item.item}</div>
-                         <div style={{ fontSize: '13px', color: '#64748b', lineHeight: '1.5' }}>{item.explanation}</div>
+                         <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', marginBottom: '2px' }}>{item.item}</div>
+                         <div style={{ fontSize: '12px', color: '#64748b', lineHeight: '1.5' }}>{item.explanation}</div>
                        </div>
                      </div>
                    ))}
@@ -785,9 +1010,17 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
              })}
           </div>
 
+          {/* APPEAL LETTER PAGE */}
+          <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: '800', borderBottom: '3px solid #1a1a2e', paddingBottom: '12px', marginBottom: '28px', textTransform: 'uppercase', letterSpacing: '1px', color: '#1a1a2e' }}>Supporting Explanation Draft</h2>
+            <div style={{ whiteSpace: 'pre-wrap', fontFamily: "'Times New Roman', Times, serif", fontSize: '14px', lineHeight: '1.8', color: '#111', textAlign: 'justify', padding: '40px', border: '1px solid #e5e7eb', backgroundColor: '#fafafa', borderRadius: '4px' }}>
+              {result.appeal_letter}
+            </div>
+          </div>
+
         </div>
       </div>
-      
+
     </div>
     </>
   );
