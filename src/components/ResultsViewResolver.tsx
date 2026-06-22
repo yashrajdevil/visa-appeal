@@ -1,6 +1,6 @@
-import { useEffect, useState, Component } from 'react';
+import { useEffect, useState, Component, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, getDoc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { createCheckout } from '../services/api';
 import ResultsDashboard from './ResultsDashboard';
@@ -111,12 +111,6 @@ export default function ResultsViewResolver({ onReset }: Props) {
   const caseId = paramCaseId || searchParams.get('caseId');
   const isPurchaseSuccess = searchParams.get('purchase') === 'success';
 
-  console.log('=== Results page mounted ===');
-  console.log('CaseId:', caseId);
-  console.log('Location state:', location.state);
-  console.log('Search params:', Object.fromEntries(searchParams.entries()));
-  console.log('Auth user:', auth.currentUser?.uid);
-
   const [caseData, setCaseData] = useState<CaseData | null>(null);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
@@ -130,25 +124,61 @@ export default function ResultsViewResolver({ onReset }: Props) {
     const user = auth.currentUser;
     if (!user) return;
 
+    console.log(`RESULTS QUERY UID: ${user.uid}`);
+    console.log(`RESULTS QUERY CASE ID: ${caseId}`);
     const resultsPath = `users/${user.uid}/cases/${caseId}`;
-    console.log(`RESULTS PAGE QUERY PATH: ${resultsPath}`);
+    console.log(`RESULTS QUERY PATH: ${resultsPath}`);
 
     const caseRef = doc(db, 'users', user.uid, 'cases', caseId);
 
-    const unsubscribe = onSnapshot(caseRef, (snap) => {
-      if (!snap.exists()) {
+    let docFound = false;
+    let retryCount = 0;
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+    let unsubscribeSnapshot: (() => void) | null = null;
+
+    // Real-time listener for document detection
+    unsubscribeSnapshot = onSnapshot(caseRef, (snap) => {
+      console.log(`RESULTS SNAPSHOT EXISTS: ${snap.exists()}`);
+      if (snap.exists()) {
+        docFound = true;
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+        const data = snap.data() as CaseData;
+        setCaseData(data);
         setLoading(false);
-        return;
       }
-      const data = snap.data() as CaseData;
-      setCaseData(data);
-      setLoading(false);
     }, (err) => {
-      console.error('Firestore error:', err);
-      setLoading(false);
+      console.error('RESULTS ERROR:', (err as any).code, (err as any).message);
+      // onSnapshot auto-reconnects; do NOT set loading=false here
     });
 
-    return unsubscribe;
+    // Poll fallback: retry every 1s up to 10s in case onSnapshot lags
+    pollTimer = setInterval(async () => {
+      retryCount++;
+      console.log(`RESULTS RETRY ${retryCount}/10`);
+      try {
+        const snap = await getDoc(caseRef);
+        console.log(`RESULTS RETRY SNAPSHOT EXISTS: ${snap.exists()}`);
+        if (snap.exists()) {
+          docFound = true;
+          if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+          if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
+          const data = snap.data() as CaseData;
+          setCaseData(data);
+          setLoading(false);
+        } else if (retryCount >= 10) {
+          console.log('RESULTS RETRY EXHAUSTED — doc not found after 10 retries');
+          if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+          setLoading(false);
+        }
+      } catch (err: any) {
+        console.error('RESULTS RETRY ERROR:', err.code, err.message);
+      }
+    }, 1000);
+
+    return () => {
+      if (unsubscribeSnapshot) unsubscribeSnapshot();
+      if (pollTimer) clearInterval(pollTimer);
+    };
   }, [caseId, navigate]);
 
   const handlePurchase = async (plan: 'starter' | 'standard' | 'premium') => {
