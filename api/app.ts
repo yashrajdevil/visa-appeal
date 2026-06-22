@@ -224,5 +224,35 @@ app.get('/api/test-generate-minimal', async (_req, res) => {
   }
 });
 
+app.get('/api/test-gemini-direct', async (_req, res) => {
+  const key = (process.env.GEMINI_API_KEY || '').trim();
+  const model = 'gemini-2.5-flash';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+  const fullUrl = `${url}?key=${key}`;
+  const payload = { contents: [{ parts: [{ text: 'Say OK' }] }] };
+  const body = JSON.stringify(payload);
+
+  console.log('DIRECT URL:', fullUrl.replace(key, '***REDACTED***'));
+  console.log('DIRECT model:', model);
+  console.log('DIRECT payload:', body);
+
+  try {
+    const resp = await fetch(fullUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+      body,
+    });
+    const text = await resp.text();
+    const headers = Object.fromEntries(resp.headers.entries());
+    console.log('DIRECT status:', resp.status);
+    console.log('DIRECT headers:', JSON.stringify(headers));
+    console.log('DIRECT body:', text);
+    res.json({ status: resp.status, headers, body: text, exactUrl: fullUrl.replace(key, '***REDACTED***'), exactPayload: payload });
+  } catch (err: any) {
+    console.error('DIRECT error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 console.log('BOOT 5 - app export');
 export default app;
