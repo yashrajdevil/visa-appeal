@@ -375,74 +375,58 @@ explanation
 ---
 
 SECTION 7
-PROFESSIONAL REFUSAL RESPONSE SUBMISSION
-----------------------------------------
+VISA REFUSAL RESPONSE SUBMISSION
+---------------------------------
 
-You are an experienced immigration lawyer.
+Generate a professional visa refusal response submission.
 
-Write the submission exactly as a professional consultant would prepare for a real visa reapplication package.
+Requirements:
 
-The goal is NOT to write a personal letter.
+* Written in the style of an experienced immigration consultant.
+* Address the visa officer directly.
+* Use numbered refusal-response sections.
+* Reference actual applicant facts from the questionnaire whenever available.
+* Do not use placeholders.
+* Do not use generic template language.
+* Do not use emotional arguments.
+* Do not repeat refusal reasons.
+* Do not create facts not supplied by the applicant.
 
-The goal is to write a professional refusal-response document addressed to the visa officer.
+Structure:
 
-IMPORTANT:
+Visa Office
 
-* Never use placeholders.
-* Never use generic template wording.
-* Never write "I respectfully request."
-* Never write "I promise."
-* Never write "Thank you for your consideration."
-* Never write "Please find attached."
-* Never write "We believe."
+Subject
 
-Use a professional immigration-law tone.
+Opening paragraph
 
-The submission should look like:
+Numbered response sections
 
-Visa Office Heading
+Professional conclusion
 
-Subject Line
+Target length:
+500-900 words.
 
-Brief introductory paragraph.
+The letter should sound like a document prepared for a real reapplication package, not a template and not a legal essay.
 
-Then create a numbered section for EVERY refusal reason.
+Most importantly:
 
-For each section:
+Use applicant-specific information aggressively.
 
-1. State the concern raised by the officer.
+If the applicant supplied:
 
-2. Explain why the concern arose.
+* employment information
+* income
+* bank balance
+* sponsor
+* property ownership
+* dependents
+* business ownership
+* travel purpose
 
-3. Explain what evidence now addresses the concern.
+the letter must reference those facts directly.
 
-4. Explain why the concern should no longer remain.
-
-Use concise, evidence-focused language.
-
-Example style:
-
-"The refusal noted concerns regarding the applicant's financial circumstances. The updated financial documentation demonstrates a consistent pattern of income and savings accumulation over time. The available evidence provides a clearer picture of the applicant's financial position than was available at the time of the original assessment."
-
-Another example:
-
-"The refusal also raised concerns regarding the applicant's ties to their country of residence. The applicant's employment history, ongoing professional commitments, and personal obligations collectively establish substantial incentives to depart Canada upon completion of the proposed visit."
-
-DO NOT create emotional arguments.
-
-DO NOT create sympathy arguments.
-
-DO NOT create dramatic language.
-
-DO NOT create long essays.
-
-DO NOT repeat the same point multiple times.
-
-Length target:
-
-500-800 words.
-
-The final result should read like a document prepared by a regulated immigration consultant or visa lawyer.
+Specific facts are more important than sophisticated wording.
 
 ---
 
