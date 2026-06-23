@@ -236,7 +236,25 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
       const CW = PW - 2 * M;
       const FS = 10;
 
-      const sanitize = (t: string) => t.replace(/•/g, '-').replace(/[–—]/g, '--').replace(/[""]/g, '"').replace(/['']/g, "'").replace(/…/g, '...');
+      const safeText = (value: unknown, field?: string): string => {
+        if (value === null || value === undefined) {
+          if (field) console.error(`[PDF] Null/undefined value for field: ${field}`);
+          return '';
+        }
+        if (typeof value === 'number' || typeof value === 'boolean') {
+          console.error(`[PDF] Non-string (${typeof value}) passed for "${field ?? 'unknown'}": ${String(value)}`);
+          return String(value);
+        }
+        if (typeof value === 'string') {
+          return value.replace(/•/g, '-').replace(/[–—]/g, '--').replace(/[""]/g, '"').replace(/['']/g, "'").replace(/…/g, '...');
+        }
+        if (Array.isArray(value)) {
+          console.error(`[PDF] Array passed for "${field ?? 'unknown'}", joining as comma-separated`);
+          return value.map(v => safeText(v)).join(', ');
+        }
+        console.error(`[PDF] Unexpected type (${typeof value}) for "${field ?? 'unknown'}"`);
+        return String(value);
+      };
 
       let y = M;
       let pg = 1;
@@ -280,11 +298,11 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
       // Severity
       doc.setFontSize(9); doc.setTextColor(59, 59, 92);
       doc.text('SEVERITY RATING', PW - M - 1.6, y + 0.2);
-      const sw = doc.getTextWidth(result.case_assessment.severityRating) + 0.3;
+      const sw = doc.getTextWidth(safeText(result.case_assessment.severityRating, 'severityRating')) + 0.3;
       doc.setFillColor(26, 26, 46);
       doc.roundedRect(PW - M - sw - 0.1, y + 0.28, sw, 0.22, 0.03, 0.03, 'F');
       doc.setFontSize(8); doc.setTextColor(255, 255, 255);
-      doc.text(result.case_assessment.severityRating, PW - M - sw / 2 - 0.1, y + 0.43, { align: 'center' });
+      doc.text(safeText(result.case_assessment.severityRating, 'severityRating'), PW - M - sw / 2 - 0.1, y + 0.43, { align: 'center' });
       // Score bar
       doc.setFillColor(229, 231, 235);
       doc.roundedRect(M + 0.15, y + 1.0, CW - 0.3, 0.1, 0.03, 0.03, 'F');
@@ -309,7 +327,7 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
         doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(136, 136, 136);
         doc.text(info[i][0].toUpperCase(), ix + 0.1, iy + 0.18);
         doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(17, 17, 17);
-        doc.text(info[i][1], ix + 0.1, iy + 0.48);
+        doc.text(safeText(info[i][1], 'infoGrid_' + info[i][0]), ix + 0.1, iy + 0.48);
       }
       y += 1.85;
 
@@ -319,7 +337,7 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
       doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(59, 130, 246);
       doc.text('RECOMMENDED PATH', M + 0.15, y + 0.2);
       doc.setFontSize(15); doc.setFont('helvetica', 'bold'); doc.setTextColor(26, 26, 46);
-      doc.text(result.case_assessment.consultantVerdict.recommendedPath, M + 0.15, y + 0.52);
+      doc.text(safeText(result.case_assessment.consultantVerdict.recommendedPath, 'recommendedPath'), M + 0.15, y + 0.52);
       ftr();
 
       // ===== PAGE 2: READINESS SCORE (Standard+) =====
@@ -363,7 +381,7 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
           doc.setTextColor(cards[i].c[0], cards[i].c[1], cards[i].c[2]);
           doc.text(cards[i].l.toUpperCase(), cx + 0.1, y + 0.18);
           doc.setFontSize(13); doc.setFont('helvetica', 'bold');
-          doc.text(cards[i].v, cx + 0.1, y + 0.48);
+          doc.text(safeText(cards[i].v, 'readinessCard_' + cards[i].l), cx + 0.1, y + 0.48);
         }
         y += 0.9;
 
@@ -391,13 +409,13 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
         doc.text('CASE STRENGTH', M + 0.2 + mw3 + 0.2, y + 0.2);
         doc.text('CONFIDENCE LEVEL', M + 0.2 + 2 * (mw3 + 0.2), y + 0.2);
         doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
-        doc.text(result.case_assessment.consultantVerdict.recommendedPath, M + 0.2, y + 0.5);
-        doc.text(result.case_assessment.consultantVerdict.currentCaseStrength, M + 0.2 + mw3 + 0.2, y + 0.5);
-        doc.text(result.case_assessment.consultantVerdict.confidenceLevel, M + 0.2 + 2 * (mw3 + 0.2), y + 0.5);
+        doc.text(safeText(result.case_assessment.consultantVerdict.recommendedPath, 'recommendedPath'), M + 0.2, y + 0.5);
+        doc.text(safeText(result.case_assessment.consultantVerdict.currentCaseStrength, 'currentCaseStrength'), M + 0.2 + mw3 + 0.2, y + 0.5);
+        doc.text(safeText(result.case_assessment.consultantVerdict.confidenceLevel, 'confidenceLevel'), M + 0.2 + 2 * (mw3 + 0.2), y + 0.5);
 
         doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(148, 163, 184);
         doc.text('CONSULTANT REASONING', M + 0.2, y + 0.8);
-        const rl = doc.splitTextToSize(sanitize(stripMarkdown(result.case_assessment.consultantVerdict.reasoning)), CW - 0.6);
+        const rl = doc.splitTextToSize(safeText(stripMarkdown(result.case_assessment.consultantVerdict.reasoning)), CW - 0.6);
         doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5); doc.setTextColor(228, 228, 231);
         let ry = y + 1.0;
         for (const l of rl) { if (ry > y + bh - 0.15) break; doc.text(l, M + 0.2, ry); ry += 0.17; }
@@ -410,7 +428,7 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
           y += 0.25;
           doc.setFont('helvetica', 'normal'); doc.setFontSize(FS); doc.setTextColor(51, 51, 51);
           for (const n of result.case_assessment.consultantNotes) {
-            const nl = doc.splitTextToSize(sanitize(stripMarkdown(n)), CW - 0.3);
+            const nl = doc.splitTextToSize(safeText(stripMarkdown(n)), CW - 0.3);
             for (const l of nl) { cp(0.2); doc.text(`-  ${l}`, M + 0.05, y); y += 0.2; }
             y += 0.08;
           }
@@ -429,7 +447,7 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
         doc.setFillColor(26, 26, 46); doc.roundedRect(M, y, CW, 1.0, 0.06, 0.06, 'F');
         doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(148, 163, 184);
         doc.text('CASE OVERVIEW', M + 0.2, y + 0.25);
-        const summary = `Applicant ${result.case_assessment.applicantName || 'Confidential Client'} applied for ${result.case_assessment.caseType}. Current readiness score is ${score}/100, rated as ${result.case_assessment.severityRating}. ${sanitize(stripMarkdown(result.case_assessment.consultantVerdict.reasoning))}`;
+        const summary = `Applicant ${result.case_assessment.applicantName || 'Confidential Client'} applied for ${result.case_assessment.caseType}. Current readiness score is ${score}/100, rated as ${result.case_assessment.severityRating}. ${safeText(stripMarkdown(result.case_assessment.consultantVerdict.reasoning))}`;
         const sl = doc.splitTextToSize(summary, CW - 0.4);
         doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(228, 228, 231);
         let sy = y + 0.5;
@@ -452,7 +470,7 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
           doc.setTextColor(ecards[i].c[0], ecards[i].c[1], ecards[i].c[2]);
           doc.text(ecards[i].l.toUpperCase(), cx + 0.1, y + 0.18);
           doc.setFontSize(13); doc.setFont('helvetica', 'bold');
-          doc.text(ecards[i].v, cx + 0.1, y + 0.48);
+          doc.text(safeText(ecards[i].v, 'execSummaryCard_' + ecards[i].l), cx + 0.1, y + 0.48);
         }
         y += 0.9;
 
@@ -463,7 +481,7 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
           y += 0.25;
           doc.setFont('helvetica', 'normal'); doc.setFontSize(FS); doc.setTextColor(51, 51, 51);
           for (const n of result.case_assessment.consultantNotes) {
-            const nl = doc.splitTextToSize(sanitize(stripMarkdown(n)), CW - 0.3);
+            const nl = doc.splitTextToSize(safeText(stripMarkdown(n)), CW - 0.3);
             for (const l of nl) { cp(0.2); doc.text(`-  ${l}`, M + 0.05, y); y += 0.2; }
             y += 0.08;
           }
@@ -497,23 +515,23 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
           doc.setDrawColor(229, 229, 235); doc.setFillColor(255, 255, 255);
           doc.roundedRect(M, y, CW, 0.45, 0.04, 0.04, 'FD');
           doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(17, 17, 17);
-          doc.text(issue.issue, M + 0.15, y + 0.28);
+          doc.text(safeText(issue.issue, 'issueName'), M + 0.15, y + 0.28);
           // Impact badge
           const impC = issue.impact === 'Critical' ? [153, 27, 27] : issue.impact === 'High' ? [154, 52, 18] : [22, 101, 52];
           const impBg = issue.impact === 'Critical' ? [254, 226, 226] : issue.impact === 'High' ? [255, 237, 213] : [220, 252, 231];
-          const iw = doc.getTextWidth(issue.impact) + 0.2;
+          const iw = doc.getTextWidth(safeText(issue.impact, 'issueImpact_width')) + 0.2;
           doc.setFillColor(impBg[0], impBg[1], impBg[2]);
           doc.roundedRect(PW - M - iw - 0.1, y + 0.08, iw, 0.2, 0.03, 0.03, 'F');
           doc.setFontSize(7); doc.setFont('helvetica', 'bold');
           doc.setTextColor(impC[0], impC[1], impC[2]);
-          doc.text(issue.impact, PW - M - iw / 2 - 0.1, y + 0.22, { align: 'center' });
+          doc.text(safeText(issue.impact, 'issueImpact'), PW - M - iw / 2 - 0.1, y + 0.22, { align: 'center' });
           y += 0.6;
 
           cp(2.8);
           doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(107, 114, 128);
           doc.text('Consultant Finding', M + 0.15, y);
           y += 0.2;
-          const fLines = doc.splitTextToSize(sanitize(stripMarkdown(issue.finding)), CW - 0.3);
+          const fLines = doc.splitTextToSize(safeText(stripMarkdown(issue.finding)), CW - 0.3);
           doc.setFont('helvetica', 'normal'); doc.setFontSize(FS); doc.setTextColor(55, 65, 81);
           for (const l of fLines) { cp(0.2); doc.text(l, M + 0.15, y); y += 0.2; }
           y += 0.2;
@@ -524,7 +542,7 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
           doc.setDrawColor(59, 130, 246); doc.setLineWidth(0.03); doc.line(M, y, M, y + 0.7);
           doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(59, 130, 246);
           doc.text('Recommended Resolution', M + 0.2, y + 0.18);
-          const aLines = doc.splitTextToSize(sanitize(stripMarkdown(issue.recommendedAction)), CW - 0.5);
+          const aLines = doc.splitTextToSize(safeText(stripMarkdown(issue.recommendedAction)), CW - 0.5);
           doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(30, 64, 175);
           let ay = y + 0.38;
           for (const l of aLines) { doc.text(l, M + 0.2, ay); ay += 0.17; }
@@ -565,7 +583,7 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
           y += 0.25;
           doc.setFont('helvetica', 'normal'); doc.setFontSize(FS); doc.setTextColor(51, 65, 85);
           for (const item of items) {
-            const il = doc.splitTextToSize(sanitize(stripMarkdown(item)), CW - 0.3);
+            const il = doc.splitTextToSize(safeText(stripMarkdown(item)), CW - 0.3);
             for (const l of il) { cp(0.2); doc.text(`-  ${l}`, M + 0.1, y); y += 0.2; }
             y += 0.05;
           }
@@ -579,14 +597,14 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
         doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(136, 136, 136);
         doc.text('TARGET TIMELINE', M + 0.15, y + 0.2);
         doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(17, 17, 17);
-        doc.text(result.strategy.timeline, M + 0.15, y + 0.5);
+        doc.text(safeText(result.strategy.timeline, 'timeline'), M + 0.15, y + 0.5);
 
         doc.setDrawColor(229, 229, 235); doc.setFillColor(240, 253, 244);
         doc.roundedRect(M + tw + 0.3, y, tw, 0.7, 0.04, 0.04, 'FD');
         doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(5, 150, 105);
         doc.text('EXPECTED OUTCOME', M + tw + 0.45, y + 0.2);
         doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(5, 150, 105);
-        doc.text(result.strategy.expectedOutcome, M + tw + 0.45, y + 0.5);
+        doc.text(safeText(result.strategy.expectedOutcome, 'expectedOutcome'), M + tw + 0.45, y + 0.5);
         ftr();
       }
 
@@ -615,13 +633,13 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
             doc.text('[ ]', M, y - 0.02);
             doc.setTextColor(15, 23, 42);
             doc.setFont('helvetica', 'bold');
-            const iLines = doc.splitTextToSize(sanitize(item.item), CW - 0.5);
+            const iLines = doc.splitTextToSize(safeText(item.item), CW - 0.5);
             doc.text(iLines, M + 0.35, y);
             if (iLines.length > 1) y += (iLines.length - 1) * 0.17 + 0.05;
             y += 0.02;
             doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
             doc.setTextColor(100, 116, 139);
-            const eLines = doc.splitTextToSize(sanitize(item.explanation), CW - 0.5);
+            const eLines = doc.splitTextToSize(safeText(item.explanation), CW - 0.5);
             for (const l of eLines) { cp(0.16); doc.text(l, M + 0.35, y); y += 0.16; }
             y += 0.12;
           }
@@ -655,7 +673,7 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
         y += 0.7;
 
         doc.setFont('times', 'normal'); doc.setFontSize(11); doc.setTextColor(17, 17, 17);
-        const letterLines = doc.splitTextToSize(sanitize(stripMarkdown(result.appeal_letter)), CW - 0.6);
+        const letterLines = doc.splitTextToSize(safeText(stripMarkdown(result.appeal_letter)), CW - 0.6);
         for (const l of letterLines) {
           cp(0.2);
           doc.text(l, M + 0.15, y);
@@ -666,7 +684,7 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
 
       doc.save('Visa_Appeal_Package.pdf');
     } catch (err: any) {
-      console.error('[PDF] Generation failed:', err.message);
+      console.error('[PDF] Generation failed:', err.message, err);
       alert('An error occurred while generating the PDF. Please try again or use the Copy button to save your content in the meantime.');
     } finally {
       setPdfLoading(false);

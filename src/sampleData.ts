@@ -1,5 +1,73 @@
 import { GenerateAppealResponse } from './types';
 
+// Edge-case data: confidenceLevel=85 (number), score=25, numeric stats, missing/null fields
+export const edgeCaseData: GenerateAppealResponse = {
+  caseId: "EDGE-CASE-001",
+  case_assessment: {
+    applicantName: "Test User",
+    score: 25,
+    severityRating: "Critical" as any,
+    caseType: "Visitor Visa",
+    consultantNotes: [],
+    consultantVerdict: {
+      currentCaseStrength: 'Critical' as any,
+      recommendedPath: 'Administrative Review' as any,
+      reasoning: "This case has multiple issues including a very low score. Confidence level is high that reapplication is needed with substantial changes.",
+      confidenceLevel: 85 as any // This is the exact crash scenario: number instead of string
+    },
+    successOutlook: {
+      currentReadiness: 'Low' as any,
+      readinessAfterFixes: 'Strong' as any,
+      expectedScoreImprovement: '+45 points',
+      primaryObstacles: []
+    }
+  },
+  issues: [
+    {
+      issue: "Insufficient Financial Evidence",
+      finding: "The applicant failed to demonstrate adequate financial resources to cover the intended stay.",
+      impact: "High" as any,
+      recommendedEvidence: [
+        "6 months bank statements",
+        "Proof of employment income"
+      ],
+      recommendedAction: "Provide comprehensive financial documentation including bank statements and income proofs."
+    }
+  ],
+  strategy: {
+    immediateActions: [
+      "Gather all financial documents",
+      "Prepare detailed explanation letter"
+    ],
+    evidenceToGather: [
+      "Bank statements",
+      "Employment letter"
+    ],
+    commonMistakes: [
+      "Submitting incomplete financial records",
+      "Not explaining large deposits"
+    ],
+    timeline: "4-6 weeks",
+    expectedOutcome: "Moderate improvement expected with proper documentation"
+  },
+  checklist: {
+    financial: [
+      { item: "Bank Statements (6 months)", explanation: "Showing consistent balance" },
+      { item: "Pay Slips (3 months)", explanation: "Proof of stable income" }
+    ],
+    employment: [
+      { item: "Employment Contract", explanation: "Confirming job position and salary" }
+    ],
+    academic: [],
+    travel: [],
+    identity: [
+      { item: "Valid Passport", explanation: "Must be valid beyond travel date" }
+    ],
+    other: []
+  },
+  appeal_letter: "Dear Officer, I am writing to provide additional context and documentation regarding my visa application..."
+};
+
 export const sampleReportData: GenerateAppealResponse = {
   caseId: "TRV-9901-CAN",
   case_assessment: {
