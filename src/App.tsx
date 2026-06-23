@@ -42,8 +42,9 @@ import FirebaseDebug from './components/FirebaseDebug';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading } = useCustomerAuth();
+  const location = useLocation();
   if (loading) return null;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
   return <>{children}</>;
 }
 
@@ -114,8 +115,8 @@ function AppContent() {
           <Route path="/" element={<LandingView onStartAppeal={() => navigate('/flow')} />} />
           <Route path="/sample-report" element={<SampleReportView />} />
           
-          <Route path="/flow" element={<AppFlow onStart={handleStartProcessing} />} />
-          <Route path="/processing" element={<ProcessingView formData={formData} error={processingError} onRetry={handleRetry} onCancel={() => navigate('/flow')} />} />
+          <Route path="/flow" element={<RequireAuth><AppFlow onStart={handleStartProcessing} /></RequireAuth>} />
+          <Route path="/processing" element={<RequireAuth><ProcessingView formData={formData} error={processingError} onRetry={handleRetry} onCancel={() => navigate('/flow')} /></RequireAuth>} />
           <Route path="/results/:caseId" element={<RequireAuth><ResultsViewResolver onReset={handleReset} /></RequireAuth>} />
           <Route path="/results" element={<Navigate to="/" />} />
 

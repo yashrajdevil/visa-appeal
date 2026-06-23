@@ -1,8 +1,16 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react';
 import SEO from '../SEO';
 import { useCustomerAuth } from '../../context/CustomerAuthContext';
+
+function getRedirect(location: ReturnType<typeof useLocation>): string {
+  const fromState = (location.state as any)?.from?.pathname;
+  if (fromState) return fromState;
+  const fromParams = new URLSearchParams(location.search).get('redirect');
+  if (fromParams) return fromParams;
+  return '/dashboard';
+}
 
 export function CustomerLogin() {
   const [email, setEmail] = useState('');
@@ -10,7 +18,9 @@ export function CustomerLogin() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, loginWithGoogle } = useCustomerAuth();
+  const redirect = getRedirect(location);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,7 +28,7 @@ export function CustomerLogin() {
     setError('');
     try {
       await login(email, password);
-      navigate('/dashboard');
+      navigate(redirect, { replace: true });
     } catch (err: any) {
       setError(err.message || 'Login failed');
     } finally {
@@ -29,7 +39,7 @@ export function CustomerLogin() {
   const handleGoogle = async () => {
     try {
       await loginWithGoogle();
-      navigate('/dashboard');
+      navigate(redirect, { replace: true });
     } catch (err: any) {
       setError(err.message || 'Google login failed');
     }
@@ -93,7 +103,7 @@ export function CustomerLogin() {
             </div>
 
             <p className="text-center text-sm text-zinc-500 mt-6">
-              Don't have an account? <Link to="/register" className="text-indigo-400 hover:text-white">Create one</Link>
+              Don't have an account? <Link to={redirect !== '/dashboard' ? `/register?redirect=${encodeURIComponent(redirect)}` : '/register'} className="text-indigo-400 hover:text-white">Create one</Link>
             </p>
           </form>
         </div>
@@ -109,7 +119,9 @@ export function CustomerRegister() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { register } = useCustomerAuth();
+  const redirect = getRedirect(location);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,7 +129,7 @@ export function CustomerRegister() {
     setError('');
     try {
       await register(email, password);
-      navigate('/dashboard');
+      navigate(redirect, { replace: true });
     } catch (err: any) {
       setError(err.message || 'Registration failed');
     } finally {
@@ -178,7 +190,7 @@ export function CustomerRegister() {
               {!loading && <ArrowRight className="w-4 h-4" />}
             </button>
             <p className="text-center text-sm text-zinc-500 mt-6">
-              Already have an account? <Link to="/login" className="text-indigo-400 hover:text-white">Log in</Link>
+              Already have an account? <Link to={redirect !== '/dashboard' ? `/login?redirect=${encodeURIComponent(redirect)}` : '/login'} className="text-indigo-400 hover:text-white">Log in</Link>
             </p>
           </form>
         </div>

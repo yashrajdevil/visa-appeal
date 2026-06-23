@@ -1,9 +1,8 @@
-import { useState, useRef } from 'react';
-import { motion } from 'motion/react';
+import { useState } from 'react';
 import { Download, Copy, CheckCircle2, ChevronLeft, FileText, CheckSquare, Clock, Briefcase, AlertCircle, Lock, ShoppingCart, Loader2, Zap, Shield, Crown, X } from 'lucide-react';
 import { GenerateAppealResponse, ChecklistItem } from '../types';
 import SEO from './SEO';
-import { markdownToHtml, stripMarkdown, escapeHtml } from '../utils/markdownToHtml';
+import { markdownToHtml, stripMarkdown } from '../utils/markdownToHtml';
 
 interface ResultsDashboardProps {
   result: GenerateAppealResponse;
@@ -198,8 +197,6 @@ function PricingTable({ onPurchase }: { onPurchase?: (plan: 'starter' | 'standar
 export default function ResultsDashboard({ result, onReset, purchasedPlan, isSample = false, onPurchase, isPurchasing }: ResultsDashboardProps) {
   const [copied, setCopied] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
-  const pdfContentRef = useRef<HTMLDivElement>(null);
-  const pdfWrapperRef = useRef<HTMLDivElement>(null);
   const isPreview = !purchasedPlan && !isSample;
   const isStarter = hasAccess(purchasedPlan, 'starter');
   const isStandard = hasAccess(purchasedPlan, 'standard');
@@ -228,99 +225,451 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
     }
 
     setPdfLoading(true);
-    console.log('[PDF] Starting PDF generation...');
-
-    if (!pdfWrapperRef.current) {
-      console.error('[PDF] pdfWrapperRef not found');
-      setPdfLoading(false);
-      return;
-    }
-
-    const wrapper = pdfWrapperRef.current;
-    const content = pdfContentRef.current;
-    if (!content) {
-      console.error('[PDF] pdfContentRef not found');
-      setPdfLoading(false);
-      return;
-    }
 
     try {
-      wrapper.style.display = 'block';
-      content.style.display = 'block';
-      console.log('[PDF] Hidden wrapper revealed for capture');
+      const { jsPDF } = await import('jspdf');
 
-      await new Promise(r => setTimeout(r, 300));
+      const doc = new jsPDF({ unit: 'in', format: 'a4', orientation: 'portrait' });
+      const PW = doc.internal.pageSize.getWidth();
+      const PH = doc.internal.pageSize.getHeight();
+      const M = 0.75;
+      const CW = PW - 2 * M;
+      const FS = 10;
 
-      console.log('[PDF] Importing html2canvas and jspdf...');
-      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
-        import('html2canvas'),
-        import('jspdf'),
-      ]);
-      console.log('[PDF] Libraries loaded successfully');
+      const sanitize = (t: string) => t.replace(/•/g, '-').replace(/[–—]/g, '--').replace(/[""]/g, '"').replace(/['']/g, "'").replace(/…/g, '...');
 
-      console.log('[PDF] Capturing content with html2canvas...');
-      const canvas = await html2canvas(content, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: true,
-        width: content.scrollWidth,
-        height: content.scrollHeight,
-        windowWidth: content.scrollWidth,
-        windowHeight: content.scrollHeight,
-      });
-      console.log('[PDF] Canvas captured, dimensions:', canvas.width, 'x', canvas.height);
+      let y = M;
+      let pg = 1;
 
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
-      const pdf = new jsPDF({ unit: 'in', format: 'a4', orientation: 'portrait' });
+      const np = () => { doc.addPage(); pg++; y = M; };
+      const cp = (n: number) => { if (y + n > PH - M) np(); };
+      const ftr = () => {
+        doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+        doc.setTextColor(136, 136, 136);
+        doc.text(`Page ${pg}`, PW - M, PH - 0.4, { align: 'right' });
+        doc.text('Strictly Confidential', M, PH - 0.4);
+        doc.setFontSize(FS); doc.setTextColor(0, 0, 0);
+      };
 
-      const pdfWidth = 8.27;
-      const pdfHeight = 11.69;
-      const margin = 0.4;
-      const usableWidth = pdfWidth - 2 * margin;
-      const usableHeight = pdfHeight - 2 * margin;
-      const imgToPdfRatio = usableWidth / canvas.width;
-      const pageCanvasHeight = usableHeight / imgToPdfRatio;
+      const { score } = result.case_assessment;
+      const sc = score > 79 ? [5, 150, 105] : score > 59 ? [37, 99, 235] : score > 39 ? [217, 119, 6] : [220, 38, 38];
 
-      console.log('[PDF] Page dimensions - usable:', usableWidth, 'x', usableHeight, 'pageCanvasHeight:', pageCanvasHeight, 'imgToPdfRatio:', imgToPdfRatio);
+      // ===== PAGE 1: COVER =====
+      y = M + 2.5;
+      doc.setDrawColor(26, 26, 46); doc.setLineWidth(0.015);
+      doc.line(M, y - 0.15, PW - M, y - 0.15);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(26);
+      doc.setTextColor(26, 26, 46);
+      doc.text('Visa Reapplication Preparation Package', M, y);
+      y += 0.35;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(13);
+      doc.setTextColor(85, 85, 85);
+      doc.text('Professional Consultant Case Assessment & Submission Document', M, y);
+      y += 0.5;
+      doc.setDrawColor(26, 26, 46); doc.line(M, y, PW - M, y);
+      y += 0.4;
 
-      let remainingHeight = canvas.height;
-      let srcY = 0;
-      let pageNum = 1;
+      // Score box
+      doc.setFillColor(240, 244, 255); doc.setDrawColor(219, 228, 255);
+      doc.roundedRect(M, y, CW, 1.3, 0.08, 0.08, 'FD');
+      doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(59, 59, 92);
+      doc.text('APPLICATION READINESS SCORE', M + 0.15, y + 0.25);
+      doc.setFontSize(36); doc.setFont('helvetica', 'bold');
+      doc.setTextColor(sc[0], sc[1], sc[2]);
+      doc.text(`${score}/100`, M + 0.15, y + 0.8);
+      // Severity
+      doc.setFontSize(9); doc.setTextColor(59, 59, 92);
+      doc.text('SEVERITY RATING', PW - M - 1.6, y + 0.2);
+      const sw = doc.getTextWidth(result.case_assessment.severityRating) + 0.3;
+      doc.setFillColor(26, 26, 46);
+      doc.roundedRect(PW - M - sw - 0.1, y + 0.28, sw, 0.22, 0.03, 0.03, 'F');
+      doc.setFontSize(8); doc.setTextColor(255, 255, 255);
+      doc.text(result.case_assessment.severityRating, PW - M - sw / 2 - 0.1, y + 0.43, { align: 'center' });
+      // Score bar
+      doc.setFillColor(229, 231, 235);
+      doc.roundedRect(M + 0.15, y + 1.0, CW - 0.3, 0.1, 0.03, 0.03, 'F');
+      doc.setFillColor(sc[0], sc[1], sc[2]);
+      doc.roundedRect(M + 0.15, y + 1.0, (CW - 0.3) * score / 100, 0.1, 0.03, 0.03, 'F');
+      y += 1.6;
 
-      while (remainingHeight > 0) {
-        if (pageNum > 1) pdf.addPage();
+      // Info grid
+      const info: [string, string][] = [
+        ['Applicant', result.case_assessment.applicantName || 'Confidential Client'],
+        ['Visa Type', result.case_assessment.caseType],
+        ['Case Strength', result.case_assessment.consultantVerdict.currentCaseStrength],
+        ['Generated', new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })],
+      ];
+      const cw = CW / 2 - 0.08;
+      for (let i = 0; i < info.length; i++) {
+        const c = i % 2, r = Math.floor(i / 2);
+        const ix = M + c * (cw + 0.16);
+        const iy = y + r * 0.85;
+        doc.setDrawColor(229, 229, 235); doc.setFillColor(255, 255, 255);
+        doc.roundedRect(ix, iy, cw, 0.7, 0.04, 0.04, 'FD');
+        doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(136, 136, 136);
+        doc.text(info[i][0].toUpperCase(), ix + 0.1, iy + 0.18);
+        doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(17, 17, 17);
+        doc.text(info[i][1], ix + 0.1, iy + 0.48);
+      }
+      y += 1.85;
 
-        const sliceHeight = Math.min(remainingHeight, pageCanvasHeight);
-        console.log(`[PDF] Page ${pageNum}: srcY=${srcY}, sliceHeight=${sliceHeight}, remaining=${remainingHeight}`);
+      // Recommended path
+      doc.setFillColor(250, 250, 250); doc.setDrawColor(229, 229, 235);
+      doc.roundedRect(M, y, CW, 0.75, 0.04, 0.04, 'FD');
+      doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(59, 130, 246);
+      doc.text('RECOMMENDED PATH', M + 0.15, y + 0.2);
+      doc.setFontSize(15); doc.setFont('helvetica', 'bold'); doc.setTextColor(26, 26, 46);
+      doc.text(result.case_assessment.consultantVerdict.recommendedPath, M + 0.15, y + 0.52);
+      ftr();
 
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = canvas.width;
-        tempCanvas.height = sliceHeight;
-        const tempCtx = tempCanvas.getContext('2d');
-        tempCtx.drawImage(canvas, 0, srcY, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
-        const pageImgData = tempCanvas.toDataURL('image/jpeg', 0.95);
+      // ===== PAGE 2: READINESS SCORE (Standard+) =====
+      if (hasFeature('readiness_score')) {
+        np();
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
+        doc.setTextColor(26, 26, 46);
+        doc.text('Application Readiness Score', M, y);
+        y += 0.12;
+        doc.setDrawColor(26, 26, 46); doc.setLineWidth(0.015); doc.line(M, y, PW - M, y);
+        y += 0.35;
 
-        pdf.addImage(pageImgData, 'JPEG', margin, margin, usableWidth, sliceHeight * imgToPdfRatio);
+        doc.setFillColor(240, 244, 255); doc.setDrawColor(219, 228, 255);
+        doc.roundedRect(M, y, CW, 0.9, 0.08, 0.08, 'FD');
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(36);
+        doc.setTextColor(sc[0], sc[1], sc[2]);
+        doc.text(`${score}/100`, PW / 2, y + 0.48, { align: 'center' });
+        doc.setFillColor(229, 231, 235);
+        doc.roundedRect(M + 0.25, y + 0.62, CW - 0.5, 0.12, 0.03, 0.03, 'F');
+        doc.setFillColor(sc[0], sc[1], sc[2]);
+        doc.roundedRect(M + 0.25, y + 0.62, (CW - 0.5) * score / 100, 0.12, 0.03, 0.03, 'F');
+        y += 1.2;
 
-        srcY += sliceHeight;
-        remainingHeight -= sliceHeight;
-        pageNum++;
+        const ol = result.case_assessment.successOutlook;
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(26, 26, 46);
+        doc.text('Readiness Outlook', M, y);
+        y += 0.3;
+
+        const cards = [
+          { l: 'Current Readiness', v: ol?.currentReadiness || 'Low', c: [17, 17, 17], b: [255, 255, 255] },
+          { l: 'Post-Fixes Outlook', v: ol?.readinessAfterFixes || 'Strong', c: [5, 150, 105], b: [240, 253, 244] },
+          { l: 'Score Improvement', v: ol?.expectedScoreImprovement || '+20 Points', c: [37, 99, 235], b: [239, 246, 255] },
+        ];
+        const cw3 = (CW - 0.3) / 3;
+        for (let i = 0; i < 3; i++) {
+          const cx = M + i * (cw3 + 0.15);
+          doc.setFillColor(cards[i].b[0], cards[i].b[1], cards[i].b[2]);
+          doc.setDrawColor(229, 229, 235);
+          doc.roundedRect(cx, y, cw3, 0.65, 0.04, 0.04, 'FD');
+          doc.setFontSize(7); doc.setFont('helvetica', 'bold');
+          doc.setTextColor(cards[i].c[0], cards[i].c[1], cards[i].c[2]);
+          doc.text(cards[i].l.toUpperCase(), cx + 0.1, y + 0.18);
+          doc.setFontSize(13); doc.setFont('helvetica', 'bold');
+          doc.text(cards[i].v, cx + 0.1, y + 0.48);
+        }
+        y += 0.9;
+
+        if (ol?.primaryObstacles?.length) {
+          cp(ol.primaryObstacles.length * 0.22 + 0.4);
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+          doc.setTextColor(220, 38, 38);
+          doc.text('Primary Obstacles to Address', M, y);
+          y += 0.22;
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(FS); doc.setTextColor(68, 68, 68);
+          for (const o of ol.primaryObstacles) { cp(0.22); doc.text(`- ${o}`, M + 0.15, y); y += 0.22; }
+          y += 0.15;
+        }
+
+        cp(3.2);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(26, 26, 46);
+        doc.text('Consultant Assessment', M, y);
+        y += 0.3;
+
+        const bh = 2.4;
+        doc.setFillColor(26, 26, 46); doc.roundedRect(M, y, CW, bh, 0.06, 0.06, 'F');
+        doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(148, 163, 184);
+        const mw3 = (CW - 0.6) / 3;
+        doc.text('RECOMMENDED PATH', M + 0.2, y + 0.2);
+        doc.text('CASE STRENGTH', M + 0.2 + mw3 + 0.2, y + 0.2);
+        doc.text('CONFIDENCE LEVEL', M + 0.2 + 2 * (mw3 + 0.2), y + 0.2);
+        doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
+        doc.text(result.case_assessment.consultantVerdict.recommendedPath, M + 0.2, y + 0.5);
+        doc.text(result.case_assessment.consultantVerdict.currentCaseStrength, M + 0.2 + mw3 + 0.2, y + 0.5);
+        doc.text(result.case_assessment.consultantVerdict.confidenceLevel, M + 0.2 + 2 * (mw3 + 0.2), y + 0.5);
+
+        doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(148, 163, 184);
+        doc.text('CONSULTANT REASONING', M + 0.2, y + 0.8);
+        const rl = doc.splitTextToSize(sanitize(stripMarkdown(result.case_assessment.consultantVerdict.reasoning)), CW - 0.6);
+        doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5); doc.setTextColor(228, 228, 231);
+        let ry = y + 1.0;
+        for (const l of rl) { if (ry > y + bh - 0.15) break; doc.text(l, M + 0.2, ry); ry += 0.17; }
+        y += bh + 0.3;
+
+        if (result.case_assessment.consultantNotes.length) {
+          cp(result.case_assessment.consultantNotes.length * 0.24 + 0.3);
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(26, 26, 46);
+          doc.text('Consultant Notes', M, y);
+          y += 0.25;
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(FS); doc.setTextColor(51, 51, 51);
+          for (const n of result.case_assessment.consultantNotes) {
+            const nl = doc.splitTextToSize(sanitize(stripMarkdown(n)), CW - 0.3);
+            for (const l of nl) { cp(0.2); doc.text(`-  ${l}`, M + 0.05, y); y += 0.2; }
+            y += 0.08;
+          }
+        }
+        ftr();
       }
 
-      console.log('[PDF] Total pages:', pageNum - 1);
-      pdf.save('Visa_Appeal_Package.pdf');
-      console.log('[PDF] Download triggered successfully');
+      // ===== PAGE 3: EXECUTIVE SUMMARY (Premium) =====
+      if (hasFeature('executive_summary')) {
+        np();
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(26, 26, 46);
+        doc.text('Executive Summary', M, y);
+        y += 0.12; doc.setDrawColor(26, 26, 46); doc.setLineWidth(0.015); doc.line(M, y, PW - M, y);
+        y += 0.35;
+
+        doc.setFillColor(26, 26, 46); doc.roundedRect(M, y, CW, 1.0, 0.06, 0.06, 'F');
+        doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(148, 163, 184);
+        doc.text('CASE OVERVIEW', M + 0.2, y + 0.25);
+        const summary = `Applicant ${result.case_assessment.applicantName || 'Confidential Client'} applied for ${result.case_assessment.caseType}. Current readiness score is ${score}/100, rated as ${result.case_assessment.severityRating}. ${sanitize(stripMarkdown(result.case_assessment.consultantVerdict.reasoning))}`;
+        const sl = doc.splitTextToSize(summary, CW - 0.4);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(228, 228, 231);
+        let sy = y + 0.5;
+        for (const l of sl) { doc.text(l, M + 0.2, sy); sy += 0.18; }
+        y += 1.3;
+
+        const ol2 = result.case_assessment.successOutlook;
+        const ecards = [
+          { l: 'Current Readiness', v: ol2?.currentReadiness || 'Low', c: [17, 17, 17], b: [255, 255, 255] },
+          { l: 'Post-Fixes Outlook', v: ol2?.readinessAfterFixes || 'Strong', c: [5, 150, 105], b: [240, 253, 244] },
+          { l: 'Score Improvement', v: ol2?.expectedScoreImprovement || '+20 Points', c: [37, 99, 235], b: [239, 246, 255] },
+        ];
+        const ecw = (CW - 0.3) / 3;
+        for (let i = 0; i < 3; i++) {
+          const cx = M + i * (ecw + 0.15);
+          doc.setFillColor(ecards[i].b[0], ecards[i].b[1], ecards[i].b[2]);
+          doc.setDrawColor(229, 229, 235);
+          doc.roundedRect(cx, y, ecw, 0.65, 0.04, 0.04, 'FD');
+          doc.setFontSize(7); doc.setFont('helvetica', 'bold');
+          doc.setTextColor(ecards[i].c[0], ecards[i].c[1], ecards[i].c[2]);
+          doc.text(ecards[i].l.toUpperCase(), cx + 0.1, y + 0.18);
+          doc.setFontSize(13); doc.setFont('helvetica', 'bold');
+          doc.text(ecards[i].v, cx + 0.1, y + 0.48);
+        }
+        y += 0.9;
+
+        if (result.case_assessment.consultantNotes.length) {
+          cp(result.case_assessment.consultantNotes.length * 0.24 + 0.3);
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(26, 26, 46);
+          doc.text('Consultant Notes', M, y);
+          y += 0.25;
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(FS); doc.setTextColor(51, 51, 51);
+          for (const n of result.case_assessment.consultantNotes) {
+            const nl = doc.splitTextToSize(sanitize(stripMarkdown(n)), CW - 0.3);
+            for (const l of nl) { cp(0.2); doc.text(`-  ${l}`, M + 0.05, y); y += 0.2; }
+            y += 0.08;
+          }
+        }
+
+        if (ol2?.primaryObstacles?.length) {
+          cp(ol2.primaryObstacles.length * 0.22 + 0.5);
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(220, 38, 38);
+          doc.text('Primary Obstacles to Address', M, y);
+          y += 0.25;
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(FS); doc.setTextColor(68, 68, 68);
+          for (const o of ol2.primaryObstacles) { cp(0.22); doc.text(`- ${o}`, M + 0.15, y); y += 0.22; }
+        }
+        ftr();
+      }
+
+      // ===== PAGE 4+: REFUSAL ANALYSIS (Premium) =====
+      if (hasFeature('refusal_analysis')) {
+        np();
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(26, 26, 46);
+        doc.text('Weakness Analysis & Refusal Breakdown', M, y);
+        y += 0.12; doc.setDrawColor(26, 26, 46); doc.setLineWidth(0.015); doc.line(M, y, PW - M, y);
+        y += 0.35;
+
+        for (let idx = 0; idx < result.issues.length; idx++) {
+          const issue = result.issues[idx];
+          const itemH = 3.0 + (issue.recommendedEvidence?.length || 0) * 0.18;
+          cp(itemH);
+          if (y > M + 0.5 && idx > 0) { np(); y = M; }
+
+          doc.setDrawColor(229, 229, 235); doc.setFillColor(255, 255, 255);
+          doc.roundedRect(M, y, CW, 0.45, 0.04, 0.04, 'FD');
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(17, 17, 17);
+          doc.text(issue.issue, M + 0.15, y + 0.28);
+          // Impact badge
+          const impC = issue.impact === 'Critical' ? [153, 27, 27] : issue.impact === 'High' ? [154, 52, 18] : [22, 101, 52];
+          const impBg = issue.impact === 'Critical' ? [254, 226, 226] : issue.impact === 'High' ? [255, 237, 213] : [220, 252, 231];
+          const iw = doc.getTextWidth(issue.impact) + 0.2;
+          doc.setFillColor(impBg[0], impBg[1], impBg[2]);
+          doc.roundedRect(PW - M - iw - 0.1, y + 0.08, iw, 0.2, 0.03, 0.03, 'F');
+          doc.setFontSize(7); doc.setFont('helvetica', 'bold');
+          doc.setTextColor(impC[0], impC[1], impC[2]);
+          doc.text(issue.impact, PW - M - iw / 2 - 0.1, y + 0.22, { align: 'center' });
+          y += 0.6;
+
+          cp(2.8);
+          doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(107, 114, 128);
+          doc.text('Consultant Finding', M + 0.15, y);
+          y += 0.2;
+          const fLines = doc.splitTextToSize(sanitize(stripMarkdown(issue.finding)), CW - 0.3);
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(FS); doc.setTextColor(55, 65, 81);
+          for (const l of fLines) { cp(0.2); doc.text(l, M + 0.15, y); y += 0.2; }
+          y += 0.2;
+
+          cp(2.0);
+          doc.setFillColor(240, 244, 255);
+          doc.roundedRect(M, y, CW, 0.7, 0.04, 0.04, 'F');
+          doc.setDrawColor(59, 130, 246); doc.setLineWidth(0.03); doc.line(M, y, M, y + 0.7);
+          doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(59, 130, 246);
+          doc.text('Recommended Resolution', M + 0.2, y + 0.18);
+          const aLines = doc.splitTextToSize(sanitize(stripMarkdown(issue.recommendedAction)), CW - 0.5);
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(30, 64, 175);
+          let ay = y + 0.38;
+          for (const l of aLines) { doc.text(l, M + 0.2, ay); ay += 0.17; }
+          y += 0.9;
+
+          cp(issue.recommendedEvidence.length * 0.18 + 0.3);
+          doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(107, 114, 128);
+          doc.text('Required Evidence', M + 0.15, y);
+          y += 0.2;
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(75, 85, 99);
+          for (const ev of issue.recommendedEvidence) {
+            cp(0.18); doc.text(`- ${ev}`, M + 0.3, y); y += 0.18;
+          }
+          y += 0.25;
+        }
+        ftr();
+      }
+
+      // ===== PAGE 5+: REAPPLICATION STRATEGY (Standard+) =====
+      if (hasFeature('strategy')) {
+        np();
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(26, 26, 46);
+        doc.text('Reapplication Strategy', M, y);
+        y += 0.12; doc.setDrawColor(26, 26, 46); doc.setLineWidth(0.015); doc.line(M, y, PW - M, y);
+        y += 0.35;
+
+        const sections: [string, string[], number[]][] = [
+          ['Immediate Actions', result.strategy.immediateActions, [22, 101, 52]],
+          ['Evidence To Gather', result.strategy.evidenceToGather, [30, 64, 175]],
+          ['Common Mistakes To Avoid', result.strategy.commonMistakes, [153, 27, 27]],
+        ];
+
+        for (const [title, items, color] of sections) {
+          cp(items.length * 0.22 + 0.6);
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+          doc.setTextColor(color[0], color[1], color[2]);
+          doc.text(title.toUpperCase(), M, y);
+          y += 0.25;
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(FS); doc.setTextColor(51, 65, 85);
+          for (const item of items) {
+            const il = doc.splitTextToSize(sanitize(stripMarkdown(item)), CW - 0.3);
+            for (const l of il) { cp(0.2); doc.text(`-  ${l}`, M + 0.1, y); y += 0.2; }
+            y += 0.05;
+          }
+          y += 0.2;
+        }
+
+        cp(1.2);
+        const tw = (CW - 0.3) / 2;
+        doc.setDrawColor(229, 229, 235); doc.setFillColor(255, 255, 255);
+        doc.roundedRect(M, y, tw, 0.7, 0.04, 0.04, 'FD');
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(136, 136, 136);
+        doc.text('TARGET TIMELINE', M + 0.15, y + 0.2);
+        doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(17, 17, 17);
+        doc.text(result.strategy.timeline, M + 0.15, y + 0.5);
+
+        doc.setDrawColor(229, 229, 235); doc.setFillColor(240, 253, 244);
+        doc.roundedRect(M + tw + 0.3, y, tw, 0.7, 0.04, 0.04, 'FD');
+        doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(5, 150, 105);
+        doc.text('EXPECTED OUTCOME', M + tw + 0.45, y + 0.2);
+        doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(5, 150, 105);
+        doc.text(result.strategy.expectedOutcome, M + tw + 0.45, y + 0.5);
+        ftr();
+      }
+
+      // ===== PAGE 6+: DOCUMENT CHECKLIST (all paid) =====
+      if (hasFeature('basic_checklist')) {
+        np();
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(26, 26, 46);
+        doc.text('Document Checklist', M, y);
+        y += 0.12; doc.setDrawColor(26, 26, 46); doc.setLineWidth(0.015); doc.line(M, y, PW - M, y);
+        y += 0.35;
+
+        const renderCat = (title: string, items: ChecklistItem[]) => {
+          if (!items?.length) return;
+          const estH = items.length * 0.35 + 0.5;
+          cp(estH);
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(51, 65, 85);
+          doc.text(title.toUpperCase(), M, y);
+          y += 0.05;
+          doc.setDrawColor(203, 213, 225); doc.setLineWidth(0.012);
+          doc.line(M, y, M + doc.getTextWidth(title.toUpperCase()) + 0.3, y);
+          y += 0.2;
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+          for (const item of items) {
+            cp(0.35);
+            doc.setTextColor(100, 116, 139);
+            doc.text('[ ]', M, y - 0.02);
+            doc.setTextColor(15, 23, 42);
+            doc.setFont('helvetica', 'bold');
+            const iLines = doc.splitTextToSize(sanitize(item.item), CW - 0.5);
+            doc.text(iLines, M + 0.35, y);
+            if (iLines.length > 1) y += (iLines.length - 1) * 0.17 + 0.05;
+            y += 0.02;
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+            doc.setTextColor(100, 116, 139);
+            const eLines = doc.splitTextToSize(sanitize(item.explanation), CW - 0.5);
+            for (const l of eLines) { cp(0.16); doc.text(l, M + 0.35, y); y += 0.16; }
+            y += 0.12;
+          }
+          y += 0.1;
+        };
+
+        renderCat('Identity Documents', result.checklist.identity);
+        renderCat('Travel Documents', result.checklist.travel);
+
+        if (hasFeature('categorized_checklist')) {
+          renderCat('Financial Documents', result.checklist.financial);
+          renderCat('Employment Documents', result.checklist.employment);
+          renderCat('Academic Documents', result.checklist.academic);
+          renderCat('Other Documents', result.checklist.other);
+        }
+        ftr();
+      }
+
+      // ===== PAGE 7+: APPEAL LETTER (Starter+) =====
+      if (hasFeature('appeal_letter')) {
+        np();
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(26, 26, 46);
+        doc.text('Supporting Explanation Draft', M, y);
+        y += 0.12; doc.setDrawColor(26, 26, 46); doc.setLineWidth(0.015); doc.line(M, y, PW - M, y);
+        y += 0.35;
+
+        doc.setDrawColor(229, 229, 235); doc.setFillColor(250, 250, 250);
+        doc.roundedRect(M, y, CW, 0.5, 0.03, 0.03, 'FD');
+        doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(100, 100, 100);
+        doc.text('The following is a professionally drafted supporting explanation for your visa reapplication.', M + 0.15, y + 0.3);
+        y += 0.7;
+
+        doc.setFont('times', 'normal'); doc.setFontSize(11); doc.setTextColor(17, 17, 17);
+        const letterLines = doc.splitTextToSize(sanitize(stripMarkdown(result.appeal_letter)), CW - 0.6);
+        for (const l of letterLines) {
+          cp(0.2);
+          doc.text(l, M + 0.15, y);
+          y += 0.2;
+        }
+        ftr();
+      }
+
+      doc.save('Visa_Appeal_Package.pdf');
     } catch (err: any) {
       console.error('[PDF] Generation failed:', err.message);
-      console.error('[PDF] Stack:', err.stack);
       alert('An error occurred while generating the PDF. Please try again or use the Copy button to save your content in the meantime.');
     } finally {
-      wrapper.style.display = 'none';
-      if (content) content.style.display = 'none';
       setPdfLoading(false);
-      console.log('[PDF] Generation complete, hidden wrapper restored');
     }
   };
 
@@ -799,371 +1148,7 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
         </div>
       </div>
 
-      {/* Hidden PDF Content — plan-conditional pages */}
-      <div ref={pdfWrapperRef} style={{ display: 'none', position: 'absolute', left: '-9999px', top: 0, width: '800px', zIndex: -1 }}>
-        <div ref={pdfContentRef} className="bg-white text-black" style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", width: '800px' }}>
 
-          {/* PAGE 1 — COVER (always included) */}
-          <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', minHeight: '1100px' }}>
-             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-               <div style={{ borderBottom: '4px solid #1a1a2e', paddingBottom: '20px', marginBottom: '30px' }}>
-                 <h1 style={{ fontSize: '36px', fontWeight: '800', margin: '0 0 8px 0', letterSpacing: '-0.5px', color: '#1a1a2e' }}>Visa Reapplication Preparation Package</h1>
-                 <p style={{ fontSize: '18px', color: '#555', margin: '0', fontWeight: '500' }}>Professional Consultant Case Assessment &amp; Submission Document</p>
-               </div>
-
-               <div style={{ backgroundColor: '#f0f4ff', padding: '30px', borderRadius: '12px', marginBottom: '30px', border: '1px solid #dbe4ff' }}>
-                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                   <div>
-                     <div style={{ fontSize: '13px', textTransform: 'uppercase', color: '#3b3b5c', fontWeight: '700', letterSpacing: '1px', marginBottom: '4px' }}>Application Readiness Score</div>
-                     <div style={{ fontSize: '48px', fontWeight: '800', color: result.case_assessment.score > 79 ? '#059669' : result.case_assessment.score > 59 ? '#2563eb' : result.case_assessment.score > 39 ? '#d97706' : '#dc2626', lineHeight: '1' }}>{result.case_assessment.score}<span style={{ fontSize: '22px', color: '#888' }}>/100</span></div>
-                   </div>
-                   <div style={{ textAlign: 'right' }}>
-                     <div style={{ fontSize: '13px', textTransform: 'uppercase', color: '#3b3b5c', fontWeight: '700', letterSpacing: '1px', marginBottom: '4px' }}>Severity Rating</div>
-                     <div style={{ display: 'inline-block', padding: '6px 16px', backgroundColor: '#1a1a2e', color: '#fff', borderRadius: '4px', fontSize: '13px', fontWeight: 'bold', letterSpacing: '1px', textTransform: 'uppercase' }}>{result.case_assessment.severityRating}</div>
-                   </div>
-                 </div>
-                 <div style={{ width: '100%', backgroundColor: '#e5e7eb', borderRadius: '4px', height: '8px', overflow: 'hidden' }}>
-                   <div style={{ width: `${result.case_assessment.score}%`, backgroundColor: result.case_assessment.score > 79 ? '#059669' : result.case_assessment.score > 59 ? '#2563eb' : result.case_assessment.score > 39 ? '#d97706' : '#dc2626', height: '100%', borderRadius: '4px' }}></div>
-                 </div>
-               </div>
-
-               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '30px' }}>
-                 <div style={{ padding: '16px', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
-                   <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#888', fontWeight: '700', letterSpacing: '1px', marginBottom: '4px' }}>Applicant</div>
-                   <div style={{ fontSize: '18px', fontWeight: '700', color: '#111' }}>{result.case_assessment.applicantName || 'Confidential Client'}</div>
-                 </div>
-                 <div style={{ padding: '16px', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
-                   <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#888', fontWeight: '700', letterSpacing: '1px', marginBottom: '4px' }}>Visa Type</div>
-                   <div style={{ fontSize: '18px', fontWeight: '600', color: '#111' }}>{result.case_assessment.caseType}</div>
-                 </div>
-                 <div style={{ padding: '16px', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
-                   <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#888', fontWeight: '700', letterSpacing: '1px', marginBottom: '4px' }}>Case Strength</div>
-                   <div style={{ fontSize: '18px', fontWeight: '700', color: result.case_assessment.score > 79 ? '#059669' : result.case_assessment.score > 59 ? '#2563eb' : result.case_assessment.score > 39 ? '#d97706' : '#dc2626' }}>{result.case_assessment.consultantVerdict.currentCaseStrength}</div>
-                 </div>
-                 <div style={{ padding: '16px', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
-                   <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#888', fontWeight: '700', letterSpacing: '1px', marginBottom: '4px' }}>Generated</div>
-                   <div style={{ fontSize: '18px', fontWeight: '600', color: '#111' }}>{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
-                 </div>
-               </div>
-
-               <div style={{ padding: '20px', backgroundColor: '#fafafa', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
-                 <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#3b82f6', fontWeight: '700', letterSpacing: '1px', marginBottom: '8px' }}>Recommended Path</div>
-                 <div style={{ fontSize: '20px', fontWeight: '700', color: '#1a1a2e' }}>{result.case_assessment.consultantVerdict.recommendedPath}</div>
-               </div>
-             </div>
-
-             <div style={{ textAlign: 'center', borderTop: '1px solid #eaeaea', paddingTop: '16px', marginTop: '20px' }}>
-               <p style={{ fontSize: '11px', color: '#888', margin: '0 0 4px 0' }}><strong>Disclaimer:</strong> This document provides structural preparation assistance only. It does not constitute immigration or legal advice.</p>
-               <p style={{ fontSize: '12px', color: '#888', margin: 0 }}>Generated: {new Date().toLocaleDateString()} | Strictly Confidential</p>
-             </div>
-          </div>
-
-          {/* PAGE 2 — READINESS SCORE (Standard+) */}
-          {hasFeature('readiness_score') && (
-            <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', minHeight: '1100px' }}>
-              <h2 style={{ fontSize: '22px', fontWeight: '800', borderBottom: '3px solid #1a1a2e', paddingBottom: '12px', marginBottom: '28px', textTransform: 'uppercase', letterSpacing: '1px', color: '#1a1a2e' }}>Application Readiness Score</h2>
-
-              <div style={{ backgroundColor: '#f0f4ff', padding: '30px', borderRadius: '12px', marginBottom: '30px', border: '1px solid #dbe4ff' }}>
-                <div style={{ fontSize: '48px', fontWeight: '800', textAlign: 'center', color: result.case_assessment.score > 79 ? '#059669' : result.case_assessment.score > 59 ? '#2563eb' : result.case_assessment.score > 39 ? '#d97706' : '#dc2626', lineHeight: '1', marginBottom: '12px' }}>
-                  {result.case_assessment.score}<span style={{ fontSize: '22px', color: '#888' }}>/100</span>
-                </div>
-                <div style={{ width: '100%', backgroundColor: '#e5e7eb', borderRadius: '4px', height: '12px', overflow: 'hidden' }}>
-                  <div style={{ width: `${result.case_assessment.score}%`, backgroundColor: result.case_assessment.score > 79 ? '#059669' : result.case_assessment.score > 59 ? '#2563eb' : result.case_assessment.score > 39 ? '#d97706' : '#dc2626', height: '100%', borderRadius: '4px' }}></div>
-                </div>
-              </div>
-
-              <h3 style={{ fontSize: '16px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '14px', color: '#1a1a2e' }}>Readiness Outlook</h3>
-              <div style={{ marginBottom: '28px', display: 'flex', gap: '16px' }}>
-                <div style={{ flex: 1, border: '1px solid #e5e7eb', padding: '18px', borderRadius: '8px' }}>
-                  <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#888', fontWeight: '700', marginBottom: '6px' }}>Current Readiness</div>
-                  <div style={{ fontSize: '18px', fontWeight: '700', color: '#111' }}>{result.case_assessment.successOutlook?.currentReadiness || 'Low'}</div>
-                </div>
-                <div style={{ flex: 1, border: '1px solid #e5e7eb', padding: '18px', borderRadius: '8px', backgroundColor: '#f0fdf4' }}>
-                  <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#059669', fontWeight: '700', marginBottom: '6px' }}>Post-Fixes Outlook</div>
-                  <div style={{ fontSize: '18px', fontWeight: '700', color: '#059669' }}>{result.case_assessment.successOutlook?.readinessAfterFixes || 'Strong'}</div>
-                </div>
-                <div style={{ flex: 1, border: '1px solid #e5e7eb', padding: '18px', borderRadius: '8px', backgroundColor: '#eff6ff' }}>
-                  <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#2563eb', fontWeight: '700', marginBottom: '6px' }}>Score Improvement</div>
-                  <div style={{ fontSize: '18px', fontWeight: '700', color: '#2563eb' }}>{result.case_assessment.successOutlook?.expectedScoreImprovement || '+20 Points'}</div>
-                </div>
-              </div>
-
-              {result.case_assessment.successOutlook?.primaryObstacles?.length > 0 && (
-                <div style={{ marginBottom: '28px' }}>
-                  <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', color: '#dc2626', marginBottom: '10px' }}>Primary Obstacles to Address</h4>
-                  <ul style={{ paddingLeft: '20px', margin: 0, color: '#444', fontSize: '14px', lineHeight: '1.8' }}>
-                    {result.case_assessment.successOutlook.primaryObstacles.map((obs, i) => <li key={i}>{obs}</li>)}
-                  </ul>
-                </div>
-              )}
-
-              <h3 style={{ fontSize: '16px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '14px', color: '#1a1a2e' }}>Consultant Assessment</h3>
-              <div style={{ marginBottom: '28px', backgroundColor: '#1a1a2e', color: '#fff', padding: '28px', borderRadius: '10px' }}>
-                <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
-                  <div style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.06)', padding: '16px', borderRadius: '8px' }}>
-                    <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: '600', marginBottom: '6px' }}>Recommended Path</div>
-                    <div style={{ fontSize: '18px', fontWeight: '700', color: '#fff' }}>{result.case_assessment.consultantVerdict.recommendedPath}</div>
-                  </div>
-                  <div style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.06)', padding: '16px', borderRadius: '8px' }}>
-                    <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: '600', marginBottom: '6px' }}>Case Strength</div>
-                    <div style={{ fontSize: '18px', fontWeight: '700', color: result.case_assessment.score > 79 ? '#34d399' : result.case_assessment.score > 59 ? '#60a5fa' : result.case_assessment.score > 39 ? '#fbbf24' : '#f87171' }}>{result.case_assessment.consultantVerdict.currentCaseStrength}</div>
-                  </div>
-                  <div style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.06)', padding: '16px', borderRadius: '8px' }}>
-                    <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: '600', marginBottom: '6px' }}>Confidence Level</div>
-                    <div style={{ fontSize: '18px', fontWeight: '700', color: '#34d399' }}>{result.case_assessment.consultantVerdict.confidenceLevel}</div>
-                  </div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: '600', marginBottom: '6px' }}>Consultant Reasoning</div>
-                   <p style={{ fontSize: '14px', margin: 0, color: '#e4e4e7', fontStyle: 'italic', lineHeight: '1.7' }}>"{stripMarkdown(result.case_assessment.consultantVerdict.reasoning)}"</p>
-                 </div>
-               </div>
-
-               <div>
-                 <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', color: '#1a1a2e', marginBottom: '10px' }}>Consultant Notes</h4>
-                 <ul style={{ paddingLeft: '20px', margin: 0 }}>
-                   {result.case_assessment.consultantNotes.map((note, i) => (
-                     <li key={i} style={{ fontSize: '14px', color: '#333', marginBottom: '10px', lineHeight: '1.6' }}>{stripMarkdown(note)}</li>
-                   ))}
-                 </ul>
-               </div>
-             </div>
-           )}
-
-           {/* PAGE 3 — EXECUTIVE SUMMARY (Premium only) */}
-           {hasFeature('executive_summary') && (
-             <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', minHeight: '1100px' }}>
-               <h2 style={{ fontSize: '22px', fontWeight: '800', borderBottom: '3px solid #1a1a2e', paddingBottom: '12px', marginBottom: '28px', textTransform: 'uppercase', letterSpacing: '1px', color: '#1a1a2e' }}>Executive Summary</h2>
-
-               <div style={{ marginBottom: '28px', backgroundColor: '#1a1a2e', color: '#fff', padding: '28px', borderRadius: '10px' }}>
-                 <h3 style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '2px', color: '#94a3b8', fontWeight: '700', marginBottom: '20px' }}>Case Overview</h3>
-                 <p style={{ fontSize: '14px', margin: 0, color: '#e4e4e7', lineHeight: '1.8' }}>
-                   Applicant <strong>{result.case_assessment.applicantName || 'Confidential Client'}</strong> applied for <strong>{result.case_assessment.caseType}</strong>. Current readiness score is <strong>{result.case_assessment.score}/100</strong>, rated as <strong>{result.case_assessment.severityRating}</strong>. {stripMarkdown(result.case_assessment.consultantVerdict.reasoning)}
-                 </p>
-               </div>
-
-               <div style={{ display: 'flex', gap: '16px', marginBottom: '28px' }}>
-                 <div style={{ flex: 1, border: '1px solid #e5e7eb', padding: '18px', borderRadius: '8px' }}>
-                   <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#888', fontWeight: '700', marginBottom: '6px' }}>Current Readiness</div>
-                   <div style={{ fontSize: '18px', fontWeight: '700', color: '#111' }}>{result.case_assessment.successOutlook?.currentReadiness || 'Low'}</div>
-                 </div>
-                 <div style={{ flex: 1, border: '1px solid #e5e7eb', padding: '18px', borderRadius: '8px', backgroundColor: '#f0fdf4' }}>
-                   <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#059669', fontWeight: '700', marginBottom: '6px' }}>Post-Fixes Outlook</div>
-                   <div style={{ fontSize: '18px', fontWeight: '700', color: '#059669' }}>{result.case_assessment.successOutlook?.readinessAfterFixes || 'Strong'}</div>
-                 </div>
-                 <div style={{ flex: 1, border: '1px solid #e5e7eb', padding: '18px', borderRadius: '8px', backgroundColor: '#eff6ff' }}>
-                   <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#2563eb', fontWeight: '700', marginBottom: '6px' }}>Score Improvement</div>
-                   <div style={{ fontSize: '18px', fontWeight: '700', color: '#2563eb' }}>{result.case_assessment.successOutlook?.expectedScoreImprovement || '+20 Points'}</div>
-                 </div>
-               </div>
-
-               {result.case_assessment.consultantNotes.length > 0 && (
-                 <>
-                   <h3 style={{ fontSize: '16px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '14px', color: '#1a1a2e' }}>Consultant Notes</h3>
-                   <ul style={{ paddingLeft: '20px', marginBottom: '28px' }}>
-                     {result.case_assessment.consultantNotes.map((note, i) => (
-                       <li key={i} style={{ fontSize: '14px', color: '#333', marginBottom: '10px', lineHeight: '1.6' }}>{stripMarkdown(note)}</li>
-                     ))}
-                   </ul>
-                 </>
-               )}
-
-              {result.case_assessment.successOutlook?.primaryObstacles?.length > 0 && (
-                <div style={{ marginBottom: '28px' }}>
-                  <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', color: '#dc2626', marginBottom: '10px' }}>Primary Obstacles to Address</h4>
-                  <ul style={{ paddingLeft: '20px', margin: 0, color: '#444', fontSize: '14px', lineHeight: '1.8' }}>
-                    {result.case_assessment.successOutlook.primaryObstacles.map((obs, i) => <li key={i}>{obs}</li>)}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* PAGE 4 — WEAKNESS / REFUSAL ANALYSIS (Premium only) */}
-          {hasFeature('refusal_analysis') && (
-            <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', minHeight: '1100px' }}>
-              <h2 style={{ fontSize: '22px', fontWeight: '800', borderBottom: '3px solid #1a1a2e', paddingBottom: '12px', marginBottom: '28px', textTransform: 'uppercase', letterSpacing: '1px', color: '#1a1a2e' }}>Weakness Analysis &amp; Refusal Breakdown</h2>
-
-              {result.issues.map((issue, idx) => (
-                <div key={idx} style={{ marginBottom: '28px', border: '1px solid #e5e7eb', padding: '24px', borderRadius: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px', paddingBottom: '14px', borderBottom: '1px solid #f3f4f6' }}>
-                    <h4 style={{ fontSize: '17px', fontWeight: '700', margin: 0, color: '#111' }}>{issue.issue}</h4>
-                    <span style={{ fontSize: '11px', fontWeight: '700', padding: '3px 10px', backgroundColor: issue.impact === 'Critical' ? '#fee2e2' : issue.impact === 'High' ? '#ffedd5' : '#dcfce7', color: issue.impact === 'Critical' ? '#991b1b' : issue.impact === 'High' ? '#9a3412' : '#166534', borderRadius: '20px', textTransform: 'uppercase' }}>{issue.impact}</span>
-                  </div>
-
-                  <div style={{ marginBottom: '16px' }}>
-                    <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#6b7280', fontWeight: '700', marginBottom: '4px' }}>Consultant Finding</div>
-                    <div style={{ fontSize: '14px', color: '#374151', lineHeight: '1.6' }}>{stripMarkdown(issue.finding)}</div>
-                  </div>
-
-                  <div style={{ marginBottom: '16px', backgroundColor: '#f0f4ff', padding: '14px', borderRadius: '6px', borderLeft: '4px solid #3b82f6' }}>
-                    <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#3b82f6', fontWeight: '700', marginBottom: '4px' }}>Recommended Resolution</div>
-                    <div style={{ fontSize: '14px', color: '#1e40af', fontWeight: '600', lineHeight: '1.5' }}>{stripMarkdown(issue.recommendedAction)}</div>
-                  </div>
-
-                  <div>
-                    <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#6b7280', fontWeight: '700', marginBottom: '6px' }}>Required Evidence</div>
-                    <ul style={{ paddingLeft: '20px', margin: 0 }}>
-                      {issue.recommendedEvidence.map((ev, i) => (
-                        <li key={i} style={{ fontSize: '14px', color: '#4b5563', marginBottom: '4px', lineHeight: '1.5' }}>{ev}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* REAPPLICATION STRATEGY (Standard+) */}
-          {hasFeature('strategy') && (
-            <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', minHeight: '1100px' }}>
-              <h2 style={{ fontSize: '22px', fontWeight: '800', borderBottom: '3px solid #1a1a2e', paddingBottom: '12px', marginBottom: '28px', textTransform: 'uppercase', letterSpacing: '1px', color: '#1a1a2e' }}>Reapplication Strategy</h2>
-
-              <div style={{ marginBottom: '28px' }}>
-                <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '12px', color: '#166534' }}>Immediate Actions</h4>
-                <ul style={{ paddingLeft: '20px', margin: 0, fontSize: '14px', lineHeight: '1.6', color: '#334155' }}>
-                  {result.strategy.immediateActions.map((action, i) => <li key={i} style={{ marginBottom: '6px' }}>{stripMarkdown(action)}</li>)}
-                </ul>
-              </div>
-
-              <div style={{ marginBottom: '28px' }}>
-                <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '12px', color: '#1e40af' }}>Evidence To Gather</h4>
-                <ul style={{ paddingLeft: '20px', margin: 0, fontSize: '14px', lineHeight: '1.6', color: '#334155' }}>
-                  {result.strategy.evidenceToGather.map((item, i) => <li key={i} style={{ marginBottom: '6px' }}>{stripMarkdown(item)}</li>)}
-                </ul>
-              </div>
-
-              <div style={{ marginBottom: '28px' }}>
-                <h4 style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '12px', color: '#991b1b' }}>Common Mistakes To Avoid</h4>
-                <ul style={{ paddingLeft: '20px', margin: 0, fontSize: '14px', lineHeight: '1.6', color: '#334155' }}>
-                  {result.strategy.commonMistakes.map((mistake, i) => <li key={i} style={{ marginBottom: '6px' }}>{stripMarkdown(mistake)}</li>)}
-                </ul>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                <div style={{ padding: '20px', border: '1px solid #e5e7eb', borderRadius: '8px', textAlign: 'center' }}>
-                  <h4 style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '8px', color: '#888' }}>Target Timeline</h4>
-                  <p style={{ fontSize: '18px', margin: 0, fontWeight: '700', color: '#111' }}>{result.strategy.timeline}</p>
-                </div>
-                <div style={{ padding: '20px', border: '1px solid #e5e7eb', borderRadius: '8px', textAlign: 'center', backgroundColor: '#f0fdf4' }}>
-                  <h4 style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '8px', color: '#059669' }}>Expected Outcome</h4>
-                  <p style={{ fontSize: '18px', margin: 0, fontWeight: '700', color: '#059669' }}>{result.strategy.expectedOutcome}</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* STRUCTURED CHECKLIST (all paid plans, basic items for Starter, all categories for Standard+) */}
-          {hasFeature('basic_checklist') && (
-            <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', minHeight: '1100px' }}>
-              <h2 style={{ fontSize: '22px', fontWeight: '800', borderBottom: '3px solid #1a1a2e', paddingBottom: '12px', marginBottom: '28px', textTransform: 'uppercase', letterSpacing: '1px', color: '#1a1a2e' }}>Document Checklist</h2>
-
-              {result.checklist.identity && result.checklist.identity.length > 0 && (
-                <div style={{ marginBottom: '24px', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px' }}>
-                  <h4 style={{ fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '14px', color: '#334155', borderBottom: '2px solid #cbd5e1', paddingBottom: '4px', display: 'inline-block' }}>Identity Documents</h4>
-                  {result.checklist.identity.map((item, i) => (
-                    <div key={i} style={{ display: 'flex', marginBottom: '10px', alignItems: 'flex-start' }}>
-                      <div style={{ fontSize: '18px', marginRight: '14px', color: '#94a3b8', lineHeight: '1' }}>☐</div>
-                      <div>
-                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', marginBottom: '2px' }}>{item.item}</div>
-                        <div style={{ fontSize: '12px', color: '#64748b', lineHeight: '1.5' }}>{item.explanation}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {result.checklist.travel && result.checklist.travel.length > 0 && (
-                <div style={{ marginBottom: '24px', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px' }}>
-                  <h4 style={{ fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '14px', color: '#334155', borderBottom: '2px solid #cbd5e1', paddingBottom: '4px', display: 'inline-block' }}>Travel Documents</h4>
-                  {result.checklist.travel.map((item, i) => (
-                    <div key={i} style={{ display: 'flex', marginBottom: '10px', alignItems: 'flex-start' }}>
-                      <div style={{ fontSize: '18px', marginRight: '14px', color: '#94a3b8', lineHeight: '1' }}>☐</div>
-                      <div>
-                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', marginBottom: '2px' }}>{item.item}</div>
-                        <div style={{ fontSize: '12px', color: '#64748b', lineHeight: '1.5' }}>{item.explanation}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Categorized checklist items — Standard+ */}
-              {hasFeature('categorized_checklist') && (
-                <>
-                  {result.checklist.financial && result.checklist.financial.length > 0 && (
-                    <div style={{ marginBottom: '24px', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px' }}>
-                      <h4 style={{ fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '14px', color: '#334155', borderBottom: '2px solid #cbd5e1', paddingBottom: '4px', display: 'inline-block' }}>Financial Documents</h4>
-                      {result.checklist.financial.map((item, i) => (
-                        <div key={i} style={{ display: 'flex', marginBottom: '10px', alignItems: 'flex-start' }}>
-                          <div style={{ fontSize: '18px', marginRight: '14px', color: '#94a3b8', lineHeight: '1' }}>☐</div>
-                          <div>
-                            <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', marginBottom: '2px' }}>{item.item}</div>
-                            <div style={{ fontSize: '12px', color: '#64748b', lineHeight: '1.5' }}>{item.explanation}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {result.checklist.employment && result.checklist.employment.length > 0 && (
-                    <div style={{ marginBottom: '24px', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px' }}>
-                      <h4 style={{ fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '14px', color: '#334155', borderBottom: '2px solid #cbd5e1', paddingBottom: '4px', display: 'inline-block' }}>Employment Documents</h4>
-                      {result.checklist.employment.map((item, i) => (
-                        <div key={i} style={{ display: 'flex', marginBottom: '10px', alignItems: 'flex-start' }}>
-                          <div style={{ fontSize: '18px', marginRight: '14px', color: '#94a3b8', lineHeight: '1' }}>☐</div>
-                          <div>
-                            <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', marginBottom: '2px' }}>{item.item}</div>
-                            <div style={{ fontSize: '12px', color: '#64748b', lineHeight: '1.5' }}>{item.explanation}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {result.checklist.academic && result.checklist.academic.length > 0 && (
-                    <div style={{ marginBottom: '24px', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px' }}>
-                      <h4 style={{ fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '14px', color: '#334155', borderBottom: '2px solid #cbd5e1', paddingBottom: '4px', display: 'inline-block' }}>Academic Documents</h4>
-                      {result.checklist.academic.map((item, i) => (
-                        <div key={i} style={{ display: 'flex', marginBottom: '10px', alignItems: 'flex-start' }}>
-                          <div style={{ fontSize: '18px', marginRight: '14px', color: '#94a3b8', lineHeight: '1' }}>☐</div>
-                          <div>
-                            <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', marginBottom: '2px' }}>{item.item}</div>
-                            <div style={{ fontSize: '12px', color: '#64748b', lineHeight: '1.5' }}>{item.explanation}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {result.checklist.other && result.checklist.other.length > 0 && (
-                    <div style={{ marginBottom: '24px', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px' }}>
-                      <h4 style={{ fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '14px', color: '#334155', borderBottom: '2px solid #cbd5e1', paddingBottom: '4px', display: 'inline-block' }}>Other Documents</h4>
-                      {result.checklist.other.map((item, i) => (
-                        <div key={i} style={{ display: 'flex', marginBottom: '10px', alignItems: 'flex-start' }}>
-                          <div style={{ fontSize: '18px', marginRight: '14px', color: '#94a3b8', lineHeight: '1' }}>☐</div>
-                          <div>
-                            <div style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', marginBottom: '2px' }}>{item.item}</div>
-                            <div style={{ fontSize: '12px', color: '#64748b', lineHeight: '1.5' }}>{item.explanation}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-
-          {/* APPEAL LETTER (Starter+) */}
-          {hasFeature('appeal_letter') && (
-            <div style={{ padding: '60px 60px 40px', boxSizing: 'border-box', minHeight: '1100px' }}>
-              <h2 style={{ fontSize: '22px', fontWeight: '800', borderBottom: '3px solid #1a1a2e', paddingBottom: '12px', marginBottom: '28px', textTransform: 'uppercase', letterSpacing: '1px', color: '#1a1a2e' }}>Supporting Explanation Draft</h2>
-              <div style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: '14px', lineHeight: '1.8', color: '#111', textAlign: 'justify', padding: '40px', border: '1px solid #e5e7eb', backgroundColor: '#fafafa', borderRadius: '4px' }}>
-                <div dangerouslySetInnerHTML={{ __html: markdownToHtml(result.appeal_letter) }} />
-              </div>
-            </div>
-          )}
-
-        </div>
-      </div>
 
     </div>
     </>
