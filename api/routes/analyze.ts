@@ -10,7 +10,7 @@ const router = Router();
 router.post('/', verifyAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const uid = req.uid!;
-    const { country, visaType, purpose, travelHistory, refusalReasons, questionnaireResponses } = req.body;
+    const { country, visaType, purpose, travelHistory, refusalReasons, questionnaireResponses, refusalDocument } = req.body;
 
     if (!country || !visaType) {
       return res.status(400).json({ error: 'Country and visa type are required' });
@@ -27,6 +27,7 @@ router.post('/', verifyAuth, async (req: AuthenticatedRequest, res: Response) =>
       travelHistory: travelHistory || '',
       refusalReasons: refusalReasons || [],
       questionnaireResponses: questionnaireResponses || [],
+      refusalDocument: refusalDocument || undefined,
     });
 
     const casePath = `users/${uid}/cases/${caseId}`;

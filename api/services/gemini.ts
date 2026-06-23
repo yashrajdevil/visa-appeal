@@ -104,6 +104,7 @@ export async function generateAnalysis(formData: {
   travelHistory: string;
   refusalReasons: string[];
   questionnaireResponses: { question: string; answer: string | boolean | string[] }[];
+  refusalDocument?: string;
 }) {
   const rawKey = process.env.GEMINI_API_KEY;
   if (!rawKey) {
@@ -130,70 +131,314 @@ function buildPrompt(formData: {
   travelHistory: string;
   refusalReasons: string[];
   questionnaireResponses: { question: string; answer: string | boolean | string[] }[];
+  refusalDocument?: string;
 }): string {
   const questionnaireText = formData.questionnaireResponses
     .map(r => `${r.question}: ${Array.isArray(r.answer) ? r.answer.join(', ') : r.answer}`)
     .join('\n');
 
-  return `You are a senior visa appeal consultant. Analyze this visa refusal case and generate a comprehensive professional appeal package.
+  const refusalDocText = formData.refusalDocument
+    ? `\nVisa Refusal Letter:\n${formData.refusalDocument}`
+    : '';
 
-Country: ${formData.country}
-Visa Type: ${formData.visaType}
-Purpose of Visit: ${formData.purpose}
-Travel History: ${formData.travelHistory}
-Refusal Reasons: ${formData.refusalReasons.join(', ')}
+  return `SYSTEM OBJECTIVE
 
-Additional Information:
+You are a senior immigration case analyst and visa reapplication consultant.
+
+Your task is to analyze a visa refusal letter together with the applicant questionnaire and generate a professional reapplication preparation package.
+
+CRITICAL RULES
+
+1. NEVER INVENT FACTS.
+
+Do not claim the applicant possesses documents, funds, employment, assets, travel history, sponsorship, invitations, or evidence unless explicitly provided.
+
+Forbidden example:
+
+"I have attached updated bank statements."
+
+if no updated bank statements were provided.
+
+Required example:
+
+"If updated financial evidence is available, supporting bank statements should be submitted."
+
+2. NEVER fabricate:
+
+* dates
+* account balances
+* property ownership
+* employment details
+* education details
+* family ties
+* travel history
+* supporting evidence
+
+3. When evidence is missing:
+
+* identify the gap
+* explain why it matters
+* recommend evidence
+
+Do not pretend the evidence exists.
+
+---
+
+INPUTS
+
+Destination Country:
+${formData.country}
+
+Visa Type:
+${formData.visaType}
+
+Purpose:
+${formData.purpose}
+
+Travel History:
+${formData.travelHistory}
+
+Refusal Reasons:
+${formData.refusalReasons.join(', ')}
+
+Applicant Questionnaire:
 ${questionnaireText}
+${refusalDocText}
 
-Generate a detailed JSON analysis with exactly this structure. Do not include markdown code fences. Return raw JSON only:
+---
 
-{
-  "case_assessment": {
-    "applicantName": "Applicant",
-    "score": 65,
-    "severityRating": "Moderate",
-    "caseType": "${formData.visaType}",
-    "consultantNotes": ["Analysis of key case factors and observations"],
-    "consultantVerdict": {
-      "currentCaseStrength": "Moderate",
-      "recommendedPath": "Fresh Application",
-      "reasoning": "Detailed reasoning based on the refusal grounds",
-      "confidenceLevel": "Medium"
-    },
-    "successOutlook": {
-      "currentReadiness": "Low",
-      "readinessAfterFixes": "Strong",
-      "expectedScoreImprovement": "30-40%",
-      "primaryObstacles": ["List top obstacles"]
-    }
-  },
-  "issues": [
-    {
-      "issue": "Specific refusal ground",
-      "finding": "Detailed finding",
-      "impact": "High",
-      "recommendedEvidence": ["Evidence item 1", "Evidence item 2"],
-      "recommendedAction": "Specific action to address this issue"
-    }
-  ],
-  "strategy": {
-    "immediateActions": ["Action 1", "Action 2"],
-    "evidenceToGather": ["Document 1", "Document 2"],
-    "commonMistakes": ["Mistake 1", "Mistake 2"],
-    "timeline": "Recommended timeline for reapplication",
-    "expectedOutcome": "Expected outcome after following recommendations"
-  },
-  "checklist": {
-    "financial": [{"item": "Bank statements (6 months)", "explanation": "Why this is needed"}],
-    "employment": [],
-    "academic": [],
-    "travel": [],
-    "identity": [],
-    "other": []
-  },
-  "appeal_letter": "Full formal appeal letter in markdown format addressing the specific refusal grounds, presenting evidence, and making the case for reconsideration."
-}`;
+OUTPUT REQUIREMENTS
+
+Return structured JSON.
+
+---
+
+SECTION 1
+CASE ASSESSMENT
+---------------
+
+Generate:
+
+applicationReadinessScore
+(0-100)
+
+severityRating
+
+Scale:
+
+0-39 = Critical
+40-59 = High Risk
+60-79 = Moderate
+80-100 = Strong
+
+caseType
+
+Examples:
+
+Financial Refusal
+Purpose of Visit Refusal
+Ties to Home Country Refusal
+Documentation Refusal
+Multiple Ground Refusal
+
+consultantNotes
+
+3-8 practical observations.
+
+---
+
+SECTION 2
+AI ASSESSMENT SUMMARY
+---------------------
+
+Generate:
+
+currentCaseStrength
+
+recommendedPath
+
+One of:
+
+Reapply Immediately
+
+Reapply After Strengthening Evidence
+
+Delay Application
+
+Seek Professional Review
+
+reasoning
+
+confidenceLevel
+
+0-100
+
+---
+
+SECTION 3
+READINESS OUTLOOK
+-----------------
+
+Generate:
+
+currentReadiness
+
+readinessAfterFixes
+
+expectedScoreImprovement
+
+primaryObstacles
+
+---
+
+SECTION 4
+ISSUE BREAKDOWN
+---------------
+
+For each refusal ground generate:
+
+finding
+
+impact
+
+Values:
+
+Critical
+High
+Medium
+Low
+
+recommendedEvidence
+
+recommendedAction
+
+---
+
+SECTION 5
+REAPPLICATION STRATEGY
+----------------------
+
+Generate:
+
+immediateActions
+
+evidenceToGather
+
+commonMistakes
+
+timeline
+
+expectedOutcome
+
+---
+
+SECTION 6
+DOCUMENT CHECKLIST
+------------------
+
+Generate categorized checklist.
+
+Categories:
+
+financial
+
+employment
+
+academic
+
+travel
+
+identity
+
+other
+
+Each item must contain:
+
+documentName
+
+importance
+
+explanation
+
+---
+
+SECTION 7
+PROFESSIONAL EXPLANATION LETTER
+-------------------------------
+
+Generate a consultant-grade supporting explanation.
+
+Requirements:
+
+* concise
+* evidence-focused
+* professional
+* serious tone
+
+Structure:
+
+Date
+
+Recipient
+
+Subject
+
+Greeting
+
+Introduction
+
+Numbered Refusal Response Sections
+
+Conclusion
+
+Signature
+
+Formatting rules:
+
+* short paragraphs
+* blank line separation
+* maximum 4-6 major sections
+* remove apologies
+* remove filler language
+* reduce verbosity by approximately 30%
+
+Do not include markdown symbols:
+
+#
+
+##
+
+###
+
+---
+
+---
+
+Use plain professional formatting only.
+
+---
+
+SECTION 8
+APPLICANT NAME
+--------------
+
+Extract applicantName from uploaded refusal document.
+
+If unavailable:
+
+"Confidential Client"
+
+---
+
+FINAL RULE
+
+Return only information supported by:
+
+1. refusal letter
+2. questionnaire
+3. supplied applicant context
+
+Never fabricate evidence.`; // <-- note: the prompt ends here; the JSON structure is dictated by the prompt instructions, not a template
 }
 
 function extractJson(text: string): any {
