@@ -24,7 +24,7 @@ function isRetryableError(status: number, errorBody: string): boolean {
 
 async function generateWithFallback(
   prompt: string,
-  generationConfig: { temperature: number; maxOutputTokens: number }
+  generationConfig: { temperature: number; maxOutputTokens: number; responseMimeType?: string }
 ): Promise<{ text: string; model: string }> {
   const rawKey = process.env.GEMINI_API_KEY;
   if (!rawKey) throw new Error('GEMINI_API_KEY is not configured');
@@ -113,11 +113,23 @@ export async function generateAnalysis(formData: {
 
   const trimmedKey = rawKey.trim();
   const prompt = buildPrompt(formData);
-  const { text } = await generateWithFallback(prompt, { temperature: 0.7, maxOutputTokens: 8192 });
+  const { text, model } = await generateWithFallback(prompt, {
+    temperature: 0.7,
+    maxOutputTokens: 8192,
+    responseMimeType: 'application/json',
+  });
+
+  console.log('RAW GEMINI RESPONSE (first 5000):', text.slice(0, 5000));
+  console.log('RAW GEMINI RESPONSE length:', text.length);
+  console.log('RAW GEMINI RESPONSE model:', model);
 
   const json = extractJson(text);
 
   if (!json) {
+    console.error('FAILED TO PARSE JSON. Full raw response:');
+    console.error(text);
+    console.error('Response length:', text.length);
+    console.error('Model:', model);
     throw new Error('Failed to parse Gemini response as JSON');
   }
 
@@ -438,18 +450,85 @@ Return only information supported by:
 2. questionnaire
 3. supplied applicant context
 
-Never fabricate evidence.`; // <-- note: the prompt ends here; the JSON structure is dictated by the prompt instructions, not a template
+Never fabricate evidence.
+
+---
+
+IMPORTANT: Return ONLY valid JSON.
+Do not wrap in markdown.
+Do not use \`\`\`json.
+Do not include explanations before or after JSON.
+Use exactly this JSON structure:
+
+{
+  "case_assessment": {
+    "applicantName": "Confidential Client",
+    "applicationReadinessScore": 0,
+    "severityRating": "Moderate",
+    "caseType": "${formData.visaType}",
+    "consultantNotes": ["Note 1", "Note 2"]
+  },
+  "aiAssessmentSummary": {
+    "currentCaseStrength": "Moderate",
+    "recommendedPath": "Reapply After Strengthening Evidence",
+    "reasoning": "Detailed reasoning",
+    "confidenceLevel": 65
+  },
+  "readinessOutlook": {
+    "currentReadiness": "Low",
+    "readinessAfterFixes": "Strong",
+    "expectedScoreImprovement": "30-40%",
+    "primaryObstacles": ["Obstacle 1", "Obstacle 2"]
+  },
+  "issues": [
+    {
+      "issue": "Specific refusal ground",
+      "finding": "Detailed finding",
+      "impact": "High",
+      "recommendedEvidence": ["Evidence item 1"],
+      "recommendedAction": "Specific action to address this issue"
+    }
+  ],
+  "strategy": {
+    "immediateActions": ["Action 1", "Action 2"],
+    "evidenceToGather": ["Document 1", "Document 2"],
+    "commonMistakes": ["Mistake 1", "Mistake 2"],
+    "timeline": "Recommended timeline",
+    "expectedOutcome": "Expected outcome"
+  },
+  "checklist": {
+    "financial": [{"documentName": "Bank statements", "importance": "Critical", "explanation": "Why this is needed"}],
+    "employment": [],
+    "academic": [],
+    "travel": [],
+    "identity": [],
+    "other": []
+  },
+  "explanationLetter": "Consultant-grade supporting explanation in plain professional formatting without markdown symbols."
+}`;
 }
 
 function extractJson(text: string): any {
-  let cleaned = text.replace(/```(?:json)?\s*/gi, '').replace(/```\s*$/gi, '').trim();
+  let cleaned = text
+    .replace(/```json\s*/gi, '')
+    .replace(/```\s*/gi, '')
+    .trim();
+
+  // If no braces found, full dump has already been logged upstream
   const start = cleaned.indexOf('{');
   const end = cleaned.lastIndexOf('}');
-  if (start === -1 || end === -1) return null;
+  if (start === -1 || end === -1) {
+    console.error('extractJson: no JSON object found in response');
+    return null;
+  }
   cleaned = cleaned.slice(start, end + 1);
+
   try {
     return JSON.parse(cleaned);
-  } catch {
+  } catch (parseErr: any) {
+    console.error('extractJson: JSON.parse failed:', parseErr.message);
+    console.error('extractJson: cleaned text length:', cleaned.length);
+    console.error('extractJson: cleaned text (first 2000):', cleaned.slice(0, 2000));
     return null;
   }
 }
