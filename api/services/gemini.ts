@@ -374,61 +374,6 @@ explanation
 
 ---
 
-SECTION 7
-VISA REFUSAL RESPONSE SUBMISSION
----------------------------------
-
-Generate a professional visa refusal response submission.
-
-Requirements:
-
-* Written in the style of an experienced immigration consultant.
-* Address the visa officer directly.
-* Use numbered refusal-response sections.
-* Reference actual applicant facts from the questionnaire whenever available.
-* Do not use placeholders.
-* Do not use generic template language.
-* Do not use emotional arguments.
-* Do not repeat refusal reasons.
-* Do not create facts not supplied by the applicant.
-
-Structure:
-
-Visa Office
-
-Subject
-
-Opening paragraph
-
-Numbered response sections
-
-Professional conclusion
-
-Target length:
-500-900 words.
-
-The letter should sound like a document prepared for a real reapplication package, not a template and not a legal essay.
-
-Most importantly:
-
-Use applicant-specific information aggressively.
-
-If the applicant supplied:
-
-* employment information
-* income
-* bank balance
-* sponsor
-* property ownership
-* dependents
-* business ownership
-* travel purpose
-
-the letter must reference those facts directly.
-
-Specific facts are more important than sophisticated wording.
-
----
 
 SECTION 8
 APPLICANT NAME
@@ -503,8 +448,7 @@ Use exactly this JSON structure:
     "travel": [],
     "identity": [],
     "other": []
-  },
-  "explanationLetter": "Professional immigration-submission letter in plain text addressing each refusal reason with evidence-based arguments."
+  }
 }`;
 }
 
@@ -546,7 +490,7 @@ function normalizeAnalysisOutput(raw: any): any {
       expectedOutcome: '',
     },
     checklist: normalizeChecklist(raw.checklist),
-    appeal_letter: raw.explanationLetter || raw.appeal_letter || '',
+    appeal_letter: '',
   };
 }
 
@@ -592,4 +536,178 @@ function extractJson(text: string): any {
     console.error('extractJson: cleaned text (first 2000):', cleaned.slice(0, 2000));
     return null;
   }
+}
+
+export async function generateAppealLetter(
+  analysisData: any,
+  formData: {
+    country: string;
+    visaType: string;
+    purpose: string;
+    travelHistory: string;
+    refusalReasons: string[];
+    questionnaireResponses: { question: string; answer: string | boolean | string[] }[];
+    refusalDocument?: string;
+  }
+): Promise<string> {
+  const questionnaireText = formData.questionnaireResponses
+    .map(r => `${r.question}: ${Array.isArray(r.answer) ? r.answer.join(', ') : r.answer}`)
+    .join('\n');
+
+  const refusalDocText = formData.refusalDocument
+    ? `\nRefusal Letter Text:\n${formData.refusalDocument}`
+    : '';
+
+  const analysisSummary = [
+    `Case Type: ${analysisData.case_assessment?.caseType || formData.visaType}`,
+    `Readiness Score: ${analysisData.case_assessment?.score || 'N/A'}/100`,
+    `Severity: ${analysisData.case_assessment?.severityRating || 'N/A'}`,
+    `Case Strength: ${analysisData.case_assessment?.consultantVerdict?.currentCaseStrength || 'N/A'}`,
+    `Key Issues: ${(analysisData.issues || []).map((i: any) => i.issue).join(', ')}`,
+  ].join('\n');
+
+  const prompt = `You are a senior immigration lawyer with 20+ years of experience preparing visa refusal responses, administrative reviews, immigration submissions, and reapplication packages.
+
+Your task is to prepare a professional immigration submission.
+
+This document must read exactly like a real submission prepared by an experienced immigration attorney.
+
+CRITICAL RULES:
+
+1. NEVER INVENT FACTS.
+
+Only use:
+
+* refusal reasons
+* applicant questionnaire
+* uploaded refusal letter
+* analysis findings
+
+If evidence is missing, do not pretend it exists.
+
+2. NEVER USE:
+
+* We believe
+* We trust
+* We appreciate your consideration
+* Please find attached
+* Should further information be required
+* Thank you for your time
+* Generic customer-service language
+
+3. NEVER WRITE:
+
+* essays
+* blog posts
+* summaries
+
+4. WRITE LIKE:
+
+* immigration barrister
+* visa attorney
+* regulated immigration consultant
+
+5. TONE:
+
+confident
+professional
+persuasive
+evidence-focused
+
+DOCUMENT STRUCTURE:
+
+Visa Office Heading
+
+Subject Line
+
+Dear Visa Officer,
+
+Opening submission paragraph
+
+Then create a separate section for EVERY refusal ground.
+
+Example:
+
+1. Financial Capacity
+
+2. Employment and Economic Ties
+
+3. Travel Purpose
+
+4. Family and Social Ties
+
+5. Travel History
+
+etc.
+
+Each section must:
+
+* identify officer concern
+* explain applicant circumstances
+* explain why concern can be overcome
+* reference available evidence
+* sound professional
+
+EXAMPLE STYLE:
+
+Use language similar to:
+
+"The refusal places significant weight on the applicant's financial circumstances. However, when assessed in the context of the applicant's documented income history and overall financial profile, the available evidence demonstrates a stable capacity to fund the proposed visit."
+
+"The applicant's continuing professional obligations create a compelling incentive to return to their country of residence following the temporary visit."
+
+"The purpose of travel remains temporary, clearly defined, and consistent with the applicant's personal circumstances."
+
+CONCLUSION:
+
+Short professional conclusion.
+
+Example style:
+
+"For the reasons outlined above, the applicant respectfully submits that the concerns identified in the previous refusal have been directly addressed through the explanations and supporting evidence now available for consideration."
+
+OUTPUT FORMAT:
+
+Return ONLY plain text.
+
+DO NOT return JSON.
+
+DO NOT return markdown.
+
+DO NOT return code fences.
+
+Target length:
+
+1000–1500 words.
+
+The final document should look like something a client would expect from a professional immigration lawyer charging $1000+ for a refusal response.
+
+---
+
+APPLICANT INFORMATION:
+
+Country: ${formData.country}
+Visa Type: ${formData.visaType}
+Purpose of Travel: ${formData.purpose}
+Travel History: ${formData.travelHistory}
+
+REFUSAL REASONS:
+${formData.refusalReasons.join('\n')}
+
+APPLICANT QUESTIONNAIRE:
+${questionnaireText}
+${refusalDocText}
+
+ANALYSIS FINDINGS:
+${analysisSummary}`;
+
+  const { text: letter, model } = await generateWithFallback(prompt, {
+    temperature: 0.3,
+    maxOutputTokens: 8192,
+  });
+
+  console.log('APPEAL LETTER GENERATED');
+  console.log(letter.slice(0, 1000));
+
+  return letter;
 }

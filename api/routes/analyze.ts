@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Timestamp } from 'firebase-admin/firestore';
 import { AuthenticatedRequest, verifyAuth } from '../middleware/auth.js';
 import { getDb } from '../firebase.js';
-import { generateAnalysis } from '../services/gemini.js';
+import { generateAnalysis, generateAppealLetter } from '../services/gemini.js';
 
 const router = Router();
 
@@ -29,6 +29,18 @@ router.post('/', verifyAuth, async (req: AuthenticatedRequest, res: Response) =>
       questionnaireResponses: questionnaireResponses || [],
       refusalDocument: refusalDocument || undefined,
     });
+
+    const appealLetter = await generateAppealLetter(analysisData, {
+      country,
+      visaType,
+      purpose: purpose || '',
+      travelHistory: travelHistory || '',
+      refusalReasons: refusalReasons || [],
+      questionnaireResponses: questionnaireResponses || [],
+      refusalDocument: refusalDocument || undefined,
+    });
+
+    analysisData.appeal_letter = appealLetter;
 
     const casePath = `users/${uid}/cases/${caseId}`;
     console.log(`UID USED FOR FIRESTORE: ${uid}`);
