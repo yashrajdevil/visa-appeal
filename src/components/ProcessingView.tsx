@@ -11,7 +11,7 @@ const steps = [
   "Extracting core rejection reasons...",
   "Analyzing legal precedence & guidelines...",
   "Generating targeted fix strategy...",
-  "Drafting professional appeal letter...",
+  "Drafting professional reapplication submission...",
   "Preparing results..."
 ];
 

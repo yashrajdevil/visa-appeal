@@ -129,7 +129,7 @@ export const AppealAnimation = () => {
           <div className="w-3/4 h-1.5 bg-zinc-800 rounded-full"></div>
         </motion.div>
 
-        {/* Front Document (Appeal Letter) */}
+        {/* Front Document (Visa Reapplication Submission) */}
         <motion.div 
           className="relative z-30 w-44 h-56 bg-zinc-900 border border-zinc-700 rounded-xl shadow-[0_20px_40px_rgba(0,0,0,0.6)] flex flex-col px-5 py-6 gap-3 group-hover:-translate-y-2 group-hover:border-emerald-500/40 group-hover:shadow-[0_30px_50px_rgba(16,185,129,0.15)] transition-all duration-700 ease-out"
           animate={{ y: [0, -4, 0] }}

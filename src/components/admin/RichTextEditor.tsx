@@ -9,7 +9,7 @@ interface RichTextEditorProps {
 
 const PRESET_CTAS = [
     { text: 'Return to Homepage', url: '/' },
-    { text: 'Generate Visa Appeal Letter', url: '/appeal-builder' },
+    { text: 'Generate Visa Reapplication Submission', url: '/appeal-builder' },
     { text: 'Analyze My Refusal Letter', url: '/analyze' },
     { text: 'Contact Us', url: '/contact' },
     { text: 'View Visa Bundles', url: '/bundles' },
@@ -17,7 +17,7 @@ const PRESET_CTAS = [
 ];
 
 const BANNER_PRESETS = [
-    { headline: "Don't guess what the embassy wants.", subheadline: "Upload your refusal letter and receive a complete personalized appeal package including document analysis, refusal reasoning, weaknesses, and a professional appeal letter.", buttonText: "Generate My Appeal Plan", url: "/appeal-builder" },
+    { headline: "Don't guess what the embassy wants.", subheadline: "Upload your refusal letter and receive a complete personalized reapplication package including document analysis, refusal reasoning, weaknesses, and a professional submission.", buttonText: "Generate My Reapplication Plan", url: "/appeal-builder" },
     { headline: "Ready to strengthen your application?", subheadline: "Get a complete refusal analysis and document strategy.", buttonText: "Analyze My Refusal", url: "/analyze" },
     { headline: "Need help with your visa refusal?", subheadline: "Get an embassy-ready appeal package in minutes.", buttonText: "Start Now", url: "/contact" }
 ];

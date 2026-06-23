@@ -375,128 +375,154 @@ explanation
 ---
 
 SECTION 7
-PROFESSIONAL EXPLANATION LETTER
+VISA REAPPLICATION SUBMISSION
 -------------------------------
 
-Generate a letter that reads as if prepared by an experienced immigration consultant or visa attorney for submission with a reapplication package.
+GOAL
 
-CRITICAL INSTRUCTION — PERSONALIZATION:
-The letter MUST feel written specifically for this applicant and this refusal. Each refusal reason must be addressed individually. A reader should never feel the letter is a template. Use the specific facts from the questionnaire and refusal document.
+Generate a professional immigration reapplication submission letter that reads as though it was prepared by an experienced immigration consultant or visa attorney.
 
-TONE REQUIREMENTS:
-- Professional legal-style register throughout
-- Assertive but respectful — never pleading or ingratiating
-- Objective and analytical, presenting facts and evidence
-- No motivational language ("I am confident", "I believe", "I am sure")
-- No unnecessary apologies or expressions of regret beyond a single brief courtesy acknowledgment if appropriate
-- No emotional appeals — logic and evidence only
-- Concise and direct — every sentence should carry information
+The output must feel individualized to the applicant's specific refusal, country, visa category, and supporting evidence.
 
-STRUCTURE:
+CRITICAL FACT RULES
 
-DATE
-- Current date in formal format (e.g., "June 23, 2026")
+Never invent facts.
 
-RECIPIENT
-- "Visa Officer" or "Immigration Officer"
-- "Embassy/Consulate of [Country]"
-- City and country of the processing post (if identifiable from refusal document)
+Never claim documents exist unless the applicant uploaded them or explicitly confirmed them.
 
-SUBJECT
-- "Re: [Visa Type] Application for [Applicant Name] — Supporting Explanation"
-- Do not use all-caps; title case or standard capitalization
+Never create employment history, income, assets, travel history, sponsors, family relationships, or property ownership that were not provided.
 
-GREETING
-- "Dear Visa Officer,"
+If evidence is missing, state:
 
-INTRODUCTION (2-3 sentences)
-- Identify the application and the date of refusal
-- Acknowledge the refusal without apologizing
-- State the purpose of the letter: to provide context and evidence addressing the specific grounds of refusal
-- Example: "This letter accompanies the reapplication of [Applicant Name] for a [Visa Type] to [Country], following the refusal dated [Date]. The purpose of this submission is to address each of the grounds cited in the refusal notice with additional context and supporting documentation."
+"The applicant may further strengthen the application by providing..."
 
-NUMBERED REFUSAL RESPONSE SECTIONS
-- One section per refusal reason cited in the refusal notice
-- For each section:
-  * Restate the refusal ground briefly and neutrally (e.g., "1. Insufficient evidence of financial means to cover the intended stay")
-  * Acknowledge the officer's concern as reasonable
-  * Present the evidence or context that addresses the concern, using only facts from the questionnaire or refusal document
-  * Explain WHY the concern is now resolved or substantially mitigated — not merely that evidence exists, but what that evidence demonstrates
-  * Reference specific supporting evidence categories (e.g., "bank statements for the period [dates]", "employment contract showing annual salary of [amount]", "property title deed registered in applicant's name")
-  * When evidence is incomplete, state: "If [specific document] can be provided, it would further demonstrate [specific point]"
-- Each section: 3-6 sentences
-- Use clear headings (bolded or underlined section titles) if formatting permits
-- Address the refusal reasons IN THE ORDER they appeared in the refusal notice
+instead of pretending the evidence exists.
 
-EVIDENCE FRAMEWORKS — Address relevant dimensions per case:
+TONE
 
-For CREDIBILITY concerns:
-- Acknowledge prior inconsistencies if any exist
-- Explain why the current evidence package resolves doubt
-- Reference verifiable third-party documentation
+Professional.
 
-For TIES concerns:
-- Present specific, quantifiable evidence of professional, economic, property, or familial ties
-- Explain the consequence of abandoning those ties
-- Reference employment letters, business registrations, property deeds, family documents
+Formal.
 
-For FINANCIAL concerns:
-- Present income and asset figures directly (use exact numbers where provided)
-- Explain the financial plan for the visit: who is paying, how funds were accumulated
-- Reference specific bank statements, sponsorship letters, pay slips
+Evidence-driven.
 
-For TRAVEL PURPOSE concerns:
-- Connect stated purpose to objective evidence (invitations, bookings, enrollment, event registrations)
-- Explain itinerary coherence
-- Reference invitation letters, hotel bookings, enrollment confirmations, event registrations
+Objective.
 
-For COMPLIANCE HISTORY concerns:
-- Acknowledge any prior overstay or non-compliance
-- Present evidence of voluntary departure, valid status at departure, or compliance since
-- Reference travel history records, exit stamps, previous visa grants
+Persuasive.
 
-For RETURN INCENTIVES concerns:
-- Present the specific, objective factors compelling return
-- Quantify where possible: job waiting period, ongoing education, business operations, family dependents, property obligations
-- Reference employer letters, academic calendars, business licenses, family documents
+No emotional language.
 
-WRITING RULES:
-- Short paragraphs (2-4 sentences maximum)
-- Blank lines between paragraphs
-- Total letter: 4-8 major sections (introduction, 2-6 refusal responses, conclusion)
-- Remove all filler phrases: "It is important to note that", "It should be mentioned that", "It is worth considering that", etc.
-- Remove all redundant modifiers: "very", "highly", "extremely", "significantly"
-- Remove all hedging language unless genuinely uncertain: "might", "could", "may", "possibly"
-- Each paragraph must advance the argument or present new information
-- Do not repeat the same point in different words
-- No placeholder text such as "[Applicant Name]" unless the refusal document contains no name and the questionnaire is empty — use "the applicant" in such cases
-- Never write "[Insert Date]", "[Country Name]", or any other generic bracket placeholder
-- The letter must be self-contained: someone reading only this letter should understand all refusal grounds and the responses
+No begging.
 
-CONCLUSION (2-3 sentences)
-- Brief restatement that the evidence package addresses the refusal grounds
-- Statement of willingness to provide further documentation if required
-- Polite closing without ingratiation
+No apologies.
 
-SIGNATURE
-- "Sincerely,"
-- Blank line
-- Applicant name (or "Confidential Client")
-- Contact information if available
+No generic AI phrases.
 
-Do not include markdown symbols:
+No motivational language.
 
-#
+No filler.
 
-##
+STRUCTURE
 
-###
+Generate the letter using this exact structure:
 
----
+1. Heading
+   Date
+   Applicant Name
+   Visa Type
+   Destination Country
 
----
+2. Subject Line
 
-Use plain professional formatting only.
+RE: Temporary Resident Visa Reapplication Submission
+
+3. Introduction
+
+Briefly summarize:
+
+* Purpose of travel
+* Previous refusal
+* Purpose of this submission
+
+4. Refusal Ground Responses
+
+For EACH refusal reason:
+
+REFUSAL GROUND
+
+Officer Concern
+
+Why the concern was raised
+
+Applicant Response
+
+Detailed explanation based on actual applicant information
+
+Supporting Evidence
+
+List the actual uploaded or confirmed evidence
+
+How the new evidence resolves the concern
+
+5. Overall Eligibility Assessment
+
+Explain why the applicant now satisfies:
+
+* Financial requirements
+* Temporary stay requirements
+* Return incentives
+* Credibility requirements
+* Purpose of visit requirements
+
+6. Conclusion
+
+Professional closing requesting consideration of the updated application.
+
+QUALITY REQUIREMENTS
+
+The letter must:
+
+* Sound like a real consultant prepared it
+* Directly address the officer's concerns
+* Use facts from questionnaire answers
+* Use facts from uploaded evidence
+* Explain WHY the evidence resolves the refusal
+* Reference country-specific visa principles when relevant
+* Be personalized
+* Be substantially stronger than a generic template
+
+AVOID THESE PHRASES
+
+* I respectfully request reconsideration
+* I hope this letter finds you well
+* I kindly ask
+* I humbly request
+* Thank you for your time and consideration
+
+These phrases make the letter look generic and AI-generated.
+
+OUTPUT LENGTH
+
+Target 800-1500 words depending on refusal complexity.
+
+Complex refusals should receive more detailed responses.
+
+SIMPLE REFUSALS
+
+If there is only one refusal reason, still provide a complete professional submission.
+
+COMPLEX REFUSALS
+
+If there are multiple refusal reasons, dedicate a separate section to each refusal ground.
+
+FINAL CHECK
+
+Before generating the letter:
+
+* Verify every factual statement comes from the refusal letter, questionnaire, or uploaded evidence.
+* Remove any invented claims.
+* Remove any placeholders.
+* Ensure the document sounds like a paid immigration consultant prepared it.
 
 ---
 

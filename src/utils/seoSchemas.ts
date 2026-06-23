@@ -51,7 +51,7 @@ export const getSoftwareAppSchema = (price: string = '29', priceCurrency: string
   },
   "featureList": [
     "AI Refusal Letter Analysis",
-    "Embassy-Ready Appeal Letters",
+    "Embassy-Ready Reapplication Submissions",
     "Personalized Document Checklists",
     "Reapplication Strategy Generator"
   ]

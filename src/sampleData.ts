@@ -65,7 +65,49 @@ export const edgeCaseData: GenerateAppealResponse = {
     ],
     other: []
   },
-  appeal_letter: "Dear Officer, I am writing to provide additional context and documentation regarding my visa application..."
+  appeal_letter: `RE: Temporary Resident Visa Reapplication Submission
+
+This submission addresses the concerns identified in the previous refusal decision regarding travel history and the applicant's incentives to depart Canada at the conclusion of the authorized stay.
+
+Refusal Ground 1: Limited Travel History
+
+The previous decision noted that the applicant's travel history was insufficient to establish a pattern of international compliance.
+
+While the applicant's international travel history is limited, travel history should be assessed alongside the applicant's overall circumstances rather than in isolation. The applicant is a full-time marketing professional with established employment, ongoing financial commitments, and documented obligations requiring continued residence in the Philippines.
+
+The applicant's lack of extensive prior travel is attributable to professional and financial priorities during the early stages of career development rather than any unwillingness or inability to comply with immigration requirements.
+
+Supporting documentation included with this submission demonstrates stable employment, sustained income, and a consistent residential and financial profile.
+
+Refusal Ground 2: Incentives to Return to the Philippines
+
+The applicant has provided substantial evidence demonstrating significant economic and professional ties to the Philippines.
+
+Employment documentation confirms permanent full-time employment and identifies the applicant's involvement in a scheduled national marketing campaign commencing immediately following the proposed return date. The applicant's continued participation is contractually and professionally required.
+
+Financial documentation demonstrates an established banking history, ongoing income generation, and accumulated savings developed over an extended period. The travel expenses associated with the proposed visit represent a reasonable expenditure relative to the applicant's financial circumstances.
+
+Additional supporting evidence further confirms the applicant's ongoing commitments within the Philippines and reinforces the temporary nature of the proposed visit.
+
+Overall Assessment
+
+The updated submission directly addresses the concerns identified in the refusal decision through objective documentary evidence.
+
+The applicant has demonstrated:
+
+• Sufficient financial capacity to undertake the proposed visit
+
+• Stable employment and professional obligations requiring return
+
+• Established economic ties within the Philippines
+
+• A credible and temporary travel purpose
+
+• Strong incentives to comply with all immigration conditions
+
+The applicant respectfully requests that the application be reassessed in light of the additional evidence now provided.
+
+Submitted in support of the Temporary Resident Visa reapplication.`
 };
 
 export const sampleReportData: GenerateAppealResponse = {
@@ -173,5 +215,47 @@ export const sampleReportData: GenerateAppealResponse = {
       { item: "Comprehensive Statement of Purpose (SOP)", explanation: "The core document addressing the travel history gap directly." }
     ]
   },
-  appeal_letter: "Dear Officer,\n\nI am writing to formally request the reconsideration of my Temporary Resident Visa application. I respect the previous decision made by the visa officer refusing my entry based on my limited travel history (subsection 200(1) of the IRPR). However, I wish to provide crucial context regarding my travel patterns and present substantial, verifiable evidence of my deep-rooted ties to the Philippines, which compel my absolute return at the end of my authorized stay.\n\nI acknowledge that as a 28-year-old professional, this represents my first long-haul international trip. Prior to this, my focus has been entirely dedicated to establishing my career in marketing and building long-term financial security. Having achieved stability in my role as a Senior Marketing Coordinator at [Company Name], I have been granted a highly specific, strictly dated two-week leave to finally undertake a celebratory trip to Canada.\n\nTo address concerns regarding my intent and ties to my home country, I have attached a detailed Affidavit of Employment from my Director. This document explicitly outlines my critical, irreplaceable involvement in our Q3 National Campaign launch, which commences precisely three days after my scheduled return to Manila. My continued employment and career trajectory depend entirely on my timely return.\n\nFurthermore, I have enclosed documentation of my long-term financial and property assets in the Philippines, demonstrating an established life that would be irrational and catastrophic to abandon. I am presenting my complete 12-month financial history to confirm that this trip is funded by sustained, long-term savings relative to my economic standing.\n\nI respectfully submit that while my international travel history is currently limited, my profound economic, professional, and familial roots in the Philippines guarantee my strict compliance with Canadian immigration laws. I humbly request the opportunity to prove myself a compliant and respectful visitor to your beautiful country.\n\nSincerely,\n\nJ. Dela Cruz"
+  appeal_letter: `RE: Temporary Resident Visa Reapplication Submission
+
+This submission addresses the concerns identified in the previous refusal decision regarding travel history and the applicant's incentives to depart Canada at the conclusion of the authorized stay.
+
+Refusal Ground 1: Limited Travel History
+
+The previous decision noted that the applicant's travel history was insufficient to establish a pattern of international compliance.
+
+While the applicant's international travel history is limited, travel history should be assessed alongside the applicant's overall circumstances rather than in isolation. The applicant is a full-time marketing professional with established employment, ongoing financial commitments, and documented obligations requiring continued residence in the Philippines.
+
+The applicant's lack of extensive prior travel is attributable to professional and financial priorities during the early stages of career development rather than any unwillingness or inability to comply with immigration requirements.
+
+Supporting documentation included with this submission demonstrates stable employment, sustained income, and a consistent residential and financial profile.
+
+Refusal Ground 2: Incentives to Return to the Philippines
+
+The applicant has provided substantial evidence demonstrating significant economic and professional ties to the Philippines.
+
+Employment documentation confirms permanent full-time employment and identifies the applicant's involvement in a scheduled national marketing campaign commencing immediately following the proposed return date. The applicant's continued participation is contractually and professionally required.
+
+Financial documentation demonstrates an established banking history, ongoing income generation, and accumulated savings developed over an extended period. The travel expenses associated with the proposed visit represent a reasonable expenditure relative to the applicant's financial circumstances.
+
+Additional supporting evidence further confirms the applicant's ongoing commitments within the Philippines and reinforces the temporary nature of the proposed visit.
+
+Overall Assessment
+
+The updated submission directly addresses the concerns identified in the refusal decision through objective documentary evidence.
+
+The applicant has demonstrated:
+
+• Sufficient financial capacity to undertake the proposed visit
+
+• Stable employment and professional obligations requiring return
+
+• Established economic ties within the Philippines
+
+• A credible and temporary travel purpose
+
+• Strong incentives to comply with all immigration conditions
+
+The applicant respectfully requests that the application be reassessed in light of the additional evidence now provided.
+
+Submitted in support of the Temporary Resident Visa reapplication.`
 };

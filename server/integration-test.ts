@@ -357,14 +357,14 @@ async function flowI() {
 
   // Test access to various sections
   const starterSections = ['Case Assessment', 'Issue Breakdown'];
-  const standardSections = ['Appeal Letter', 'Strategy'];
+  const standardSections = ['Visa Reapplication Submission', 'Strategy'];
   const premiumSections = ['Checklist'];
 
   assert('I', 'Starter sees Case Assessment', true, 'Case assessment is always visible');
   assert('I', 'Starter sees Issue Breakdown', true, 'Issue breakdown is always visible');
 
-  // Standard+ gets the appeal letter and strategy
-  assert('I', 'Premium sees Appeal Letter', hasAccess('premium', 'standard'), 'Premium should see appeal letter');
+  // Standard+ gets the reapplication submission and strategy
+  assert('I', 'Premium sees Reapplication Submission', hasAccess('premium', 'standard'), 'Premium should see reapplication submission');
   assert('I', 'Premium sees Strategy', hasAccess('premium', 'standard'), 'Premium should see strategy');
   assert('I', 'Starter cannot access Strategy (standard)', !hasAccess('starter', 'standard'),
     'Starter should NOT see strategy content');

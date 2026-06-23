@@ -6,7 +6,7 @@ The platform analyzes official visa refusal letters, extracts exactly why the vi
 
 ## Features
 - AI Refusal Analysis: Understand exactly why the visa was refused.
-- Embassy-Ready Appeal Letters: Formal structure covering legal burdens of proof.
+- Embassy-Ready Visa Reapplication Submissions: Formal structure covering legal burdens of proof.
 - Personalized Document Checklists: A roadmap of evidence required for a successful reapplication.
 - Country-specific logic (Schengen, UK, US, Canada, Australia).
 

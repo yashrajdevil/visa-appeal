@@ -19,7 +19,7 @@ const HEADLINES = [
   "Upload your refusal letter. Get a complete appeal and reapplication plan.",
   "From refusal letter to embassy-ready appeal package.",
   "Professional visa refusal recovery for students, workers, and travelers.",
-  "Get a personalized appeal letter, document roadmap, and refusal analysis in minutes.",
+  "Get a professional reapplication submission, document roadmap, and refusal analysis in minutes.",
   "Understand why your visa was refused — and exactly how to strengthen your next application."
 ];
 
@@ -177,8 +177,8 @@ export default function LandingView({ onStartAppeal }: LandingViewProps) {
                   <AppealAnimation />
                </div>
                <div className="px-8 pb-8 pt-6 flex-1 flex flex-col bg-zinc-900/40 z-10 relative">
-                  <h3 className="text-xl font-bold mb-2 group-hover:text-emerald-400 transition-colors">3. Get your appeal</h3>
-                  <p className="text-zinc-500 text-sm leading-relaxed">Download a complete, embassy-ready package structured to maximize approval odds.</p>
+                   <h3 className="text-xl font-bold mb-2 group-hover:text-emerald-400 transition-colors">3. Get your reapplication package</h3>
+                   <p className="text-zinc-500 text-sm leading-relaxed">Download a complete, embassy-ready package structured to maximize approval odds.</p>
                </div>
             </div>
 
@@ -195,8 +195,8 @@ export default function LandingView({ onStartAppeal }: LandingViewProps) {
               <div className="flex gap-4">
                 <div className="mt-1 bg-zinc-800/50 p-2 rounded-lg h-fit"><FileText className="w-5 h-5 text-indigo-400" /></div>
                 <div>
-                  <h4 className="font-semibold text-lg mb-1">Embassy-ready appeal letter</h4>
-                  <p className="text-zinc-400 text-sm">Formal, structured, and specifically addressing the refusal grounds. No generic AI fluff.</p>
+                   <h4 className="font-semibold text-lg mb-1">Embassy-ready reapplication submission</h4>
+                   <p className="text-zinc-400 text-sm">Formal, structured, and specifically addressing the refusal grounds. No generic AI fluff.</p>
                 </div>
               </div>
               <div className="flex gap-4">
@@ -283,7 +283,7 @@ export default function LandingView({ onStartAppeal }: LandingViewProps) {
                               <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0">
                                  <FileText className="w-4 h-4 text-indigo-400" />
                               </div>
-                              <span className="text-sm text-zinc-200 font-medium">Embassy Appeal Letter</span>
+                              <span className="text-sm text-zinc-200 font-medium">Visa Reapplication Submission</span>
                               <CheckCircle2 className="w-4 h-4 text-emerald-500/60 ml-auto shrink-0" />
                           </div>
                           <div className="flex items-center gap-3 bg-zinc-950 hover:bg-zinc-900 border border-zinc-800/50 hover:border-purple-500/30 transition-colors p-3 rounded-xl">

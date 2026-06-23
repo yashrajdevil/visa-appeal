@@ -27,7 +27,7 @@ const PLANS = [
 ];
 
 const FEATURES = [
-  { key: 'appeal_letter', label: 'Explanation Letter Draft', starter: true, standard: true, premium: true },
+  { key: 'appeal_letter', label: 'Visa Reapplication Submission', starter: true, standard: true, premium: true },
   { key: 'basic_checklist', label: 'Basic Document Checklist', starter: true, standard: true, premium: true },
   { key: 'pdf_export', label: 'PDF Export', starter: true, standard: true, premium: true },
   { key: 'readiness_score', label: 'Application Readiness Score', starter: false, standard: true, premium: true },
@@ -662,14 +662,14 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
       if (hasFeature('appeal_letter')) {
         np();
         doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(26, 26, 46);
-        doc.text('Supporting Explanation Draft', M, y);
+        doc.text('Visa Reapplication Submission', M, y);
         y += 0.12; doc.setDrawColor(26, 26, 46); doc.setLineWidth(0.015); doc.line(M, y, PW - M, y);
         y += 0.35;
 
         doc.setDrawColor(229, 229, 235); doc.setFillColor(250, 250, 250);
         doc.roundedRect(M, y, CW, 0.5, 0.03, 0.03, 'FD');
         doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(100, 100, 100);
-        doc.text('The following is a professionally drafted supporting explanation for your visa reapplication.', M + 0.15, y + 0.3);
+        doc.text('The following is a professionally drafted reapplication submission for your visa application.', M + 0.15, y + 0.3);
         y += 0.7;
 
         doc.setFont('times', 'normal'); doc.setFontSize(11); doc.setTextColor(17, 17, 17);

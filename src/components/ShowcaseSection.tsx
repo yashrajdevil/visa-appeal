@@ -202,7 +202,7 @@ export const ShowcaseSection = () => {
 
                                 {/* Items */}
                                 {[
-                                    { icon: <FileText className="w-5 h-5 text-blue-400" />, title: "Appeal Letter", desc: "Embassy-ready • 3-5 pages" },
+                                    { icon: <FileText className="w-5 h-5 text-blue-400" />, title: "Visa Reapplication Submission", desc: "Consultant-grade • Professional format" },
                                     { icon: <ShieldCheck className="w-5 h-5 text-emerald-400" />, title: "Evidence Checklist", desc: "8 required documents" },
                                     { icon: <PieChart className="w-5 h-5 text-rose-400" />, title: "Weakness Analysis", desc: "3 refusal concerns detected" },
                                     { icon: <Lightbulb className="w-5 h-5 text-amber-400" />, title: "Reapplication Strategy", desc: "Recommended next steps" }
