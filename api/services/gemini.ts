@@ -114,7 +114,7 @@ export async function generateAnalysis(formData: {
   const trimmedKey = rawKey.trim();
   const prompt = buildPrompt(formData);
   const { text, model } = await generateWithFallback(prompt, {
-    temperature: 0.7,
+    temperature: 0.3,
     maxOutputTokens: 8192,
     responseMimeType: 'application/json',
   });
@@ -375,98 +375,74 @@ explanation
 ---
 
 SECTION 7
-VISA REAPPLICATION SUBMISSION LETTER
----------------------------------------
+PROFESSIONAL REFUSAL RESPONSE SUBMISSION
+----------------------------------------
 
-You are a senior immigration lawyer with 20+ years of experience preparing visa reconsideration and reapplication submissions.
+You are an experienced immigration lawyer.
 
-Your task is to draft a professional legal-style submission letter that directly addresses the refusal grounds.
+Write the submission exactly as a professional consultant would prepare for a real visa reapplication package.
 
-CRITICAL RULES:
+The goal is NOT to write a personal letter.
 
-* Never invent facts.
-* Never claim a document exists unless explicitly provided by the applicant.
-* If evidence is not available, use conditional language such as:
-  "If available, updated bank statements should be provided..."
-  "Additional evidence may further demonstrate..."
-* Do not use generic motivational language.
-* Do not use phrases such as:
-  "I respectfully request reconsideration"
-  "I hope this clarifies"
-  "Thank you for your consideration"
-  unless genuinely necessary.
-* Do not write like an essay.
-* Do not write like ChatGPT.
-* Do not write like a template generator.
+The goal is to write a professional refusal-response document addressed to the visa officer.
 
-WRITING STYLE:
+IMPORTANT:
 
-Write like a real immigration attorney preparing a submission package.
+* Never use placeholders.
+* Never use generic template wording.
+* Never write "I respectfully request."
+* Never write "I promise."
+* Never write "Thank you for your consideration."
+* Never write "Please find attached."
+* Never write "We believe."
 
-The letter must:
+Use a professional immigration-law tone.
 
-1. Identify the refusal.
-2. Address each refusal reason separately.
-3. Explain why the concern arose.
-4. Explain how the concern can be overcome.
-5. Reference supporting evidence.
-6. Demonstrate compliance with immigration requirements.
-7. Maintain a formal legal tone throughout.
+The submission should look like:
 
-FORMAT:
+Visa Office Heading
 
-Entry Clearance Officer / Visa Officer
+Subject Line
 
-[Authority]
+Brief introductory paragraph.
 
-Subject: Reapplication Submission – [Applicant Name]
+Then create a numbered section for EVERY refusal reason.
 
-Dear Visa Officer,
+For each section:
 
-Opening paragraph
+1. State the concern raised by the officer.
 
-1. First refusal ground
+2. Explain why the concern arose.
 
-Professional analysis and response.
+3. Explain what evidence now addresses the concern.
 
-2. Second refusal ground
+4. Explain why the concern should no longer remain.
 
-Professional analysis and response.
+Use concise, evidence-focused language.
 
-3. Additional refusal grounds
+Example style:
 
-Professional analysis and response.
+"The refusal noted concerns regarding the applicant's financial circumstances. The updated financial documentation demonstrates a consistent pattern of income and savings accumulation over time. The available evidence provides a clearer picture of the applicant's financial position than was available at the time of the original assessment."
 
-Conclusion
+Another example:
 
-Professional concluding paragraph.
+"The refusal also raised concerns regarding the applicant's ties to their country of residence. The applicant's employment history, ongoing professional commitments, and personal obligations collectively establish substantial incentives to depart Canada upon completion of the proposed visit."
 
-Sincerely,
+DO NOT create emotional arguments.
 
-[Applicant Name]
+DO NOT create sympathy arguments.
 
-QUALITY REQUIREMENTS:
+DO NOT create dramatic language.
 
-The letter must feel comparable to work produced by a paid immigration consultant or attorney.
+DO NOT create long essays.
 
-Every section should contain:
+DO NOT repeat the same point multiple times.
 
-* analysis,
-* reasoning,
-* evidence strategy,
-* compliance explanation.
+Length target:
 
-Avoid fluff.
+500-800 words.
 
-Avoid repetition.
-
-Avoid generic statements.
-
-Prioritize credibility, legal reasoning, and persuasive structure.
-
-Target length: 600–1200 words depending on case complexity.
-
-The final output should read like a genuine immigration submission letter prepared for an actual visa file.
+The final result should read like a document prepared by a regulated immigration consultant or visa lawyer.
 
 ---
 
@@ -544,7 +520,7 @@ Use exactly this JSON structure:
     "identity": [],
     "other": []
   },
-  "explanationLetter": "Consultant-grade supporting explanation in plain professional formatting without markdown symbols."
+  "explanationLetter": "Professional immigration-submission letter in plain text addressing each refusal reason with evidence-based arguments."
 }`;
 }
 
