@@ -48,6 +48,8 @@ router.post('/', verifyAuth, async (req: AuthenticatedRequest, res: Response) =>
       pdfUrls: { starter: '', standard: '', premium: '' },
     };
 
+    console.log('SAVED ANALYSIS DATA:', JSON.stringify(analysisData, null, 2));
+
     await getDb().collection('users').doc(uid).collection('cases').doc(caseId).set(caseDoc);
     console.log(`CASE WRITE SUCCESS: ${casePath}`);
 

@@ -133,7 +133,7 @@ export async function generateAnalysis(formData: {
     throw new Error('Failed to parse Gemini response as JSON');
   }
 
-  return json;
+  return normalizeAnalysisOutput(json);
 }
 
 function buildPrompt(formData: {
@@ -506,6 +506,67 @@ Use exactly this JSON structure:
   },
   "explanationLetter": "Consultant-grade supporting explanation in plain professional formatting without markdown symbols."
 }`;
+}
+
+function normalizeAnalysisOutput(raw: any): any {
+  if (!raw || typeof raw !== 'object') return raw;
+
+  const ca = raw.case_assessment || {};
+
+  // Transform aiAssessmentSummary at root level into case_assessment.consultantVerdict
+  const summary = raw.aiAssessmentSummary || ca.aiAssessmentSummary || {};
+  const outlook = raw.readinessOutlook || ca.readinessOutlook || {};
+
+  return {
+    case_assessment: {
+      applicantName: ca.applicantName || raw.applicantName || 'Confidential Client',
+      score: ca.score ?? ca.applicationReadinessScore ?? raw.applicationReadinessScore ?? 0,
+      severityRating: ca.severityRating || 'Moderate',
+      caseType: ca.caseType || raw.caseType || '',
+      consultantNotes: ca.consultantNotes || raw.consultantNotes || [],
+      consultantVerdict: {
+        currentCaseStrength: summary.currentCaseStrength || ca.consultantVerdict?.currentCaseStrength || 'Moderate',
+        recommendedPath: summary.recommendedPath || ca.consultantVerdict?.recommendedPath || 'Fresh Application',
+        reasoning: summary.reasoning || ca.consultantVerdict?.reasoning || '',
+        confidenceLevel: summary.confidenceLevel ?? ca.consultantVerdict?.confidenceLevel ?? 'Medium',
+      },
+      successOutlook: {
+        currentReadiness: outlook.currentReadiness || ca.successOutlook?.currentReadiness || 'Low',
+        readinessAfterFixes: outlook.readinessAfterFixes || ca.successOutlook?.readinessAfterFixes || 'Strong',
+        expectedScoreImprovement: outlook.expectedScoreImprovement || ca.successOutlook?.expectedScoreImprovement || 'N/A',
+        primaryObstacles: outlook.primaryObstacles || ca.successOutlook?.primaryObstacles || [],
+      },
+    },
+    issues: raw.issues || [],
+    strategy: raw.strategy || {
+      immediateActions: [],
+      evidenceToGather: [],
+      commonMistakes: [],
+      timeline: '',
+      expectedOutcome: '',
+    },
+    checklist: normalizeChecklist(raw.checklist),
+    appeal_letter: raw.explanationLetter || raw.appeal_letter || '',
+  };
+}
+
+function normalizeChecklist(cl: any): any {
+  if (!cl || typeof cl !== 'object') {
+    return { financial: [], employment: [], academic: [], travel: [], identity: [], other: [] };
+  }
+  const result: any = {};
+  for (const category of ['financial', 'employment', 'academic', 'travel', 'identity', 'other']) {
+    const items = cl[category];
+    if (!Array.isArray(items)) {
+      result[category] = [];
+      continue;
+    }
+    result[category] = items.map((item: any) => ({
+      item: item.item ?? item.documentName ?? '',
+      explanation: item.explanation ?? item.importance ?? '',
+    }));
+  }
+  return result;
 }
 
 function extractJson(text: string): any {

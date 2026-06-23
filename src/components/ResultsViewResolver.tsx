@@ -247,8 +247,61 @@ export default function ResultsViewResolver({ onReset }: Props) {
         } catch { /* not JSON, fall through */ }
       }
     }
-    // Format 3: Assume it's already GenerateAppealResponse
+    // Format 3: Already normalized by backend — return as-is
+    const obj = raw as any;
+    if (obj?.case_assessment?.consultantVerdict) {
+      return obj as GenerateAppealResponse;
+    }
+    // Format 4: New Gemini schema at root level — normalize inline
+    if (obj?.aiAssessmentSummary || obj?.readinessOutlook || obj?.explanationLetter) {
+      console.warn('analysisData is new Gemini schema, normalizing inline');
+      const ca = obj.case_assessment || {};
+      const summary = obj.aiAssessmentSummary || ca.aiAssessmentSummary || {};
+      const outlook = obj.readinessOutlook || ca.readinessOutlook || {};
+      return {
+        case_assessment: {
+          applicantName: ca.applicantName || 'Confidential Client',
+          score: ca.score ?? ca.applicationReadinessScore ?? obj.applicationReadinessScore ?? 0,
+          severityRating: ca.severityRating || 'Moderate',
+          caseType: ca.caseType || obj.caseType || '',
+          consultantNotes: ca.consultantNotes || obj.consultantNotes || [],
+          consultantVerdict: {
+            currentCaseStrength: summary.currentCaseStrength || 'Moderate',
+            recommendedPath: summary.recommendedPath || 'Fresh Application',
+            reasoning: summary.reasoning || '',
+            confidenceLevel: summary.confidenceLevel ?? 'Medium',
+          },
+          successOutlook: {
+            currentReadiness: outlook.currentReadiness || 'Low',
+            readinessAfterFixes: outlook.readinessAfterFixes || 'Strong',
+            expectedScoreImprovement: outlook.expectedScoreImprovement || 'N/A',
+            primaryObstacles: outlook.primaryObstacles || [],
+          },
+        },
+        issues: obj.issues || [],
+        strategy: obj.strategy || { immediateActions: [], evidenceToGather: [], commonMistakes: [], timeline: '', expectedOutcome: '' },
+        checklist: normalizeInlineChecklist(obj.checklist),
+        appeal_letter: obj.explanationLetter || obj.appeal_letter || '',
+      };
+    }
+    // Format 5: Fallback — assume it's already GenerateAppealResponse
     return raw as GenerateAppealResponse;
+  }
+
+  function normalizeInlineChecklist(cl: any): any {
+    if (!cl || typeof cl !== 'object') {
+      return { financial: [], employment: [], academic: [], travel: [], identity: [], other: [] };
+    }
+    const result: any = {};
+    for (const cat of ['financial', 'employment', 'academic', 'travel', 'identity', 'other']) {
+      const items = cl[cat];
+      if (!Array.isArray(items)) { result[cat] = []; continue; }
+      result[cat] = items.map((it: any) => ({
+        item: it.item ?? it.documentName ?? '',
+        explanation: it.explanation ?? it.importance ?? '',
+      }));
+    }
+    return result;
   }
 
   const resolvedResult = resolveAnalysisData(analysisData);
