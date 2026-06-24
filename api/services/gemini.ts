@@ -113,17 +113,32 @@ export async function generateAnalysis(formData: {
 
   const trimmedKey = rawKey.trim();
   const prompt = buildPrompt(formData);
-  const { text, model } = await generateWithFallback(prompt, {
-    temperature: 0.3,
-    maxOutputTokens: 8192,
+  const genConfig = {
+    temperature: 0.1,
+    maxOutputTokens: 4096,
     responseMimeType: 'application/json',
-  });
+  };
+
+  const { text, model } = await generateWithFallback(prompt, genConfig);
 
   console.log('RAW RESPONSE LENGTH', text.length);
   console.log(text);
   console.log('RAW GEMINI RESPONSE model:', model);
 
-  const json = extractJson(text);
+  let json = extractJson(text);
+
+  // Retry once with stricter temperature if first response is malformed
+  if (!json) {
+    console.log('First response parse failed, retrying with temperature 0');
+    const retryPrompt = 'Your previous response contained invalid JSON.\nReturn ONLY valid JSON.\n\n' + prompt;
+    const { text: retryText } = await generateWithFallback(retryPrompt, {
+      temperature: 0,
+      maxOutputTokens: 4096,
+      responseMimeType: 'application/json',
+    });
+    console.log('RETRY RESPONSE LENGTH', retryText.length);
+    json = extractJson(retryText);
+  }
 
   if (!json) {
     console.error('FAILED TO PARSE JSON. Full raw response:');
@@ -399,10 +414,22 @@ Never fabricate evidence.
 
 ---
 
-IMPORTANT: Return ONLY valid JSON.
-Do not wrap in markdown.
-Do not use \`\`\`json.
-Do not include explanations before or after JSON.
+CRITICAL JSON REQUIREMENT
+
+Return a SINGLE valid JSON object.
+
+Do not include commentary.
+Do not include markdown.
+Do not include explanations.
+Do not include trailing text.
+Do not include notes.
+
+Every property must contain valid JSON syntax.
+
+The response must successfully pass JSON.parse() without modification.
+
+Output only the JSON object and nothing else.
+
 Use exactly this JSON structure:
 
 {
