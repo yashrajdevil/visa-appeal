@@ -35,7 +35,7 @@ export default function Footer() {
       
       <div className="max-w-7xl mx-auto border-t border-zinc-900 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
         <p className="text-zinc-600 text-xs">
-          © {new Date().getFullYear()} Visa Reapplication Platform. All rights reserved. Not affiliated with any government agency.
+          © {new Date().getFullYear()} Lumera. All rights reserved. Not affiliated with any government agency.
         </p>
       </div>
     </footer>

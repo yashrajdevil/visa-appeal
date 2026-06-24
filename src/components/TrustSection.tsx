@@ -25,7 +25,7 @@ interface NetworkNode {
 }
 
 const nodes: NetworkNode[] = [
-    { id: 'center', label: 'Visa Appeal AI', description: 'Core intelligence engine powering the appeal process.', cat: 'brand', x: 0, y: 0, icon: <ShieldCheck className="w-8 h-8 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]" /> },
+    { id: 'center', label: 'Lumera AI', description: 'Core intelligence engine powering the appeal process.', cat: 'brand', x: 0, y: 0, icon: <ShieldCheck className="w-8 h-8 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]" /> },
     
     // AI & Platform (Tech)
     { id: 'openai', label: 'OpenAI', description: 'Advanced GPT models for legal text analysis.', cat: 'tech', x: 60, y: -104, icon: <OpenAILogo /> },

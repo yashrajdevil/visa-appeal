@@ -43,7 +43,7 @@ export function DashboardOverview() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-white tracking-tight">Dashboard</h1>
-        <p className="text-zinc-400 mt-1">Welcome to your Visa Appeal dashboard.</p>
+        <p className="text-zinc-400 mt-1">Welcome to your Lumera dashboard.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

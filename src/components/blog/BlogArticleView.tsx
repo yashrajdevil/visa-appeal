@@ -74,7 +74,7 @@ export default function BlogArticleView() {
   return (
     <>
       <SEO
-        title={article.seoTitle || `${article.title} | Visa Appeal Builder`}
+        title={article.seoTitle || `${article.title} | Lumera`}
         description={article.seoDescription || article.excerpt}
         imageUrl={article.ogImage || article.featuredImage}
         canonicalUrl={article.canonicalUrl}

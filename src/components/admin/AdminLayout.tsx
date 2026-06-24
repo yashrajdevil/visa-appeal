@@ -34,7 +34,7 @@ export default function AdminLayout() {
 
   return (
     <div className="flex min-h-screen bg-black">
-      <SEO title="Admin CMS | Visa Appeal Builder" description="" noindex={true} />
+      <SEO title="Admin CMS | Lumera" description="" noindex={true} />
 
       <aside className="w-64 bg-zinc-950 border-r border-zinc-800 flex flex-col hidden md:flex sticky top-0 h-screen">
         <div className="p-6 border-b border-zinc-800">

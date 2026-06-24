@@ -13,7 +13,7 @@ interface SEOProps {
   modifiedTime?: string;
 }
 
-const SITE_NAME = 'Visa Appeal Builder';
+const SITE_NAME = 'Lumera';
 const DEFAULT_IMAGE = 'https://visaappealbuilder.com/og-image.jpg';
 
 export default function SEO({
@@ -51,7 +51,7 @@ export default function SEO({
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={imageUrl} />
-      <meta name="twitter:site" content="@visaappeal" />
+      <meta name="twitter:site" content="@lumera" />
 
       {publishedTime && <meta property="article:published_time" content={publishedTime} />}
       {modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}

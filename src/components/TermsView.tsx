@@ -5,7 +5,7 @@ export default function TermsView() {
   return (
     <>
       <SEO 
-        title="Terms of Service | Visa Appeal Builder"
+        title="Terms of Service | Lumera"
         description="Review our terms of service to understand the conditions, limitations, and nature of our visa appeal document generation tool."
         schema={{
           "@context": "https://schema.org",
@@ -30,7 +30,7 @@ export default function TermsView() {
 
         <section>
           <h2 className="text-2xl font-semibold text-white mb-4">2. Nature of Service</h2>
-          <p>VisaAppeal Builder is a document structuring and text analysis tool. <strong>We are not a law firm.</strong> We do not provide legal advice, representation, or guarantees of any outcome related to your visa application.</p>
+          <p>Lumera is a document structuring and text analysis tool. <strong>We are not a law firm.</strong> We do not provide legal advice, representation, or guarantees of any outcome related to your visa application.</p>
         </section>
 
         <section>

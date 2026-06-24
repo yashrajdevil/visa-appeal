@@ -59,7 +59,7 @@ export default function ProcessingView({ formData, error: initialError, onRetry,
 
   return (
     <>
-      <SEO title="Processing... | Visa Appeal Builder" description="" noindex={true} />
+      <SEO title="Processing... | Lumera" description="" noindex={true} />
       <div className="min-h-screen flex flex-col items-center justify-center -mt-16 z-20 relative px-6">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}

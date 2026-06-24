@@ -5,7 +5,7 @@ export default function AboutUsView() {
   return (
     <>
       <SEO 
-        title="About Us | Visa Reapplication Planning Platform"
+        title="About Us | Lumera"
         description="Learn about our mission to level the playing field for visa applicants worldwide with AI-powered appeal structuring."
         schema={{
           "@context": "https://schema.org",
@@ -23,7 +23,7 @@ export default function AboutUsView() {
       
       <div className="space-y-8 text-zinc-300 leading-relaxed text-lg">
         <p>
-          At Visa Reapplication Platform, our mission is to level the playing field for visa applicants worldwide. 
+          At Lumera, our mission is to level the playing field for visa applicants worldwide. 
           We believe that a single refusal should not mean the end of your travel, work, or study dreams.
         </p>
         

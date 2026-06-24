@@ -1,5 +1,5 @@
 /* TEAM */
-Developer: Visa Appeal Builder Team
+Developer: Lumera Team
 Site: https://visaappealbuilder.com
 
 /* SITE */

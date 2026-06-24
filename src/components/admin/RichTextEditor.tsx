@@ -9,7 +9,7 @@ interface RichTextEditorProps {
 
 const PRESET_CTAS = [
     { text: 'Return to Homepage', url: '/' },
-    { text: 'Generate Visa Reapplication Submission', url: '/appeal-builder' },
+    { text: 'Generate Reapplication Submission', url: '/appeal-builder' },
     { text: 'Analyze My Refusal Letter', url: '/analyze' },
     { text: 'Contact Us', url: '/contact' },
     { text: 'View Visa Bundles', url: '/bundles' },
@@ -221,7 +221,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
                             <form id="cta-form" onSubmit={insertCtaButton} className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-zinc-300 mb-1">Button Text</label>
-                                    <input type="text" required value={ctaText} onChange={e => setCtaText(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500" placeholder="e.g. Generate Visa Appeal" />
+                                    <input type="text" required value={ctaText} onChange={e => setCtaText(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500" placeholder="e.g. Start Your Appeal" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-zinc-300 mb-1">Destination URL</label>

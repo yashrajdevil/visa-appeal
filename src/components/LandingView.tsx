@@ -68,7 +68,7 @@ export default function LandingView({ onStartAppeal }: LandingViewProps) {
   return (
     <>
       <SEO 
-        title="Visa Reapplication Planning Platform | Recover from Visa Refusals" 
+        title="Lumera – AI-powered visa refusal analysis and reapplication intelligence platform." 
         description="Upload your visa refusal letter to generate an embassy-ready appeal package, personalized document checklist, and reapplication strategy using AI."
         schema={{
           "@context": "https://schema.org",

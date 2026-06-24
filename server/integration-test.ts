@@ -5,7 +5,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
 /* ------------------------------------------------------------------ */
-/*  Integration Test Suite for Visa Appeal Builder                    */
+/*  Integration Test Suite for Lumera                                 */
 /*  Flows A through J                                                 */
 /* ------------------------------------------------------------------ */
 
@@ -429,7 +429,7 @@ async function flowJ(localId: string) {
 /* ================================================================== */
 async function main() {
   console.log('╔══════════════════════════════════════════╗');
-  console.log('║  Visa Appeal Builder — Integration Tests ║');
+  console.log('║  Lumera — Integration Tests              ║');
   console.log('╚══════════════════════════════════════════╝');
   console.log(`Server: ${API_BASE}`);
   console.log(`Project: ${FIREBASE_PROJECT_ID}`);

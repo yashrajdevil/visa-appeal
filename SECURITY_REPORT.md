@@ -1,4 +1,4 @@
-# Production Security Report — Visa Appeal Builder
+# Production Security Report — Lumera
 
 **Date:** 2026-06-23
 **Status:** Post-hardening pass

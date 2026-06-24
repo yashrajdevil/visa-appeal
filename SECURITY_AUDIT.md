@@ -1,4 +1,4 @@
-# Security Audit — Visa Appeal Builder
+# Security Audit — Lumera
 
 **Date:** 2026-06-23
 **Scope:** Full-stack security review (Firebase, Express API, React SPA, Vercel deployment)

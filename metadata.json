@@ -1,5 +1,5 @@
 {
-  "name": "Visa Appeal Builder",
+  "name": "Lumera",
   "description": "A premium SaaS web app that helps users generate structured rejection analysis, document checklists, and professional reapplication submissions from visa refusal letters.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

@@ -29,7 +29,7 @@ export default function BlogHubView() {
   const displayCategory = category ? CATEGORY_SLUGS[category] || category.replace(/-/g, ' ') : null;
   const displayTag = tag ? tag.replace(/-/g, ' ') : null;
 
-  let title = "Blog | Visa Reapplication Planning Platform";
+  let title = "Blog | Lumera";
   let description = "Read our latest articles, guides, and tips on visa applications and refusals.";
   if (displayCategory) { title = `${displayCategory} Articles | Blog`; description = `Articles about ${displayCategory}.`; }
   else if (displayTag) { title = `Articles tagged "${displayTag}" | Blog`; description = `Articles tagged with ${displayTag}.`; }

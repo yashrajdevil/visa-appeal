@@ -105,10 +105,9 @@ router.get('/settings', verifyAdmin, async (_req: Request, res: Response) => {
     const doc = await db.collection('admin').doc('settings').get();
     const defaults = {
       pricing: { starter: 29, standard: 59, premium: 99, currency: 'USD' },
-      cta: { headline: 'Build Your Visa Appeal', subtitle: 'AI-powered analysis in minutes', buttonText: 'Start Your Appeal' },
-      seo: { siteTitle: 'Visa Appeal Builder', metaDescription: '', ogImage: '' },
-      features: { enableBlog: true, enableSampleReport: true },
-      branding: { siteName: 'Visa Appeal Builder', logoUrl: '', faviconUrl: '' },
+      cta: { headline: 'Build Your Appeal with Lumera', subtitle: 'AI-powered analysis in minutes', buttonText: 'Start Your Appeal' },
+      seo: { siteTitle: 'Lumera', metaDescription: 'AI-powered visa refusal analysis and reapplication intelligence platform.', ogImage: '' },
+      branding: { siteName: 'Lumera', logoUrl: '', faviconUrl: '' },
     };
     if (!doc.exists) {
       await db.collection('admin').doc('settings').set(defaults);

@@ -1,7 +1,7 @@
-# Visa Appeal Builder LLM Overview
+# Lumera LLM Overview
 
 ## Product
-Visa Appeal Builder is an AI-powered SaaS that helps users recover from visa refusals. 
+Lumera is an AI-powered SaaS that helps users recover from visa refusals. 
 The platform analyzes official visa refusal letters, extracts exactly why the visa was denied based on immigration logic, and generates complete appeal packages.
 
 ## Features

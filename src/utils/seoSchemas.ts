@@ -1,10 +1,10 @@
 export const getOrganizationSchema = () => ({
   "@context": "https://schema.org",
   "@type": "Organization",
-  "name": "Visa Appeal Builder",
+  "name": "Lumera",
   "url": "https://visaappealbuilder.com",
   "logo": "https://visaappealbuilder.com/logo.png",
-  "description": "AI-powered Visa Appeal Builder SaaS analyzing refusal letters to generate embassy-ready appeal packages.",
+  "description": "AI-powered visa refusal analysis and reapplication intelligence platform.",
   "sameAs": [
     "https://twitter.com/visaappeal",
     "https://linkedin.com/company/visaappealbuilder"
@@ -14,7 +14,7 @@ export const getOrganizationSchema = () => ({
 export const getWebsiteSchema = () => ({
   "@context": "https://schema.org",
   "@type": "WebSite",
-  "name": "Visa Appeal Builder",
+  "name": "Lumera",
   "url": "https://visaappealbuilder.com",
   "potentialAction": {
     "@type": "SearchAction",
@@ -29,7 +29,7 @@ export const getWebsiteSchema = () => ({
 export const getSoftwareAppSchema = (price: string = '29', priceCurrency: string = 'USD') => ({
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  "name": "Visa Appeal Builder",
+  "name": "Lumera",
   "applicationCategory": "BusinessApplication",
   "operatingSystem": "All",
   "offers": {
@@ -47,7 +47,7 @@ export const getSoftwareAppSchema = (price: string = '29', priceCurrency: string
   },
   "creator": {
     "@type": "Organization",
-    "name": "Visa Appeal Builder"
+    "name": "Lumera"
   },
   "featureList": [
     "AI Refusal Letter Analysis",
@@ -140,11 +140,11 @@ export const getArticleSchema = (article: {
   "image": article.imageUrl || "https://visaappealbuilder.com/og-image.jpg",
   "author": {
     "@type": "Person",
-    "name": article.authorName || "Visa Appeal Team"
+    "name": article.authorName || "Lumera Team"
   },
   "publisher": {
     "@type": "Organization",
-    "name": "Visa Appeal Builder",
+    "name": "Lumera",
     "logo": {
       "@type": "ImageObject",
       "url": "https://visaappealbuilder.com/logo.png"

@@ -5,8 +5,8 @@ export default function ContactUsView() {
   return (
     <>
       <SEO 
-        title="Contact Us | Visa Appeal Builder"
-        description="Get in touch with the Visa Appeal Builder support team. We're here to help you navigate your Visa appeal journey."
+        title="Contact Us | Lumera"
+        description="Get in touch with the Lumera support team. We're here to help you navigate your visa appeal journey."
         schema={{
           "@context": "https://schema.org",
           "@graph": [
@@ -33,7 +33,7 @@ export default function ContactUsView() {
             </div>
             <div>
               <h3 className="text-white font-medium mb-1">Email Support</h3>
-              <p className="text-zinc-400 text-sm">support@visaappeal.com</p>
+              <p className="text-zinc-400 text-sm">support@lumera.app</p>
               <p className="text-zinc-500 text-xs mt-1">We aim to respond within 24 hours.</p>
             </div>
           </div>

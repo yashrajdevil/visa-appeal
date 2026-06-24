@@ -278,11 +278,11 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
       doc.line(M, y - 0.15, PW - M, y - 0.15);
       doc.setFont('helvetica', 'bold'); doc.setFontSize(26);
       doc.setTextColor(26, 26, 46);
-      doc.text('Visa Reapplication Preparation Package', M, y);
+      doc.text('Lumera', M, y);
       y += 0.35;
       doc.setFont('helvetica', 'normal'); doc.setFontSize(13);
       doc.setTextColor(85, 85, 85);
-      doc.text('Professional Consultant Case Assessment & Submission Document', M, y);
+      doc.text('AI Immigration Intelligence Platform', M, y);
       y += 0.5;
       doc.setDrawColor(26, 26, 46); doc.line(M, y, PW - M, y);
       y += 0.4;
@@ -682,7 +682,7 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
         ftr();
       }
 
-      doc.save('Visa_Appeal_Package.pdf');
+      doc.save('Lumera_Appeal_Package.pdf');
     } catch (err: any) {
       console.error('[PDF] Generation failed:', err.message, err);
       alert('An error occurred while generating the PDF. Please try again or use the Copy button to save your content in the meantime.');
@@ -724,7 +724,7 @@ export default function ResultsDashboard({ result, onReset, purchasedPlan, isSam
 
   return (
     <>
-      <SEO title="Appeal Results | Visa Reapplication Planning Platform" description="" noindex={true} />
+      <SEO title="Appeal Results | Lumera" description="" noindex={true} />
       <div className="min-h-screen pt-24 pb-24 px-4 sm:px-6 max-w-5xl mx-auto w-full relative z-10 flex flex-col">
       <div className="flex items-start sm:items-center justify-between mb-12 flex-col sm:flex-row gap-6">
         <div>

@@ -5,7 +5,7 @@ export default function PrivacyPolicyView() {
   return (
     <>
       <SEO 
-        title="Privacy Policy | Visa Reapplication Planning Platform"
+        title="Privacy Policy | Lumera"
         description="Read our privacy policy to understand how we securely handle and protect your sensitive visa documents and personal information."
         schema={{
           "@context": "https://schema.org",

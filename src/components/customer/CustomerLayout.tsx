@@ -22,7 +22,7 @@ export default function CustomerLayout() {
 
   return (
     <>
-      <SEO title="Dashboard | Visa Appeal Builder" description="" noindex={true} />
+      <SEO title="Dashboard | Lumera" description="" noindex={true} />
       <div className="flex bg-zinc-950 min-h-[calc(100vh-64px)] w-full">
         {/* Sidebar */}
         <aside className="w-64 bg-zinc-900 border-r border-zinc-800 hidden md:flex flex-col">

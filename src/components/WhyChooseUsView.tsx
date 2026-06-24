@@ -10,7 +10,7 @@ export default function WhyChooseUsView({ onClickStart }: Props) {
   return (
     <>
       <SEO 
-        title="Why Choose Us | Visa Reapplication Planning Platform"
+        title="Why Choose Us | Lumera"
         description="Discover why our AI-driven approach to visa refusal recovery is faster, more structured, and more effective than traditional agents or free templates."
         schema={{
           "@context": "https://schema.org",
@@ -24,7 +24,7 @@ export default function WhyChooseUsView({ onClickStart }: Props) {
       />
       <div className="flex flex-col py-24 px-6 max-w-5xl mx-auto w-full">
       <div className="text-center mb-16">
-        <h1 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">Why Choose Visa Reapplication Platform?</h1>
+        <h1 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">Why Choose Lumera?</h1>
         <p className="text-xl text-zinc-400 max-w-2xl mx-auto">
           Not all visa recovery approaches are equal. See how our algorithm-driven, structured approach compares to traditional alternatives.
         </p>
@@ -62,7 +62,7 @@ export default function WhyChooseUsView({ onClickStart }: Props) {
           <div className="w-16 h-16 bg-indigo-500/20 rounded-full flex items-center justify-center mb-6">
             <CheckCircle2 className="w-8 h-8 text-indigo-400" />
           </div>
-          <h3 className="text-xl font-semibold mb-4 text-white">Visa Reapplication Platform</h3>
+          <h3 className="text-xl font-semibold mb-4 text-white">Lumera</h3>
           <ul className="text-sm text-zinc-300 space-y-3 text-left w-full mt-4 font-medium">
             <li className="flex gap-2 items-start"><span className="text-indigo-400 mt-1">✓</span> Analyzes the exact text of your refusal letter.</li>
             <li className="flex gap-2 items-start"><span className="text-indigo-400 mt-1">✓</span> Applies advanced logical structuring tailored to consular reasoning.</li>

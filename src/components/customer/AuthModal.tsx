@@ -59,7 +59,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold text-white mb-2">{isLogin ? 'Welcome Back' : 'Create an Account'}</h2>
           <p className="text-zinc-400 text-sm">
-            {isLogin ? 'Sign in to start your appeal process' : 'Start managing your Visa Appeals effectively'}
+            {isLogin ? 'Sign in to start your appeal process' : 'Start managing your appeals effectively'}
           </p>
         </div>
 

@@ -47,7 +47,7 @@ export function CustomerLogin() {
 
   return (
     <>
-      <SEO title="Log In to Visa Appeal Builder" description="" noindex={true} />
+      <SEO title="Log In to Lumera" description="" noindex={true} />
       <div className="min-h-screen flex items-center justify-center pt-20 pb-12 px-6">
         <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 p-8 rounded-2xl">
           <div className="text-center mb-8">
@@ -139,12 +139,12 @@ export function CustomerRegister() {
 
   return (
     <>
-      <SEO title="Create Account | Visa Appeal Builder" description="" noindex={true} />
+      <SEO title="Create Account | Lumera" description="" noindex={true} />
       <div className="min-h-screen flex items-center justify-center pt-20 pb-12 px-6">
         <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 p-8 rounded-2xl">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold text-white mb-2">Create an Account</h1>
-            <p className="text-zinc-400 text-sm">Start managing your Visa Appeals effectively.</p>
+            <p className="text-zinc-400 text-sm">Start managing your appeals effectively.</p>
           </div>
           <form onSubmit={handleRegister} className="space-y-4">
             {error && <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm">{error}</div>}

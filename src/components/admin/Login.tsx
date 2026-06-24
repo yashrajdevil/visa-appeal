@@ -26,7 +26,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-black flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <SEO title="Admin Login | Visa Appeal Builder" description="" noindex={true} />
+      <SEO title="Admin Login | Lumera" description="" noindex={true} />
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center text-indigo-500 mb-6">
           <div className="p-4 bg-indigo-500/10 rounded-full">

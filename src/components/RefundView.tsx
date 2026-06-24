@@ -5,7 +5,7 @@ export default function RefundView() {
   return (
     <>
       <SEO 
-        title="Refund Policy | Visa Reapplication Planning Platform"
+        title="Refund Policy | Lumera"
         description="Understand our refund policy for digital document generation and structural visa appeal services."
         schema={{
           "@context": "https://schema.org",
