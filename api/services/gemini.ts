@@ -566,65 +566,102 @@ export async function generateAppealLetter(
     `Key Issues: ${(analysisData.issues || []).map((i: any) => i.issue).join(', ')}`,
   ].join('\n');
 
-  const prompt = `You are a senior immigration lawyer with 20+ years of experience preparing visa refusal responses, administrative reviews, immigration submissions, and reapplication packages.
+  const prompt = `SECTION 7
+REFUSAL RESPONSE LETTER
 
-Your task is to prepare a professional immigration submission.
+Generate a professional visa refusal-response letter.
 
-This document must read exactly like a real submission prepared by an experienced immigration attorney.
+IMPORTANT:
 
-CRITICAL RULES:
+The goal is NOT to sound like a lawyer.
 
-1. NEVER INVENT FACTS.
+The goal is NOT to sound academic.
+
+The goal is NOT to write a legal essay.
+
+The goal is to directly overcome the refusal reasons.
+
+The visa officer should immediately see:
+
+* what concern was raised
+* what evidence addresses it
+* why the concern is resolved
+
+---
+
+STRICT RULES
+
+DO NOT:
+
+* Explain immigration law
+* Mention regulations unless explicitly cited in the refusal
+* Discuss legal standards
+* Discuss burden of proof
+* Discuss jurisprudence
+* Discuss "balance of probabilities"
+* Discuss statutory requirements
+* Use phrases like:
+
+  * "holistic assessment"
+  * "legal framework"
+  * "it is respectfully submitted"
+  * "jurisprudence"
+  * "decision-maker"
+  * "statutory criteria"
+
+DO NOT write like a lawyer arguing in court.
+
+DO NOT write a university essay.
+
+DO NOT write generic visa template language.
+
+---
+
+NEVER INVENT FACTS
 
 Only use:
 
-* refusal reasons
-* applicant questionnaire
-* uploaded refusal letter
-* analysis findings
+* refusal letter
+* questionnaire answers
+* uploaded evidence
 
-If evidence is missing, do not pretend it exists.
+Never claim:
 
-2. NEVER USE:
+* documents were attached
+* funds exist
+* employment exists
+* property exists
+* sponsorship exists
 
-* We believe
-* We trust
-* We appreciate your consideration
-* Please find attached
-* Should further information be required
-* Thank you for your time
-* Generic customer-service language
+unless explicitly provided.
 
-3. NEVER WRITE:
+---
 
-* essays
-* blog posts
-* summaries
+LETTER STRUCTURE
 
-4. WRITE LIKE:
+Header
 
-* immigration barrister
-* visa attorney
-* regulated immigration consultant
-
-5. TONE:
-
-confident
-professional
-persuasive
-evidence-focused
-
-DOCUMENT STRUCTURE:
-
-Visa Office Heading
+Visa Office
 
 Subject Line
 
 Dear Visa Officer,
 
-Opening submission paragraph
+Opening Paragraph
 
-Then create a separate section for EVERY refusal ground.
+Maximum 3-4 sentences.
+
+Explain:
+
+* this is a reapplication
+* previous refusal is acknowledged
+* this submission addresses the refusal concerns
+
+---
+
+REFUSAL RESPONSE SECTIONS
+
+Create one section per refusal reason.
 
 Example:
 
@@ -634,53 +671,114 @@ Example:
 
 3. Travel Purpose
 
-4. Family and Social Ties
-
-5. Travel History
+4. Travel History
 
 etc.
 
-Each section must:
+For EACH section:
 
-* identify officer concern
-* explain applicant circumstances
-* explain why concern can be overcome
-* reference available evidence
-* sound professional
+A.
 
-EXAMPLE STYLE:
+State the concern.
 
-Use language similar to:
+Example:
 
-"The refusal places significant weight on the applicant's financial circumstances. However, when assessed in the context of the applicant's documented income history and overall financial profile, the available evidence demonstrates a stable capacity to fund the proposed visit."
+"The refusal noted concerns regarding the origin of funds deposited into the applicant's account."
 
-"The applicant's continuing professional obligations create a compelling incentive to return to their country of residence following the temporary visit."
+B.
 
-"The purpose of travel remains temporary, clearly defined, and consistent with the applicant's personal circumstances."
+Provide the explanation.
 
-CONCLUSION:
+Use actual applicant facts.
 
-Short professional conclusion.
+C.
 
-Example style:
+Reference evidence naturally.
 
-"For the reasons outlined above, the applicant respectfully submits that the concerns identified in the previous refusal have been directly addressed through the explanations and supporting evidence now available for consideration."
+Example:
 
-OUTPUT FORMAT:
+"The applicant's employment records and income history demonstrate a consistent source of earnings."
 
-Return ONLY plain text.
+D.
 
-DO NOT return JSON.
+Explain why the concern is resolved.
 
-DO NOT return markdown.
+---
 
-DO NOT return code fences.
+STYLE EXAMPLES
 
-Target length:
+GOOD:
 
-1000–1500 words.
+"The refusal noted concerns regarding the applicant's financial circumstances. The financial records provided demonstrate a consistent pattern of income and savings that support the proposed visit."
 
-The final document should look like something a client would expect from a professional immigration lawyer charging $1000+ for a refusal response.
+GOOD:
+
+"The applicant maintains ongoing employment in the home country and is expected to return to their position following the visit."
+
+GOOD:
+
+"The travel purpose remains temporary and clearly defined."
+
+BAD:
+
+"The applicant satisfies the statutory requirements."
+
+BAD:
+
+"On a balance of probabilities..."
+
+BAD:
+
+"It is respectfully submitted that..."
+
+BAD:
+
+"The decision-maker should conclude..."
+
+BAD:
+
+"The legal framework requires..."
+
+---
+
+LENGTH
+
+Target:
+
+400-700 words
+
+Maximum:
+
+900 words
+
+If the letter exceeds 900 words, shorten it.
+
+---
+
+CONCLUSION
+
+Maximum 2 short paragraphs.
+
+Example:
+
+"The information and evidence provided directly address the concerns identified in the previous refusal decision.
+
+The applicant respectfully requests that the application be reassessed in light of the updated explanations and supporting evidence."
+
+---
+
+FINAL OUTPUT REQUIREMENT
+
+The finished letter should read like something prepared by a top immigration consultant responding to a refusal.
+
+It should NOT read like:
+
+* ChatGPT
+* a law school essay
+* a court brief
+* a legal memorandum
+
+The focus must remain on the refusal reasons and the evidence that resolves them.
 
 ---
 
