@@ -119,8 +119,8 @@ export async function generateAnalysis(formData: {
     responseMimeType: 'application/json',
   });
 
-  console.log('RAW GEMINI RESPONSE (first 5000):', text.slice(0, 5000));
-  console.log('RAW GEMINI RESPONSE length:', text.length);
+  console.log('RAW RESPONSE LENGTH', text.length);
+  console.log(text);
   console.log('RAW GEMINI RESPONSE model:', model);
 
   const json = extractJson(text);
@@ -514,22 +514,32 @@ function normalizeChecklist(cl: any): any {
 }
 
 function extractJson(text: string): any {
-  let cleaned = text
-    .replace(/```json\s*/gi, '')
-    .replace(/```\s*/gi, '')
-    .trim();
+  console.log('JSON extraction start');
 
-  const start = cleaned.indexOf('{');
+  const start = text.indexOf('{');
   if (start === -1) {
     console.error('extractJson: no JSON object found in response');
-    return null;
+    throw new Error('Model returned invalid JSON');
   }
 
-  // Balanced brace parsing: extract from first "{" to matching "}"
+  // Balanced brace extraction with string/escape awareness
   let depth = 0;
+  let insideString = false;
   let pos = start;
-  for (; pos < cleaned.length; pos++) {
-    const ch = cleaned[pos];
+  for (; pos < text.length; pos++) {
+    const ch = text[pos];
+    if (insideString) {
+      if (ch === '\\') {
+        pos++; // skip escaped character
+        continue;
+      }
+      if (ch === '"') insideString = false;
+      continue;
+    }
+    if (ch === '"') {
+      insideString = true;
+      continue;
+    }
     if (ch === '{') depth++;
     else if (ch === '}') depth--;
     if (depth === 0) break;
@@ -537,38 +547,21 @@ function extractJson(text: string): any {
 
   if (depth !== 0) {
     console.error('extractJson: unbalanced braces in response');
-    return null;
+    throw new Error('Model returned invalid JSON');
   }
 
-  cleaned = cleaned.slice(start, pos + 1);
-  console.log('Balanced JSON extracted length:', cleaned.length);
+  const json = text.slice(start, pos + 1);
+  console.log('JSON extraction end');
+  console.log('Extracted JSON length:', json.length);
 
-  const tryParse = (s: string): any | null => {
-    try {
-      return JSON.parse(s);
-    } catch {
-      return null;
-    }
-  };
-
-  // First attempt
-  let parsed = tryParse(cleaned);
-  if (parsed) return parsed;
-
-  // Second attempt: remove trailing commas and trim garbage after final brace
-  console.log('extractJson: first parse failed, attempting cleanup');
-  let cleaned2 = cleaned
-    .replace(/,(\s*[}\]])/g, '$1')   // remove trailing commas before } or ]
-    .replace(/[^\S\n]*$/, '')        // trim trailing whitespace
-    .trim();
-
-  parsed = tryParse(cleaned2);
-  if (parsed) return parsed;
-
-  console.error('extractJson: JSON.parse failed after cleanup');
-  console.error('extractJson: cleaned text length:', cleaned.length);
-  console.error('extractJson: cleaned text (first 2000):', cleaned.slice(0, 2000));
-  throw new Error('extractJson: could not parse JSON after cleanup');
+  try {
+    return JSON.parse(json);
+  } catch (parseErr: any) {
+    console.error('extractJson: JSON.parse failed:', parseErr.message);
+    console.error('extractJson: last 500 chars of extracted JSON:', json.slice(-500));
+    console.error('Extracted JSON length:', json.length);
+    throw new Error('Model returned invalid JSON');
+  }
 }
 
 export async function generateAppealLetter(
