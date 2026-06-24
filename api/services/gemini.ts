@@ -569,102 +569,132 @@ export async function generateAppealLetter(
   const prompt = `SECTION 7
 REFUSAL RESPONSE LETTER
 
-Generate a professional visa refusal-response letter.
+Generate a visa refusal-response letter.
 
-Keep it short and structured. Do not generate legal memorandums, legal essays, statutory analysis, balance of probabilities discussions, immigration law explanations, or long legal arguments.
+CRITICAL RULES — NEVER GENERATE:
 
-Target length: 500-900 words.
+* [Applicant Name]
+* [Address]
+* [Phone Number]
+* [Email Address]
+* [Embassy Name]
+* [Consulate Name]
+* [Application Number]
+* [UCI]
+* [Date]
+* Any placeholder whatsoever
 
-Required structure:
+NEVER INVENT:
 
-Applicant Information
+* fake balances
+* fake income
+* fake employers
+* fake family members
+* fake property ownership
+* fake evidence
+* fake dates
 
-Date
+If information is missing from the provided data, simply do not mention it.
 
-Subject Line
+---
+
+NEW LETTER FORMAT
 
 Dear Visa Officer,
 
-Opening paragraph:
+I respectfully submit this application following the refusal of my previous visitor visa application.
 
-* acknowledge previous refusal
-* explain this submission addresses refusal concerns
-* mention purpose of travel
+The refusal letter raised concerns regarding my financial circumstances and my ties to my country of residence. I would like to address each concern directly.
 
-Then create one section per refusal reason.
+Financial Capacity
 
-Examples:
+[2-4 short paragraphs based ONLY on actual facts from questionnaire and refusal]
 
-1. Financial Capacity
-2. Employment and Economic Ties
-3. Travel Purpose
-4. Travel History
-5. Family Ties
+Employment and Professional Commitments
 
-For each section:
+[2-4 short paragraphs]
 
-* summarize officer concern
-* reference actual applicant facts
-* explain why concern is addressed
-* 2-4 paragraphs maximum
+Family and Personal Ties
 
-Most important rule:
+[2-4 short paragraphs]
 
-USE APPLICANT DATA.
+Purpose of Travel
 
-The letter must actively reference:
+[2-3 short paragraphs]
 
-* current bank balance
-* monthly income
-* employment status
-* sponsor information
-* business ownership
-* property ownership
-* family dependents
-* purpose of travel
-* refusal reasons
+Conclusion
 
-whenever those facts exist.
-
-Do not generate generic text that could apply to anyone.
-
-Example:
-
-BAD:
-"The applicant has sufficient funds."
-
-GOOD:
-"The applicant reports an available bank balance of approximately USD 18,500 together with a monthly income of approximately USD 3,200. These resources are sufficient to support the proposed temporary visit."
-
-BAD:
-"The applicant has strong ties."
-
-GOOD:
-"The applicant maintains full-time employment as a Marketing Manager, owns residential property in the home country, and supports two dependent family members. These ongoing obligations create a clear incentive to return."
-
-Forbidden:
-
-* balance of probabilities
-* legal analysis
-* jurisprudence
-* statutory interpretation
-* Senior Immigration Counsel
-* Immigration Counsel
-* Attorney Signature Block
-* Legal Submission
-* Memorandum
-* We believe
-* We trust
-
-Signature should simply be:
+A short professional closing.
 
 Sincerely,
 
-[Applicant Name]
+Applicant Name (if extracted — no brackets, just the name)
+Otherwise: Confidential Client
 
-If applicant name unavailable: Confidential Client
+---
 
-The letter must sound like a strong professional visa reapplication prepared by a consultant, not a courtroom brief and not a generic AI template.
+WRITING STYLE — USE FIRST PERSON
+
+Write in FIRST PERSON throughout.
+
+Examples:
+
+"I am currently employed..."
+"I maintain..."
+"I intend to visit..."
+
+NOT:
+
+"The applicant is employed..."
+"The applicant maintains..."
+
+The letter should sound like:
+
+* professional immigration consultant
+* experienced visa advisor
+* not a lawyer writing a court brief
+* not a student essay
+* not a generic template
+
+Good examples:
+
+"While concerns were raised regarding my financial circumstances, my current financial records demonstrate a stable income and sufficient savings to support the proposed visit."
+
+"My employment obligations require my return following the authorized period of travel."
+
+"My personal and professional circumstances remain firmly established in my country of residence."
+
+Bad examples:
+
+"We believe..."
+"I kindly request..."
+"I promise..."
+"The applicant submits..."
+"This submission demonstrates..."
+"Under Section 179..."
+"Balance of probabilities..."
+
+---
+
+LENGTH
+
+Target: 500-900 words
+
+NOT 1500+
+NOT 2000+
+
+---
+
+DO NOT INCLUDE:
+
+* legal essay
+* legal memorandum
+* immigration law lecture
+* IRPA explanations
+* section 179 analysis
+* "balance of probabilities"
+* 1500-word walls of text
+* repetitive explanations
 
 APPLICANT INFORMATION:
 
