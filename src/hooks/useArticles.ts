@@ -4,12 +4,18 @@ import {
   query, where, orderBy, limit, startAfter, Timestamp, increment, DocumentSnapshot
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { db, storage } from '../firebase';
+import { db, storage, auth } from '../firebase';
 import { Article } from '../types';
 import slugify from 'slugify';
 
 const ARTICLES_COLLECTION = 'articles';
 const PAGE_SIZE = 12;
+
+function removeUndefined(obj: Record<string, any>): Record<string, any> {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([_, value]) => value !== undefined)
+  );
+}
 
 function docToArticle(doc: any): Article {
   const d = doc.data();
@@ -94,22 +100,61 @@ export function useArticles() {
 
   const saveArticle = useCallback(async (data: Partial<Article> & { title: string }): Promise<string | null> => {
     try {
+      const user = auth.currentUser;
+      const idTokenResult = await user?.getIdTokenResult();
+      const role = idTokenResult?.claims?.role;
+      console.log("Current user UID:", user?.uid);
+      console.log("Current user role:", role);
+      console.log("ARTICLE PAYLOAD", JSON.stringify(data, null, 2));
+
       const slug = data.slug || generateSlug(data.title);
       const readingTime = calculateReadingTime(data.content || '');
       const now = Timestamp.now();
 
       if (data.id) {
-        const updateData: any = { ...data, slug, readingTime, updatedAt: now };
-        delete updateData.id;
-        delete updateData.createdAt;
-        if (updateData.status === 'published' && !updateData.publishedAt) {
-          updateData.publishedAt = now;
+        // EXISTING article — update via updateDoc
+        const payload = removeUndefined({
+          slug,
+          readingTime,
+          updatedAt: now,
+          title: data.title,
+          content: data.content,
+          excerpt: data.excerpt,
+          featuredImage: data.featuredImage,
+          status: data.status,
+          author: data.author,
+          categories: data.categories,
+          tags: data.tags,
+          seoTitle: data.seoTitle,
+          seoDescription: data.seoDescription,
+          ogImage: data.ogImage,
+          canonicalUrl: data.canonicalUrl,
+          publishedAt: data.publishedAt,
+        });
+        if (payload.status === 'published' && !payload.publishedAt) {
+          payload.publishedAt = now;
         }
-        await updateDoc(doc(db, ARTICLES_COLLECTION, data.id), updateData);
+        console.log("FINAL FIRESTORE PAYLOAD", payload);
+        await updateDoc(doc(db, ARTICLES_COLLECTION, data.id), payload);
         return data.id;
       } else {
-        const docRef = await addDoc(collection(db, ARTICLES_COLLECTION), {
-          ...data,
+        // NEW article — addDoc, NO id field ever
+        const cleanData = removeUndefined({
+          title: data.title,
+          content: data.content,
+          excerpt: data.excerpt,
+          featuredImage: data.featuredImage,
+          status: data.status,
+          author: data.author,
+          categories: data.categories,
+          tags: data.tags,
+          seoTitle: data.seoTitle,
+          seoDescription: data.seoDescription,
+          ogImage: data.ogImage,
+          canonicalUrl: data.canonicalUrl,
+        });
+        const docPayload = {
+          ...cleanData,
           slug,
           readingTime,
           status: data.status || 'draft',
@@ -117,7 +162,9 @@ export function useArticles() {
           createdAt: now,
           updatedAt: now,
           publishedAt: data.status === 'published' ? now : null,
-        });
+        };
+        console.log("FINAL FIRESTORE PAYLOAD", docPayload);
+        const docRef = await addDoc(collection(db, ARTICLES_COLLECTION), docPayload);
         return docRef.id;
       }
     } catch (err) {

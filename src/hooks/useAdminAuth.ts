@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { onAuthStateChanged, signInWithCustomToken, signOut, User } from 'firebase/auth';
+import { onAuthStateChanged, signInWithCustomToken, signInWithEmailAndPassword, signOut, User } from 'firebase/auth';
 import { auth } from '../firebase';
 
 export type AdminRole = 'superadmin' | 'admin' | 'editor' | 'author';
@@ -80,6 +80,7 @@ export function useAdminAuth(): AdminAuthState {
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
+      console.log("Admin login response:", { ok: res.ok, sessionOnly: data.sessionOnly, role: data.role });
       if (!res.ok) {
         setError(data.error || 'Invalid admin credentials.');
         return;
@@ -88,10 +89,17 @@ export function useAdminAuth(): AdminAuthState {
         localStorage.setItem('admin_session', data.token);
         setRole(data.role);
         setIsAdmin(true);
-        try { const u = auth.currentUser; if (u) { await signOut(auth); } } catch {}
+        try {
+          await signInWithEmailAndPassword(auth, email, password);
+          console.log("Admin signed in with email/password fallback");
+        } catch (signInErr: any) {
+          console.log("Email/password fallback failed:", signInErr.message);
+          try { const u = auth.currentUser; if (u) { await signOut(auth); } } catch {}
+        }
         return;
       }
       await signInWithCustomToken(auth, data.token);
+      console.log("Admin signed in with custom token, role:", data.role);
       setRole(data.role);
       setIsAdmin(true);
     } catch (err: any) {

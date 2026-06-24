@@ -74,8 +74,15 @@ router.post('/login', async (req: Request, res: Response) => {
             email: normalizedEmail,
             emailVerified: true,
             displayName: normalizedEmail.split('@')[0],
+            password,
           });
           console.log('[admin-login] Migrated to new uid:', userRecord.uid);
+        }
+        try {
+          await auth.setCustomUserClaims(userRecord.uid, { role, provider: 'env' });
+          console.log('[admin-login] Custom claims set for uid:', userRecord.uid);
+        } catch (claimsErr: any) {
+          console.log('[admin-login] Failed to set custom claims:', claimsErr.message);
         }
       } catch {
         console.log('[admin-login] No existing user, creating new one');
@@ -83,8 +90,15 @@ router.post('/login', async (req: Request, res: Response) => {
           email: normalizedEmail,
           emailVerified: true,
           displayName: normalizedEmail.split('@')[0],
+          password,
         });
         console.log('[admin-login] Created new user, uid:', userRecord.uid);
+      }
+      try {
+        await auth.setCustomUserClaims(userRecord.uid, { role, provider: 'env' });
+        console.log('[admin-login] Custom claims set for uid:', userRecord.uid);
+      } catch (claimsErr: any) {
+        console.log('[admin-login] Failed to set custom claims:', claimsErr.message);
       }
       const token = await auth.createCustomToken(userRecord.uid, { role, provider: 'env' });
       console.log('[admin-login] Custom token created for uid:', userRecord.uid);

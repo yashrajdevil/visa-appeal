@@ -1,0 +1,37 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Articles - public read published, admin write
+    match /articles/{article} {
+      allow read: if resource.data.status == 'published'
+                  || (request.auth != null
+                      && request.auth.token.role in ['superadmin', 'admin', 'editor', 'author']);
+      allow write: if request.auth != null
+                    && request.auth.token.role in ['superadmin', 'admin', 'editor', 'author'];
+    }
+
+    // Media - public read, admin write
+    match /media/{media} {
+      allow read: if true;
+      allow write: if request.auth != null
+                    && request.auth.token.role in ['superadmin', 'admin', 'editor', 'author'];
+    }
+
+    // Categories - public read, admin write
+    match /categories/{category} {
+      allow read: if true;
+      allow write: if request.auth != null
+                    && request.auth.token.role in ['superadmin', 'admin', 'editor', 'author'];
+    }
+
+    // User cases - users can only read/write their own cases
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Admin settings - deny all client access (use Admin SDK only)
+    match /admin/{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
