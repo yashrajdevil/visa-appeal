@@ -571,216 +571,100 @@ REFUSAL RESPONSE LETTER
 
 Generate a professional visa refusal-response letter.
 
-IMPORTANT:
+Keep it short and structured. Do not generate legal memorandums, legal essays, statutory analysis, balance of probabilities discussions, immigration law explanations, or long legal arguments.
 
-The goal is NOT to sound like a lawyer.
+Target length: 500-900 words.
 
-The goal is NOT to sound academic.
+Required structure:
 
-The goal is NOT to write a legal essay.
+Applicant Information
 
-The goal is to directly overcome the refusal reasons.
-
-The visa officer should immediately see:
-
-* what concern was raised
-* what evidence addresses it
-* why the concern is resolved
-
----
-
-STRICT RULES
-
-DO NOT:
-
-* Explain immigration law
-* Mention regulations unless explicitly cited in the refusal
-* Discuss legal standards
-* Discuss burden of proof
-* Discuss jurisprudence
-* Discuss "balance of probabilities"
-* Discuss statutory requirements
-* Use phrases like:
-
-  * "holistic assessment"
-  * "legal framework"
-  * "it is respectfully submitted"
-  * "jurisprudence"
-  * "decision-maker"
-  * "statutory criteria"
-
-DO NOT write like a lawyer arguing in court.
-
-DO NOT write a university essay.
-
-DO NOT write generic visa template language.
-
----
-
-NEVER INVENT FACTS
-
-Only use:
-
-* refusal letter
-* questionnaire answers
-* uploaded evidence
-
-Never claim:
-
-* documents were attached
-* funds exist
-* employment exists
-* property exists
-* sponsorship exists
-
-unless explicitly provided.
-
----
-
-LETTER STRUCTURE
-
-Header
-
-Visa Office
+Date
 
 Subject Line
 
 Dear Visa Officer,
 
-Opening Paragraph
+Opening paragraph:
 
-Maximum 3-4 sentences.
+* acknowledge previous refusal
+* explain this submission addresses refusal concerns
+* mention purpose of travel
 
-Explain:
+Then create one section per refusal reason.
 
-* this is a reapplication
-* previous refusal is acknowledged
-* this submission addresses the refusal concerns
-
----
-
-REFUSAL RESPONSE SECTIONS
-
-Create one section per refusal reason.
-
-Example:
+Examples:
 
 1. Financial Capacity
-
 2. Employment and Economic Ties
-
 3. Travel Purpose
-
 4. Travel History
+5. Family Ties
 
-etc.
+For each section:
 
-For EACH section:
+* summarize officer concern
+* reference actual applicant facts
+* explain why concern is addressed
+* 2-4 paragraphs maximum
 
-A.
+Most important rule:
 
-State the concern.
+USE APPLICANT DATA.
 
-Example:
+The letter must actively reference:
 
-"The refusal noted concerns regarding the origin of funds deposited into the applicant's account."
+* current bank balance
+* monthly income
+* employment status
+* sponsor information
+* business ownership
+* property ownership
+* family dependents
+* purpose of travel
+* refusal reasons
 
-B.
+whenever those facts exist.
 
-Provide the explanation.
-
-Use actual applicant facts.
-
-C.
-
-Reference evidence naturally.
-
-Example:
-
-"The applicant's employment records and income history demonstrate a consistent source of earnings."
-
-D.
-
-Explain why the concern is resolved.
-
----
-
-STYLE EXAMPLES
-
-GOOD:
-
-"The refusal noted concerns regarding the applicant's financial circumstances. The financial records provided demonstrate a consistent pattern of income and savings that support the proposed visit."
-
-GOOD:
-
-"The applicant maintains ongoing employment in the home country and is expected to return to their position following the visit."
-
-GOOD:
-
-"The travel purpose remains temporary and clearly defined."
-
-BAD:
-
-"The applicant satisfies the statutory requirements."
-
-BAD:
-
-"On a balance of probabilities..."
-
-BAD:
-
-"It is respectfully submitted that..."
-
-BAD:
-
-"The decision-maker should conclude..."
-
-BAD:
-
-"The legal framework requires..."
-
----
-
-LENGTH
-
-Target:
-
-400-700 words
-
-Maximum:
-
-900 words
-
-If the letter exceeds 900 words, shorten it.
-
----
-
-CONCLUSION
-
-Maximum 2 short paragraphs.
+Do not generate generic text that could apply to anyone.
 
 Example:
 
-"The information and evidence provided directly address the concerns identified in the previous refusal decision.
+BAD:
+"The applicant has sufficient funds."
 
-The applicant respectfully requests that the application be reassessed in light of the updated explanations and supporting evidence."
+GOOD:
+"The applicant reports an available bank balance of approximately USD 18,500 together with a monthly income of approximately USD 3,200. These resources are sufficient to support the proposed temporary visit."
 
----
+BAD:
+"The applicant has strong ties."
 
-FINAL OUTPUT REQUIREMENT
+GOOD:
+"The applicant maintains full-time employment as a Marketing Manager, owns residential property in the home country, and supports two dependent family members. These ongoing obligations create a clear incentive to return."
 
-The finished letter should read like something prepared by a top immigration consultant responding to a refusal.
+Forbidden:
 
-It should NOT read like:
+* balance of probabilities
+* legal analysis
+* jurisprudence
+* statutory interpretation
+* Senior Immigration Counsel
+* Immigration Counsel
+* Attorney Signature Block
+* Legal Submission
+* Memorandum
+* We believe
+* We trust
 
-* ChatGPT
-* a law school essay
-* a court brief
-* a legal memorandum
+Signature should simply be:
 
-The focus must remain on the refusal reasons and the evidence that resolves them.
+Sincerely,
 
----
+[Applicant Name]
+
+If applicant name unavailable: Confidential Client
+
+The letter must sound like a strong professional visa reapplication prepared by a consultant, not a courtroom brief and not a generic AI template.
 
 APPLICANT INFORMATION:
 
