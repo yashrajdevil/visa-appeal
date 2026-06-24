@@ -1,7 +1,7 @@
 export const MODEL_FALLBACKS = [
-  'gemini-3.5-flash',
-  'gemini-3.1-flash-lite',
-  'gemini-2.5-flash',
+  'gemini-3.5-flash',       // Preferred model
+  'gemini-2.5-flash',       // High-quality fallback
+  'gemini-3.1-flash-lite',  // Last-resort lightweight fallback
 ];
 
 let lastSuccessfulModel: string | null = null;
@@ -33,14 +33,14 @@ async function generateWithFallback(
 
   const attempts: { model: string; status: number | null; error: string | null }[] = [];
 
-  for (const model of MODEL_FALLBACKS) {
+  for (const [index, model] of MODEL_FALLBACKS.entries()) {
     const requestBody = JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig,
     });
     const fullUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${trimmedKey}`;
 
-    console.log(`FALLBACK attempting model=${model}`);
+    console.log(`FALLBACK attempting model=${model} (${index + 1}/${MODEL_FALLBACKS.length})`);
     console.log(`FALLBACK URL (redacted): ${fullUrl.replace(trimmedKey, '***REDACTED***')}`);
 
     try {
@@ -56,7 +56,7 @@ async function generateWithFallback(
       const rawBody = await response.text();
 
       if (response.ok) {
-        console.log(`FALLBACK success model=${model}`);
+        console.log(`FALLBACK selected model=${model} after ${index + 1} attempt(s)`);
         lastSuccessfulModel = model;
         // Parse API response envelope to extract generated text from candidates
         try {
@@ -519,23 +519,56 @@ function extractJson(text: string): any {
     .replace(/```\s*/gi, '')
     .trim();
 
-  // If no braces found, full dump has already been logged upstream
   const start = cleaned.indexOf('{');
-  const end = cleaned.lastIndexOf('}');
-  if (start === -1 || end === -1) {
+  if (start === -1) {
     console.error('extractJson: no JSON object found in response');
     return null;
   }
-  cleaned = cleaned.slice(start, end + 1);
 
-  try {
-    return JSON.parse(cleaned);
-  } catch (parseErr: any) {
-    console.error('extractJson: JSON.parse failed:', parseErr.message);
-    console.error('extractJson: cleaned text length:', cleaned.length);
-    console.error('extractJson: cleaned text (first 2000):', cleaned.slice(0, 2000));
+  // Balanced brace parsing: extract from first "{" to matching "}"
+  let depth = 0;
+  let pos = start;
+  for (; pos < cleaned.length; pos++) {
+    const ch = cleaned[pos];
+    if (ch === '{') depth++;
+    else if (ch === '}') depth--;
+    if (depth === 0) break;
+  }
+
+  if (depth !== 0) {
+    console.error('extractJson: unbalanced braces in response');
     return null;
   }
+
+  cleaned = cleaned.slice(start, pos + 1);
+  console.log('Balanced JSON extracted length:', cleaned.length);
+
+  const tryParse = (s: string): any | null => {
+    try {
+      return JSON.parse(s);
+    } catch {
+      return null;
+    }
+  };
+
+  // First attempt
+  let parsed = tryParse(cleaned);
+  if (parsed) return parsed;
+
+  // Second attempt: remove trailing commas and trim garbage after final brace
+  console.log('extractJson: first parse failed, attempting cleanup');
+  let cleaned2 = cleaned
+    .replace(/,(\s*[}\]])/g, '$1')   // remove trailing commas before } or ]
+    .replace(/[^\S\n]*$/, '')        // trim trailing whitespace
+    .trim();
+
+  parsed = tryParse(cleaned2);
+  if (parsed) return parsed;
+
+  console.error('extractJson: JSON.parse failed after cleanup');
+  console.error('extractJson: cleaned text length:', cleaned.length);
+  console.error('extractJson: cleaned text (first 2000):', cleaned.slice(0, 2000));
+  throw new Error('extractJson: could not parse JSON after cleanup');
 }
 
 export async function generateAppealLetter(
@@ -566,135 +599,102 @@ export async function generateAppealLetter(
     `Key Issues: ${(analysisData.issues || []).map((i: any) => i.issue).join(', ')}`,
   ].join('\n');
 
-  const prompt = `SECTION 7
-REFUSAL RESPONSE LETTER
+  const prompt = `Generate a visa reapplication cover letter.
 
-Generate a visa refusal-response letter.
+LENGTH: 350 to 700 words. Never exceed 900 words.
 
-CRITICAL RULES — NEVER GENERATE:
+STRUCTURE:
 
-* [Applicant Name]
-* [Address]
-* [Phone Number]
-* [Email Address]
-* [Embassy Name]
-* [Consulate Name]
-* [Application Number]
-* [UCI]
-* [Date]
-* Any placeholder whatsoever
+Immigration, Refugees and Citizenship Canada
 
-NEVER INVENT:
-
-* fake balances
-* fake income
-* fake employers
-* fake family members
-* fake property ownership
-* fake evidence
-* fake dates
-
-If information is missing from the provided data, simply do not mention it.
-
----
-
-NEW LETTER FORMAT
+Subject: Reapplication for [Visa Type]
 
 Dear Visa Officer,
 
-I respectfully submit this application following the refusal of my previous visitor visa application.
+Opening paragraph - directly acknowledge the refusal and state this is a reapplication.
 
-The refusal letter raised concerns regarding my financial circumstances and my ties to my country of residence. I would like to address each concern directly.
+Numbered refusal-response sections. Create only sections relevant to the refusal reasons:
 
-Financial Capacity
+1. Financial Capacity
+2. Employment / Ties
+3. Purpose of Visit
 
-[2-4 short paragraphs based ONLY on actual facts from questionnaire and refusal]
+Short conclusion - respectfully request reconsideration.
 
-Employment and Professional Commitments
+Applicant Name
 
-[2-4 short paragraphs]
+STYLE:
 
-Family and Personal Ties
+Write like an immigration consultant, visa caseworker, or professional applicant — NOT like a lawyer, barrister, or litigation counsel.
 
-[2-4 short paragraphs]
+NEVER USE THESE PHRASES:
 
-Purpose of Travel
+- balance of probabilities
+- statutory requirements
+- jurisprudence
+- legal standard
+- the refusal places significant weight
+- economic integration
+- compelling incentive
+- objective evidence establishes
+- for the reasons outlined above
+- professional obligations create
+- holistic assessment
+- "We believe"
+- "I kindly request"
+- "I promise"
+- "The applicant submits"
+- "This submission demonstrates"
+- "Under Section"
+- IRPA or immigration act references
 
-[2-3 short paragraphs]
+NEVER INVENT FACTS. Use only the refusal reasons, questionnaire answers, and refusal document provided below. If information is missing, omit it entirely — do not create placeholders or bracketed fields.
 
-Conclusion
+NEVER OUTPUT placeholders of any kind:
 
-A short professional closing.
+- [Applicant Name]
+- [Employer Name]
+- [Country]
+- [Insert Details]
+- [UCI]
+- [Address]
+- [Date]
+- [Phone Number]
+- [Email]
 
-Sincerely,
+If data is missing, write naturally without placeholders.
 
-Applicant Name (if extracted — no brackets, just the name)
-Otherwise: Confidential Client
+TONE EXAMPLE (good):
 
----
+"The previous refusal noted concerns regarding my financial circumstances. To address this concern, I have included updated bank statements showing a consistent pattern of income and savings."
 
-WRITING STYLE — USE FIRST PERSON
+"My employment letter confirms my ongoing position and approved leave period. I am expected to return to my role after my visit."
 
-Write in FIRST PERSON throughout.
+TONE EXAMPLE (bad):
 
-Examples:
+"The applicant's continuing professional obligations create a compelling incentive to return."
 
-"I am currently employed..."
-"I maintain..."
-"I intend to visit..."
+"When assessed in the context of the applicant's documented financial profile..."
 
-NOT:
+CONCLUSION STYLE:
 
-"The applicant is employed..."
-"The applicant maintains..."
+"The information provided addresses the concerns identified in the previous refusal. I respectfully request that my application be reconsidered based on the updated evidence and explanations provided."
 
-The letter should sound like:
-
-* professional immigration consultant
-* experienced visa advisor
-* not a lawyer writing a court brief
-* not a student essay
-* not a generic template
-
-Good examples:
-
-"While concerns were raised regarding my financial circumstances, my current financial records demonstrate a stable income and sufficient savings to support the proposed visit."
-
-"My employment obligations require my return following the authorized period of travel."
-
-"My personal and professional circumstances remain firmly established in my country of residence."
-
-Bad examples:
-
-"We believe..."
-"I kindly request..."
-"I promise..."
-"The applicant submits..."
-"This submission demonstrates..."
-"Under Section 179..."
-"Balance of probabilities..."
-
----
-
-LENGTH
-
-Target: 500-900 words
-
-NOT 1500+
-NOT 2000+
-
----
+OUTPUT: Return plain text only. No markdown. No code blocks. No JSON. No legal submission format. No attorney signature block. No "Senior Immigration Counsel". No "Immigration Barrister". No law-firm language.
 
 DO NOT INCLUDE:
 
-* legal essay
-* legal memorandum
-* immigration law lecture
-* IRPA explanations
-* section 179 analysis
-* "balance of probabilities"
-* 1500-word walls of text
-* repetitive explanations
+- legal essay
+- legal memorandum
+- immigration law lecture
+- IRPA explanations
+- 1500-word walls of text
+- repetitive explanations
+- numbered legal arguments
+- "hereby" or "aforementioned"
+- footnotes or citations
+
+USE FIRST PERSON throughout.
 
 APPLICANT INFORMATION:
 
